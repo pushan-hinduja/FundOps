@@ -12,6 +12,7 @@ ALTER TABLE emails_parsed ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deal_lp_relationships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE suggested_contacts ENABLE ROW LEVEL SECURITY;
 
 -- Helper function to get current user's organization_id
 CREATE OR REPLACE FUNCTION get_user_organization_id()
@@ -24,6 +25,12 @@ CREATE POLICY "Users can view own organization"
     ON organizations FOR SELECT
     TO authenticated
     USING (id = get_user_organization_id());
+
+-- Organizations: Users can create organizations
+CREATE POLICY "Users can create organizations"
+    ON organizations FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
 
 -- Users: Users can only see users in their organization
 CREATE POLICY "Users can view org members"
@@ -218,6 +225,27 @@ CREATE POLICY "Users can delete org deal LP relationships"
             SELECT id FROM deals WHERE organization_id = get_user_organization_id()
         )
     );
+
+-- Suggested Contacts: Users can CRUD within their organization
+CREATE POLICY "Users can view org suggested contacts"
+    ON suggested_contacts FOR SELECT
+    TO authenticated
+    USING (organization_id = get_user_organization_id());
+
+CREATE POLICY "Users can insert org suggested contacts"
+    ON suggested_contacts FOR INSERT
+    TO authenticated
+    WITH CHECK (organization_id = get_user_organization_id());
+
+CREATE POLICY "Users can update org suggested contacts"
+    ON suggested_contacts FOR UPDATE
+    TO authenticated
+    USING (organization_id = get_user_organization_id());
+
+CREATE POLICY "Users can delete org suggested contacts"
+    ON suggested_contacts FOR DELETE
+    TO authenticated
+    USING (organization_id = get_user_organization_id());
 
 -- Service role bypass (for cron jobs and server-side operations)
 -- Note: Service role key bypasses RLS by default in Supabase

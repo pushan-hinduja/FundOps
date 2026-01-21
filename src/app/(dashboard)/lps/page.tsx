@@ -1,4 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSuggestedContacts } from "@/lib/emails/suggested-contacts";
+import { HubSpotSyncButton } from "@/components/shared/HubSpotSyncButton";
+import { SuggestedContacts } from "@/components/shared/SuggestedContacts";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
@@ -34,12 +37,49 @@ export default async function LPsPage() {
     );
   }
 
-  // Fetch LPs
-  const { data: lps, error } = await supabase
-    .from("lp_contacts")
-    .select("*")
-    .eq("organization_id", userData.organization_id)
-    .order("last_interaction_at", { ascending: false, nullsFirst: false });
+  // Fetch LPs and suggested contacts in parallel (both use same email data source)
+  let lps, error, suggestedContacts = [];
+  
+  console.log(`[LPs Page] Loading for organization: ${userData.organization_id}`);
+  
+  try {
+    // First verify auth_accounts exist for debugging
+    const { data: authAccounts, error: authError } = await supabase
+      .from("auth_accounts")
+      .select("id, email, is_active, organization_id")
+      .eq("user_id", user.id);
+    
+    console.log(`[LPs Page] Found ${authAccounts?.length || 0} auth accounts for user`);
+    if (authAccounts && authAccounts.length > 0) {
+      authAccounts.forEach(acc => {
+        console.log(`[LPs Page]   - ${acc.email} (active: ${acc.is_active})`);
+      });
+    }
+    
+    const [lpsResult, suggestedContactsResult] = await Promise.all([
+      supabase
+        .from("lp_contacts")
+        .select("*")
+        .eq("organization_id", userData.organization_id)
+        .order("last_interaction_at", { ascending: false, nullsFirst: false }),
+      getSuggestedContacts(supabase, userData.organization_id).catch((err) => {
+        console.error("Error fetching suggested contacts:", err);
+        return [];
+      }),
+    ]);
+
+    lps = lpsResult.data;
+    error = lpsResult.error;
+    suggestedContacts = suggestedContactsResult || [];
+    
+    console.log(`[LPs Page] Loaded ${lps?.length || 0} LPs and ${suggestedContacts.length} suggested contacts`);
+  } catch (err) {
+    console.error("Error in LPs page:", err);
+    // Fallback to empty data
+    lps = [];
+    error = err instanceof Error ? err : new Error("Failed to load data");
+    suggestedContacts = [];
+  }
 
   const formatCurrency = (amount: number | null) => {
     if (!amount) return "-";
@@ -52,78 +92,92 @@ export default async function LPsPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">LP Contacts</h1>
-        <Link
-          href="/lps/new"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
-        >
-          Add LP
-        </Link>
+    <div className="flex h-[calc(100vh-4rem)]">
+      {/* Suggested Contacts Sidebar - 1/3 width */}
+      <div className="w-1/3">
+        <SuggestedContacts 
+          organizationId={userData.organization_id}
+          initialContacts={suggestedContacts}
+        />
       </div>
 
-      {error && (
-        <div className="bg-destructive/10 text-destructive p-4 rounded-lg mb-4">
-          Error loading LPs: {error.message}
+      {/* LP Contacts Table - 2/3 width */}
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">LP Contacts</h1>
+          <div className="flex items-center gap-3">
+            <HubSpotSyncButton />
+            <Link
+              href="/lps/new"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
+            >
+              Add LP
+            </Link>
+          </div>
         </div>
-      )}
 
-      {!lps || lps.length === 0 ? (
-        <div className="bg-muted p-8 rounded-lg text-center">
-          <p className="text-muted-foreground mb-4">
-            No LP contacts yet. LPs are automatically created when emails are parsed, or you can add them manually.
-          </p>
-          <Link
-            href="/lps/new"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition inline-block"
-          >
-            Add LP Manually
-          </Link>
-        </div>
-      ) : (
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Firm</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Email</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Total Committed</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Last Interaction</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {lps.map((lp) => (
-                <tr key={lp.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link href={`/lps/${lp.id}`} className="font-medium text-sm hover:text-primary">
-                      {lp.name}
-                    </Link>
-                    {lp.title && (
-                      <p className="text-xs text-muted-foreground">{lp.title}</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {lp.firm || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {lp.email}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-green-600">
-                    {formatCurrency(lp.total_commitments)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {lp.last_interaction_at
-                      ? formatDistanceToNow(new Date(lp.last_interaction_at), { addSuffix: true })
-                      : "-"}
-                  </td>
+        {error && (
+          <div className="bg-destructive/10 text-destructive p-4 rounded-lg mb-4">
+            Error loading LPs: {error.message}
+          </div>
+        )}
+
+        {!lps || lps.length === 0 ? (
+          <div className="bg-muted p-8 rounded-lg text-center">
+            <p className="text-muted-foreground mb-4">
+              No LP contacts yet. LPs are automatically created when emails are parsed, or you can add them manually.
+            </p>
+            <Link
+              href="/lps/new"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition inline-block"
+            >
+              Add LP Manually
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Firm</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Email</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Total Committed</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Last Interaction</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody className="divide-y divide-border">
+                {lps.map((lp) => (
+                  <tr key={lp.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3">
+                      <Link href={`/lps/${lp.id}`} className="font-medium text-sm hover:text-primary">
+                        {lp.name}
+                      </Link>
+                      {lp.title && (
+                        <p className="text-xs text-muted-foreground">{lp.title}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {lp.firm || "-"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {lp.email}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-green-600">
+                      {formatCurrency(lp.total_commitments)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {lp.last_interaction_at
+                        ? formatDistanceToNow(new Date(lp.last_interaction_at), { addSuffix: true })
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

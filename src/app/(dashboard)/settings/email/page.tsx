@@ -73,12 +73,14 @@ export default async function EmailSettingsPage({
               Emails from these accounts will be automatically ingested and parsed.
             </p>
           </div>
-          <Link
-            href="/api/auth/google"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
-          >
-            Connect Gmail
-          </Link>
+          {(!accounts || accounts.length === 0) && (
+            <Link
+              href="/api/auth/google"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
+            >
+              Connect Gmail
+            </Link>
+          )}
         </div>
 
         {!accounts || accounts.length === 0 ? (

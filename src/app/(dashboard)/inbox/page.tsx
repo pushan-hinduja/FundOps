@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchEmailsWithParsed } from "@/lib/emails/queries";
 import { IntentBadge } from "@/components/shared/IntentBadge";
+import { SyncButton } from "@/components/shared/SyncButton";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 
@@ -35,43 +37,51 @@ export default async function InboxPage() {
     );
   }
 
-  // Fetch emails with parsed data
-  const { data: emails, error } = await supabase
-    .from("emails_raw")
-    .select(`
-      id,
-      from_email,
-      from_name,
-      subject,
-      received_at,
-      emails_parsed (
-        intent,
-        detected_lp_id,
-        detected_deal_id,
-        confidence_scores,
-        lp_contacts (name, firm),
-        deals (name)
-      )
-    `)
-    .eq("organization_id", userData.organization_id)
-    .order("received_at", { ascending: false })
-    .limit(50);
+  // Check for connected Gmail accounts
+  const { data: accounts } = await supabase
+    .from("auth_accounts")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("provider", "gmail")
+    .eq("is_active", true)
+    .limit(1);
+
+  const hasConnectedAccount = accounts && accounts.length > 0;
+
+  // Fetch emails with parsed data using shared query function
+  // This ensures we use the same data source as suggested contacts
+  let emails;
+  let error: Error | null = null;
+  
+  try {
+    emails = await fetchEmailsWithParsed(supabase, userData.organization_id, {
+      limit: 50,
+    });
+  } catch (err: any) {
+    error = err;
+    emails = [];
+  }
 
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Inbox</h1>
-        <Link
-          href="/settings/email"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
-        >
-          Connect Gmail
-        </Link>
+        <div className="flex items-center gap-3">
+          {hasConnectedAccount && <SyncButton />}
+          {!hasConnectedAccount && (
+            <Link
+              href="/settings/email"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
+            >
+              Connect Gmail
+            </Link>
+          )}
+        </div>
       </div>
 
       {error && (
         <div className="bg-destructive/10 text-destructive p-4 rounded-lg mb-4">
-          Error loading emails: {error.message}
+          Error loading emails: {error instanceof Error ? error.message : String(error)}
         </div>
       )}
 

@@ -3,6 +3,8 @@ import { IntentBadge } from "@/components/shared/IntentBadge";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function InboxPage() {
   const supabase = await createClient();
 

@@ -34,6 +34,10 @@ export default async function EmailSettingsPage({
     not_authenticated: "You must be logged in to connect Gmail.",
     save_failed: "Failed to save Gmail credentials.",
     token_exchange_failed: "Failed to exchange authorization code.",
+    oauth_config_missing:
+      "Gmail OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then restart the server.",
+    missing_encryption_key:
+      "Token encryption is not configured. Set ENCRYPTION_KEY and restart the server.",
   };
 
   const errorMessage = searchParams.error

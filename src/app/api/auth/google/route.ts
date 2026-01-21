@@ -25,8 +25,12 @@ export async function GET() {
     maxAge: 60 * 10, // 10 minutes
   });
 
-  // Generate auth URL and redirect
-  const authUrl = generateAuthUrl(state);
-
-  return NextResponse.redirect(authUrl);
+  try {
+    // Generate auth URL and redirect
+    const authUrl = generateAuthUrl(state);
+    return NextResponse.redirect(authUrl);
+  } catch (error) {
+    console.error("Gmail OAuth config error:", error);
+    return NextResponse.redirect("/settings/email?error=oauth_config_missing");
+  }
 }

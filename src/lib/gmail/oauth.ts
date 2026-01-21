@@ -7,10 +7,18 @@ const SCOPES = [
 ];
 
 export function getOAuth2Client() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  if (!clientId || !clientSecret) {
+    throw new Error("Missing Google OAuth configuration");
+  }
+
   return new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/google`
+    clientId,
+    clientSecret,
+    `${appUrl}/api/auth/callback/google`
   );
 }
 

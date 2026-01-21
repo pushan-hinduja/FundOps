@@ -80,6 +80,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${appUrl}/settings/email?success=gmail_connected`);
   } catch (err) {
     console.error("Gmail OAuth callback error:", err);
-    return NextResponse.redirect(`${appUrl}/settings/email?error=token_exchange_failed`);
+    const errorMessage = err instanceof Error ? err.message : "";
+    const errorCode =
+      errorMessage.includes("ENCRYPTION_KEY")
+        ? "missing_encryption_key"
+        : "token_exchange_failed";
+    return NextResponse.redirect(`${appUrl}/settings/email?error=${errorCode}`);
   }
 }

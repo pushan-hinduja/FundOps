@@ -26,12 +26,15 @@ export async function getGmailClient(authAccount: AuthAccount) {
   const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
   let accessToken = decrypt(authAccount.access_token);
+  let tokenRefreshed = false;
 
   if (expiresAt < fiveMinutesFromNow) {
     // Refresh the token
+    console.log("[Gmail Client] Token expired or expiring soon, refreshing...");
     const refreshToken = decrypt(authAccount.refresh_token);
     const newTokens = await refreshAccessToken(refreshToken);
     accessToken = newTokens.accessToken;
+    tokenRefreshed = true;
 
     // Update the database with new token
     const supabase = createServiceClient();
@@ -42,7 +45,10 @@ export async function getGmailClient(authAccount: AuthAccount) {
         token_expires_at: newTokens.expiresAt.toISOString(),
       })
       .eq("id", authAccount.id);
+    console.log("[Gmail Client] Token refreshed and saved");
   }
+
+  console.log(`[Gmail Client] Using ${tokenRefreshed ? "refreshed" : "existing"} token for ${authAccount.email}`);
 
   oauth2Client.setCredentials({ access_token: accessToken });
   return google.gmail({ version: "v1", auth: oauth2Client });
@@ -51,23 +57,33 @@ export async function getGmailClient(authAccount: AuthAccount) {
 export async function fetchNewMessages(
   gmail: gmail_v1.Gmail,
   afterTimestamp?: Date,
-  maxResults: number = 50
+  maxResults: number = 200
 ): Promise<gmail_v1.Schema$Message[]> {
-  // Build query
-  let query = "in:inbox";
-  if (afterTimestamp) {
-    // Gmail uses epoch seconds for after: filter
-    const epochSeconds = Math.floor(afterTimestamp.getTime() / 1000);
-    query += ` after:${epochSeconds}`;
+  // Build query - fetch all inbox messages, not filtered by date
+  // This ensures we get emails even if timestamp is off
+  const query = "in:inbox";
+
+  console.log(`[Gmail API] Fetching messages with query: "${query}", maxResults: ${maxResults}`);
+
+  try {
+    const response = await gmail.users.messages.list({
+      userId: "me",
+      q: query,
+      maxResults,
+    });
+
+    const messages = response.data.messages || [];
+    console.log(`[Gmail API] Response: ${messages.length} messages found, resultSizeEstimate: ${response.data.resultSizeEstimate}`);
+
+    return messages;
+  } catch (error: any) {
+    console.error(`[Gmail API] Error fetching messages:`, error.message);
+    if (error.response) {
+      console.error(`[Gmail API] Response status: ${error.response.status}`);
+      console.error(`[Gmail API] Response data:`, JSON.stringify(error.response.data));
+    }
+    throw error;
   }
-
-  const response = await gmail.users.messages.list({
-    userId: "me",
-    q: query,
-    maxResults,
-  });
-
-  return response.data.messages || [];
 }
 
 export async function getMessageDetails(

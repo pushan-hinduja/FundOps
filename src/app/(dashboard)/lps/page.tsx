@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { getSuggestedContacts } from "@/lib/emails/suggested-contacts";
 import { HubSpotSyncButton } from "@/components/shared/HubSpotSyncButton";
+import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
 import { SuggestedContacts } from "@/components/shared/SuggestedContacts";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -62,15 +62,17 @@ export default async function LPsPage() {
         .select("*")
         .eq("organization_id", userData.organization_id)
         .order("last_interaction_at", { ascending: false, nullsFirst: false }),
-      getSuggestedContacts(supabase, userData.organization_id).catch((err) => {
-        console.error("Error fetching suggested contacts:", err);
-        return [];
-      }),
+      supabase
+        .from("suggested_contacts")
+        .select("id, email, name, firm, title")
+        .eq("organization_id", userData.organization_id)
+        .eq("is_dismissed", false)
+        .order("created_at", { ascending: false }),
     ]);
 
     lps = lpsResult.data;
     error = lpsResult.error;
-    suggestedContacts = suggestedContactsResult || [];
+    suggestedContacts = suggestedContactsResult.data || [];
     
     console.log(`[LPs Page] Loaded ${lps?.length || 0} LPs and ${suggestedContacts.length} suggested contacts`);
   } catch (err) {
@@ -93,19 +95,12 @@ export default async function LPsPage() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
-      {/* Suggested Contacts Sidebar - 1/3 width */}
-      <div className="w-1/3">
-        <SuggestedContacts 
-          organizationId={userData.organization_id}
-          initialContacts={suggestedContacts}
-        />
-      </div>
-
       {/* LP Contacts Table - 2/3 width */}
       <div className="flex-1 overflow-y-auto p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">LP Contacts</h1>
           <div className="flex items-center gap-3">
+            <EmailSyncButton />
             <HubSpotSyncButton />
             <Link
               href="/lps/new"
@@ -178,6 +173,12 @@ export default async function LPsPage() {
           </div>
         )}
       </div>
+
+      {/* Suggested Contacts Sidebar - collapsible */}
+      <SuggestedContacts
+        organizationId={userData.organization_id}
+        initialContacts={suggestedContacts}
+      />
     </div>
   );
 }

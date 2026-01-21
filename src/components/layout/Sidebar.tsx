@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, Users, Briefcase, Settings, LogOut } from "lucide-react";
+import { Users, Briefcase, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 const navItems = [
-  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/deals", label: "Deals", icon: Briefcase },
   { href: "/lps", label: "LPs", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },

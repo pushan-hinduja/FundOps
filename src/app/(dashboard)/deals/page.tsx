@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -69,12 +70,15 @@ export default async function DealsPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Deals</h1>
-        <Link
-          href="/deals/new"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
-        >
-          New Deal
-        </Link>
+        <div className="flex items-center gap-3">
+          <EmailSyncButton />
+          <Link
+            href="/deals/new"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
+          >
+            New Deal
+          </Link>
+        </div>
       </div>
 
       {error && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface SuggestedContact {
@@ -11,15 +11,16 @@ interface SuggestedContact {
   title: string | null;
 }
 
-export function SuggestedContacts({ 
+export function SuggestedContacts({
   organizationId,
   initialContacts = []
-}: { 
+}: {
   organizationId: string;
   initialContacts?: SuggestedContact[];
 }) {
   const [contacts, setContacts] = useState<SuggestedContact[]>(initialContacts);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -43,15 +44,6 @@ export function SuggestedContacts({
     }
   };
 
-  useEffect(() => {
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(() => {
-      fetchContacts();
-    }, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [organizationId]);
-
   const handleAdd = async (contactId: string) => {
     try {
       const response = await fetch("/api/suggested-contacts", {
@@ -70,9 +62,8 @@ export function SuggestedContacts({
 
       // Remove from list
       setContacts((prev) => prev.filter((c) => c.id !== contactId));
-      
+
       // Refresh the page to show new LP in the table
-      // Error handling in server components will prevent RSC payload failures
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Failed to add contact");
@@ -98,12 +89,37 @@ export function SuggestedContacts({
     }
   };
 
+  if (isHidden) {
+    return (
+      <button
+        onClick={() => setIsHidden(false)}
+        className="h-full w-10 bg-card border-l border-border flex items-center justify-center hover:bg-muted transition"
+        title="Show Suggested Contacts"
+      >
+        <svg
+          className="h-4 w-4 rotate-180"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </button>
+    );
+  }
+
   return (
-    <div className="h-full bg-card border-r border-border flex flex-col">
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Suggested Contacts</h2>
+    <div className="h-full w-80 bg-card border-l border-border flex flex-col">
+      <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+        <h2 className="text-lg font-semibold flex-1">Suggested Contacts</h2>
         <button
-          onClick={() => fetchContacts(true)}
+          onClick={() => fetchContacts()}
           disabled={isRefreshing}
           className="p-1.5 hover:bg-muted rounded transition disabled:opacity-50"
           title="Refresh"
@@ -120,6 +136,26 @@ export function SuggestedContacts({
               strokeLinejoin="round"
               strokeWidth={2}
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+        </button>
+        <button
+          onClick={() => setIsHidden(true)}
+          className="p-1.5 hover:bg-muted rounded transition"
+          title="Hide panel"
+        >
+          <svg
+            className="h-4 w-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
             />
           </svg>
         </button>
@@ -202,4 +238,3 @@ export function SuggestedContacts({
     </div>
   );
 }
-

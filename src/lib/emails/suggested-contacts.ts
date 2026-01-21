@@ -12,6 +12,77 @@ export interface SuggestedContact {
 }
 
 /**
+ * Process a single email for suggested contacts - called during cron
+ * Only adds if email sender is not already an LP and not dismissed
+ */
+export async function processEmailForSuggestedContact(
+  supabase: SupabaseClient,
+  organizationId: string,
+  email: {
+    id: string;
+    from_email: string;
+    from_name: string | null;
+  },
+  parsedEntities?: { lp?: { name?: string; email?: string; firm?: string } }
+): Promise<{ added: boolean; reason?: string }> {
+  if (!email.from_email) {
+    return { added: false, reason: "no_email" };
+  }
+
+  const emailLower = email.from_email.toLowerCase();
+
+  // Check if already in LP contacts
+  const { data: existingLP } = await supabase
+    .from("lp_contacts")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .ilike("email", emailLower)
+    .single();
+
+  if (existingLP) {
+    return { added: false, reason: "already_lp" };
+  }
+
+  // Check if dismissed
+  const { data: dismissed } = await supabase
+    .from("suggested_contacts")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .ilike("email", emailLower)
+    .eq("is_dismissed", true)
+    .single();
+
+  if (dismissed) {
+    return { added: false, reason: "dismissed" };
+  }
+
+  // Upsert the suggested contact
+  const { error } = await supabase
+    .from("suggested_contacts")
+    .upsert(
+      {
+        organization_id: organizationId,
+        email: email.from_email,
+        name: parsedEntities?.lp?.name || email.from_name || email.from_email,
+        firm: parsedEntities?.lp?.firm || null,
+        source_email_id: email.id,
+        is_dismissed: false,
+      },
+      {
+        onConflict: "organization_id,email",
+        ignoreDuplicates: false,
+      }
+    );
+
+  if (error) {
+    console.error("Error upserting suggested contact:", error);
+    return { added: false, reason: "error" };
+  }
+
+  return { added: true };
+}
+
+/**
  * Get suggested contacts from emails that aren't in LP table
  * Uses the same email data source as inbox page
  */

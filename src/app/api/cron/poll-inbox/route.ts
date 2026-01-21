@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getGmailClient, fetchNewMessages, getMessageDetails } from "@/lib/gmail/client";
-import { parseEmailWithAI } from "@/lib/ai/parser";
+import { parseEmailSimple } from "@/lib/emails/simple-parser";
+import { processEmailForSuggestedContact } from "@/lib/emails/suggested-contacts";
 import type { AuthAccount } from "@/lib/supabase/types";
 
 export const maxDuration = 60; // Maximum execution time in seconds
@@ -12,6 +13,7 @@ async function processInboxSync(userId?: string) {
     accountsProcessed: 0,
     emailsIngested: 0,
     emailsParsed: 0,
+    suggestedContactsAdded: 0,
     errors: [] as string[],
   };
 
@@ -105,7 +107,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (err: any) {
     return NextResponse.json(
-      { error: err.message, stats: { accountsProcessed: 0, emailsIngested: 0, emailsParsed: 0, errors: [] } },
+      { error: err.message, stats: { accountsProcessed: 0, emailsIngested: 0, emailsParsed: 0, suggestedContactsAdded: 0, errors: [] } },
       { status: 500 }
     );
   }
@@ -114,7 +116,7 @@ export async function GET(request: NextRequest) {
 async function processAccount(
   supabase: ReturnType<typeof createServiceClient>,
   account: AuthAccount & { users: { organization_id: string } },
-  stats: { emailsIngested: number; emailsParsed: number; errors: string[] }
+  stats: { emailsIngested: number; emailsParsed: number; suggestedContactsAdded: number; errors: string[] }
 ) {
   console.log(`[Email Sync] Processing account: ${account.email}`);
   
@@ -128,7 +130,7 @@ async function processAccount(
   console.log(`[Email Sync] Fetching messages after: ${afterTimestamp.toISOString()}`);
 
   // Fetch new messages
-  const messages = await fetchNewMessages(gmail, afterTimestamp, 50);
+  const messages = await fetchNewMessages(gmail, afterTimestamp, 200);
   console.log(`[Email Sync] Found ${messages.length} messages from Gmail`);
 
   if (messages.length === 0) {
@@ -194,12 +196,33 @@ async function processAccount(
       stats.emailsIngested++;
       console.log(`[Email Sync] Ingested email ${stats.emailsIngested}/${messages.length} from ${details.from.email}`);
 
-      // Parse the email with AI
+      // Parse the email with simple regex (no AI required)
       if (insertedEmail) {
         try {
-          await parseEmailWithAI(supabase, insertedEmail, organizationId);
+          const parseResult = await parseEmailSimple(supabase, insertedEmail, organizationId);
           stats.emailsParsed++;
-          console.log(`[Email Sync] Parsed email ${stats.emailsParsed} with AI`);
+
+          if (parseResult.detectedDealId) {
+            console.log(`[Email Sync] Matched deal for email from ${details.from.email}`);
+          }
+
+          // If no LP was matched, add to suggested contacts
+          if (!parseResult.lpMatched && !parseResult.lpCreated) {
+            const scResult = await processEmailForSuggestedContact(
+              supabase,
+              organizationId,
+              {
+                id: insertedEmail.id,
+                from_email: insertedEmail.from_email,
+                from_name: insertedEmail.from_name,
+              },
+              { lp: parseResult.extractedLp }
+            );
+            if (scResult.added) {
+              stats.suggestedContactsAdded++;
+              console.log(`[Email Sync] Added suggested contact: ${insertedEmail.from_email}`);
+            }
+          }
         } catch (parseErr: any) {
           stats.errors.push(`Parse error for ${message.id}: ${parseErr.message}`);
           console.error(`[Email Sync] Parse error for ${message.id}:`, parseErr.message);
@@ -221,6 +244,7 @@ async function processAccount(
   console.log(`  - Duplicates skipped: ${duplicateCount}`);
   console.log(`  - New emails ingested: ${stats.emailsIngested}`);
   console.log(`  - Emails parsed with AI: ${stats.emailsParsed}`);
+  console.log(`  - Suggested contacts added: ${stats.suggestedContactsAdded}`);
   console.log(`  - Errors: ${stats.errors.length}`);
 }
 
@@ -241,7 +265,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (err: any) {
     return NextResponse.json(
-      { error: err.message, stats: { accountsProcessed: 0, emailsIngested: 0, emailsParsed: 0, errors: [] } },
+      { error: err.message, stats: { accountsProcessed: 0, emailsIngested: 0, emailsParsed: 0, suggestedContactsAdded: 0, errors: [] } },
       { status: 500 }
     );
   }

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { DisconnectGmailButton } from "@/components/shared/DisconnectGmailButton";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
@@ -73,14 +74,12 @@ export default async function EmailSettingsPage({
               Emails from these accounts will be automatically ingested and parsed.
             </p>
           </div>
-          {(!accounts || accounts.length === 0) && (
-            <Link
-              href="/api/auth/google"
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
-            >
-              Connect Gmail
-            </Link>
-          )}
+          <Link
+            href="/api/auth/google"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
+          >
+            Connect Gmail
+          </Link>
         </div>
 
         {!accounts || accounts.length === 0 ? (
@@ -114,6 +113,7 @@ export default async function EmailSettingsPage({
                   >
                     {account.is_active ? "Active" : "Inactive"}
                   </span>
+                  <DisconnectGmailButton accountId={account.id} />
                 </div>
               </div>
             ))}
@@ -126,9 +126,9 @@ export default async function EmailSettingsPage({
         <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
           <li>Connect your Gmail account by clicking &quot;Connect Gmail&quot;</li>
           <li>Authorize FundOps to read your emails (we only read, never send)</li>
-          <li>Emails are automatically ingested every 5 minutes</li>
+          <li>Click &quot;Sync Emails&quot; on the LPs or Deals page to pull emails</li>
           <li>Our AI parses each email to identify LPs, deals, and intent</li>
-          <li>View parsed emails in your Inbox</li>
+          <li>Suggested contacts appear automatically from your emails</li>
         </ol>
       </div>
     </div>

@@ -2,7 +2,6 @@ import { google } from "googleapis";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
-  "https://www.googleapis.com/auth/gmail.metadata",
   "https://www.googleapis.com/auth/userinfo.email",
 ];
 
@@ -25,17 +24,23 @@ export function getOAuth2Client() {
 export function generateAuthUrl(state: string): string {
   const oauth2Client = getOAuth2Client();
 
+  console.log("[OAuth] Requesting scopes:", SCOPES);
+
   return oauth2Client.generateAuthUrl({
-    access_type: "offline", // Get refresh token
+    access_type: "offline",
     scope: SCOPES,
     state,
-    prompt: "consent", // Force consent to always get refresh token
+    prompt: "consent",
+    include_granted_scopes: false, // Don't include previously granted scopes
   });
 }
 
 export async function exchangeCodeForTokens(code: string) {
   const oauth2Client = getOAuth2Client();
   const { tokens } = await oauth2Client.getToken(code);
+
+  console.log("[OAuth] Token exchange complete");
+  console.log("[OAuth] Scope granted:", tokens.scope);
 
   if (!tokens.access_token || !tokens.refresh_token) {
     throw new Error("Failed to get access or refresh token");

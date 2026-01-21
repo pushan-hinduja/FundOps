@@ -5,11 +5,20 @@ import type { EmailRaw } from "../supabase/types";
 
 const CONFIDENCE_THRESHOLD = 0.7;
 
+export interface ParseEmailResult {
+  lpCreated: boolean;
+  lpMatched: boolean;
+  detectedLpId: string | null;
+  parsedEntities: {
+    lp: { name?: string; email?: string; firm?: string };
+  };
+}
+
 export async function parseEmailWithAI(
   supabase: any,
   email: EmailRaw,
   organizationId: string
-): Promise<void> {
+): Promise<ParseEmailResult> {
   // Create pending parse record
   const { data: parseRecord, error: createError } = await supabase
     .from("emails_parsed")
@@ -95,6 +104,9 @@ export async function parseEmailWithAI(
 
     // Handle LP matching/creation
     let detectedLpId = parsed.lp.matched_lp_id;
+    let lpMatched = !!parsed.lp.matched_lp_id;
+    let lpCreated = false;
+
     if (!detectedLpId && parsed.lp.email) {
       // Try to find LP by email
       const { data: existingLp } = await supabase
@@ -106,6 +118,7 @@ export async function parseEmailWithAI(
 
       if (existingLp) {
         detectedLpId = existingLp.id;
+        lpMatched = true;
       } else if (parsed.lp.name) {
         // Create new LP
         const { data: newLp } = await supabase
@@ -121,6 +134,7 @@ export async function parseEmailWithAI(
 
         if (newLp) {
           detectedLpId = newLp.id;
+          lpCreated = true;
         }
       }
     }
@@ -163,6 +177,15 @@ export async function parseEmailWithAI(
       // This could be done with a database function for accuracy
       // For now, we'll rely on computed totals from the UI
     }
+
+    return {
+      lpCreated,
+      lpMatched,
+      detectedLpId,
+      parsedEntities: {
+        lp: parsed.lp,
+      },
+    };
   } catch (err: any) {
     // Update parse record with error
     await supabase

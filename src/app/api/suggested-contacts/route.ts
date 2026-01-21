@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-// GET: Fetch suggested contacts (for refresh only - initial data comes from server)
+// GET: Fetch suggested contacts from database (contacts are updated by cron job)
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -24,23 +24,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No organization found" }, { status: 400 });
   }
 
-  const serviceSupabase = createServiceClient();
+  // Simple database read - contacts are updated by cron job
+  const { data: contacts, error } = await supabase
+    .from("suggested_contacts")
+    .select("id, email, name, firm, title, phone, source_email_id")
+    .eq("organization_id", userData.organization_id)
+    .eq("is_dismissed", false)
+    .order("created_at", { ascending: false });
 
-  try {
-    // Use the shared function to get suggested contacts
-    const { getSuggestedContacts } = await import("@/lib/emails/suggested-contacts");
-    const contacts = await getSuggestedContacts(serviceSupabase, userData.organization_id);
-
-    return NextResponse.json({
-      contacts,
-    });
-  } catch (err: any) {
-    console.error("Error fetching suggested contacts:", err);
+  if (error) {
+    console.error("Error fetching suggested contacts:", error);
     return NextResponse.json(
-      { error: err.message || "Failed to fetch suggested contacts" },
+      { error: error.message || "Failed to fetch suggested contacts" },
       { status: 500 }
     );
   }
+
+  return NextResponse.json({ contacts: contacts || [] });
 }
 
 // POST: Add suggested contact to LP table

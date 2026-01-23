@@ -60,8 +60,8 @@ export function TopNav() {
 
   return (
     <header className="h-20 bg-white px-8 flex items-center">
-      {/* Left: Logo */}
-      <div className="flex items-center">
+      {/* Left: Logo and Action Icons */}
+      <div className="flex items-center gap-4">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="w-7 h-7 bg-primary rounded flex items-center justify-center">
             <svg
@@ -76,6 +76,28 @@ export function TopNav() {
           </div>
           <span className="text-lg font-medium tracking-tight">FundOps</span>
         </Link>
+
+        {/* Action Icons with hover labels */}
+        <div className="flex items-center gap-1 ml-2">
+          <Link
+            href="/notifications"
+            className="group flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+          >
+            <Bell className="w-[18px] h-[18px]" />
+            <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-200">
+              Notifications
+            </span>
+          </Link>
+          <Link
+            href="/settings"
+            className="group flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+          >
+            <Settings className="w-[18px] h-[18px]" />
+            <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-200">
+              Settings
+            </span>
+          </Link>
+        </div>
       </div>
 
       {/* Center: Navigation Icons */}
@@ -109,20 +131,6 @@ export function TopNav() {
             className="w-52 h-10 pl-9 pr-4 text-sm bg-white border border-border rounded-xl placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
           />
         </div>
-
-        {/* Icon buttons */}
-        <Link
-          href="/notifications"
-          className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-        >
-          <Bell className="w-[18px] h-[18px]" />
-        </Link>
-        <Link
-          href="/settings"
-          className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-        >
-          <Settings className="w-[18px] h-[18px]" />
-        </Link>
 
         {/* Profile */}
         <div className="relative">

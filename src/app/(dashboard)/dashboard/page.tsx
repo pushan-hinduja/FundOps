@@ -306,27 +306,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mt-8 flex items-center gap-4">
-        <Link
-          href="/deals/new"
-          className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          New Deal
-        </Link>
-        <Link
-          href="/deals"
-          className="px-5 py-2.5 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors"
-        >
-          View All Deals
-        </Link>
-        <Link
-          href="/lps"
-          className="px-5 py-2.5 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors"
-        >
-          Manage LPs
-        </Link>
-      </div>
     </div>
   );
 }

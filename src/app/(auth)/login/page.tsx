@@ -13,7 +13,7 @@ function LoginForm() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/inbox";
+  const redirect = searchParams.get("redirect") || "/deals";
 
   const supabase = createClient();
 

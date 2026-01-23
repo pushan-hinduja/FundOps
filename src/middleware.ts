@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request);
 
   // Define protected routes
-  const protectedPaths = ["/inbox", "/deals", "/lps", "/settings"];
+  const protectedPaths = ["/deals", "/lps", "/settings"];
   const isProtectedPath = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth routes
   if (isAuthPath && user) {
     const url = request.nextUrl.clone();
-    const redirect = url.searchParams.get("redirect") || "/inbox";
+    const redirect = url.searchParams.get("redirect") || "/deals";
     url.pathname = redirect;
     url.searchParams.delete("redirect");
     return NextResponse.redirect(url);

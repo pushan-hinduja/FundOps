@@ -60,8 +60,8 @@ export function TopNav() {
 
   return (
     <header className="h-20 bg-white px-8 flex items-center">
-      {/* Left: Logo and Action Icons */}
-      <div className="flex items-center gap-4">
+      {/* Left: Logo */}
+      <div className="flex items-center">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="w-7 h-7 bg-primary rounded flex items-center justify-center">
             <svg
@@ -76,31 +76,9 @@ export function TopNav() {
           </div>
           <span className="text-lg font-medium tracking-tight">FundOps</span>
         </Link>
-
-        {/* Action Icons with hover labels */}
-        <div className="flex items-center gap-1 ml-2">
-          <Link
-            href="/notifications"
-            className="group flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
-          >
-            <Bell className="w-[18px] h-[18px]" />
-            <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-200">
-              Notifications
-            </span>
-          </Link>
-          <Link
-            href="/settings"
-            className="group flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
-          >
-            <Settings className="w-[18px] h-[18px]" />
-            <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-200">
-              Settings
-            </span>
-          </Link>
-        </div>
       </div>
 
-      {/* Center: Navigation Icons */}
+      {/* Center: Navigation */}
       <nav className="flex-1 flex items-center justify-center gap-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -109,18 +87,27 @@ export function TopNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "nav-icon-btn",
-                isActive ? "nav-icon-btn-active" : "nav-icon-btn-inactive"
+                "group flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-primary hover:text-primary-foreground"
               )}
-              title={item.label}
             >
               <item.icon className="w-[18px] h-[18px]" />
+              <span
+                className={cn(
+                  "text-sm font-medium overflow-hidden transition-all duration-200",
+                  isActive ? "max-w-[100px]" : "max-w-0 group-hover:max-w-[100px]"
+                )}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Right: Search and Profile */}
+      {/* Right: Search, Actions, and Profile */}
       <div className="flex items-center gap-3">
         {/* Search */}
         <div className="relative">
@@ -130,6 +117,28 @@ export function TopNav() {
             placeholder="Type Client Name or ID..."
             className="w-52 h-10 pl-9 pr-4 text-sm bg-white border border-border rounded-xl placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
           />
+        </div>
+
+        {/* Action Icons */}
+        <div className="flex items-center gap-1">
+          <Link
+            href="/notifications"
+            className="group flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+          >
+            <Bell className="w-[18px] h-[18px]" />
+            <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-200">
+              Notifications
+            </span>
+          </Link>
+          <Link
+            href="/settings"
+            className="group flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+          >
+            <Settings className="w-[18px] h-[18px]" />
+            <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-200">
+              Settings
+            </span>
+          </Link>
         </div>
 
         {/* Profile */}

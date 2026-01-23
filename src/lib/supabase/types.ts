@@ -14,7 +14,134 @@ export type Json =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Database = any;
 
+// ============================================
+// Enum Types
+// ============================================
+
+export type InvestorType =
+  | "individual"
+  | "institution"
+  | "family_office"
+  | "fund_of_funds"
+  | "endowment"
+  | "pension"
+  | "sovereign_wealth";
+
+export type AccreditationStatus =
+  | "accredited_investor"
+  | "qualified_purchaser"
+  | "qualified_client"
+  | "non_accredited";
+
+export type TaxStatus =
+  | "us_individual"
+  | "us_entity"
+  | "foreign_individual"
+  | "foreign_entity"
+  | "tax_exempt";
+
+export type KYCStatus =
+  | "not_started"
+  | "pending"
+  | "in_review"
+  | "approved"
+  | "expired"
+  | "rejected";
+
+export type DocumentType =
+  | "subscription_agreement"
+  | "accreditation_letter"
+  | "tax_form_w9"
+  | "tax_form_w8"
+  | "id_passport"
+  | "kyc_documents"
+  | "other";
+
+export type DocumentStatus =
+  | "pending"
+  | "uploaded"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "expired";
+
+export type WireStatus = "pending" | "partial" | "complete";
+
+export type ReportingFrequency = "monthly" | "quarterly" | "annual";
+
+// ============================================
+// Label Mappings for Dropdowns
+// ============================================
+
+export const INVESTOR_TYPE_LABELS: Record<InvestorType, string> = {
+  individual: "Individual",
+  institution: "Institution",
+  family_office: "Family Office",
+  fund_of_funds: "Fund of Funds",
+  endowment: "Endowment",
+  pension: "Pension Fund",
+  sovereign_wealth: "Sovereign Wealth Fund",
+};
+
+export const ACCREDITATION_STATUS_LABELS: Record<AccreditationStatus, string> = {
+  accredited_investor: "Accredited Investor",
+  qualified_purchaser: "Qualified Purchaser",
+  qualified_client: "Qualified Client",
+  non_accredited: "Non-Accredited",
+};
+
+export const TAX_STATUS_LABELS: Record<TaxStatus, string> = {
+  us_individual: "US Individual",
+  us_entity: "US Entity",
+  foreign_individual: "Foreign Individual",
+  foreign_entity: "Foreign Entity",
+  tax_exempt: "Tax Exempt",
+};
+
+export const KYC_STATUS_LABELS: Record<KYCStatus, string> = {
+  not_started: "Not Started",
+  pending: "Pending",
+  in_review: "In Review",
+  approved: "Approved",
+  expired: "Expired",
+  rejected: "Rejected",
+};
+
+export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  subscription_agreement: "Subscription Agreement",
+  accreditation_letter: "Accreditation Letter",
+  tax_form_w9: "Tax Form W-9",
+  tax_form_w8: "Tax Form W-8",
+  id_passport: "ID / Passport",
+  kyc_documents: "KYC Documents",
+  other: "Other",
+};
+
+export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
+  pending: "Pending",
+  uploaded: "Uploaded",
+  under_review: "Under Review",
+  approved: "Approved",
+  rejected: "Rejected",
+  expired: "Expired",
+};
+
+export const WIRE_STATUS_LABELS: Record<WireStatus, string> = {
+  pending: "Pending",
+  partial: "Partial",
+  complete: "Complete",
+};
+
+export const REPORTING_FREQUENCY_LABELS: Record<ReportingFrequency, string> = {
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  annual: "Annual",
+};
+
+// ============================================
 // Manual type definitions for use in components
+// ============================================
+
 export interface Organization {
   id: string;
   name: string;
@@ -64,6 +191,47 @@ export interface LPContact {
   last_interaction_at: string | null;
   tags: Json;
   notes: string | null;
+  // LP Passport fields
+  investor_type: InvestorType | null;
+  accreditation_status: AccreditationStatus | null;
+  tax_status: TaxStatus | null;
+  kyc_status: KYCStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LPDocument {
+  id: string;
+  lp_contact_id: string;
+  document_type: DocumentType;
+  document_name: string;
+  file_path: string | null;
+  status: DocumentStatus;
+  expiration_date: string | null;
+  verified_by: string | null;
+  verified_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LPWiringInstructions {
+  id: string;
+  lp_contact_id: string;
+  account_label: string;
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  routing_number: string | null;
+  swift_code: string | null;
+  iban: string | null;
+  bank_address: string | null;
+  intermediary_bank: string | null;
+  special_instructions: string | null;
+  is_primary: boolean;
+  is_verified: boolean;
+  verified_at: string | null;
+  verified_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -157,6 +325,49 @@ export interface DealLPRelationship {
   latest_response_at: string | null;
   response_time_hours: number | null;
   notes: string | null;
+  // Deal-specific terms
+  management_fee_percent: number | null;
+  carry_percent: number | null;
+  minimum_commitment: number | null;
+  side_letter_terms: string | null;
+  has_mfn_rights: boolean;
+  has_coinvest_rights: boolean;
+  reporting_frequency: ReportingFrequency | null;
+  // Allocation tracking
+  reserved_amount: number | null;
+  wire_status: WireStatus;
+  wire_amount_received: number | null;
+  wire_received_at: string | null;
+  close_date: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Extended type with LP contact info for joined queries
+export interface DealLPRelationshipWithLP extends DealLPRelationship {
+  lp_contacts: Pick<LPContact, "id" | "name" | "email" | "firm" | "kyc_status" | "accreditation_status"> | null;
+}
+
+// Extended type with deal info for joined queries
+export interface DealLPRelationshipWithDeal extends DealLPRelationship {
+  deals: Pick<Deal, "id" | "name" | "company_name" | "status" | "target_raise"> | null;
+}
+
+// Close readiness metrics type
+export interface CloseReadinessMetrics {
+  docsReceivedPercent: number;
+  wiredPercent: number;
+  allocatedPercent: number;
+  totalLPs: number;
+  lpsWithDocs: number;
+  totalAllocated: number;
+  totalWired: number;
+  targetRaise: number;
+  pendingItems: {
+    lpId: string;
+    lpName: string;
+    missingDocs: boolean;
+    pendingWire: boolean;
+    amount: number;
+  }[];
 }

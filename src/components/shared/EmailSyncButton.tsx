@@ -75,10 +75,10 @@ export function EmailSyncButton() {
 
       {result && (
         <div
-          className={`absolute top-full right-0 mt-2 p-4 rounded-xl text-sm w-64 z-50 shadow-lg border ${
+          className={`absolute top-full right-0 mt-2 p-4 rounded-xl text-sm w-64 z-50 glass-menu ${
             result.success
-              ? "bg-card text-[hsl(var(--success))] border-[hsl(var(--success))]/30"
-              : "bg-card text-destructive border-destructive/30"
+              ? "text-[hsl(var(--success))]"
+              : "text-destructive"
           }`}
         >
           <div className="flex justify-between items-start">

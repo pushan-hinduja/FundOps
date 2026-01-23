@@ -5,14 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Briefcase,
-  Zap,
-  FileText,
+  Bell,
   Users,
-  BarChart3,
   Settings,
   Search,
   LogOut,
-  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
@@ -22,7 +19,6 @@ const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/deals", icon: Briefcase, label: "Deals" },
   { href: "/lps", icon: Users, label: "LPs" },
-  { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
 export function TopNav() {
@@ -115,12 +111,18 @@ export function TopNav() {
         </div>
 
         {/* Icon buttons */}
-        <button className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-          <Zap className="w-[18px] h-[18px]" />
-        </button>
-        <button className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+        <Link
+          href="/notifications"
+          className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          <Bell className="w-[18px] h-[18px]" />
+        </Link>
+        <Link
+          href="/settings"
+          className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+        >
           <Settings className="w-[18px] h-[18px]" />
-        </button>
+        </Link>
 
         {/* Profile */}
         <div className="relative">
@@ -144,18 +146,10 @@ export function TopNav() {
                 className="fixed inset-0 z-40"
                 onClick={() => setShowProfileMenu(false)}
               />
-              <div className="absolute right-0 top-full mt-2 w-48 bg-card rounded-xl shadow-lg border border-border py-1 z-50">
-                <Link
-                  href="/settings"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
-                  onClick={() => setShowProfileMenu(false)}
-                >
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </Link>
+              <div className="absolute right-0 top-full mt-2 w-48 glass-menu rounded-xl py-1 z-50">
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors w-full"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-white/30 dark:hover:bg-white/10 transition-colors w-full"
                 >
                   <LogOut className="w-4 h-4" />
                   Sign Out

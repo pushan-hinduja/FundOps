@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function NewLPPage() {
   const [name, setName] = useState("");
@@ -63,24 +64,26 @@ export default function NewLPPage() {
   };
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-6">
-        <Link href="/lps" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Back to LPs
+    <div className="px-8 py-6 max-w-2xl">
+      <div className="mb-8">
+        <Link href="/lps" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back to LPs
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Add LP Contact</h1>
+        <h1 className="text-3xl font-medium tracking-tight mt-4">Add LP Contact</h1>
+        <p className="text-muted-foreground mt-1">Add a new limited partner to your network</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-lg p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-2xl p-8">
         {error && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm">
+          <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm">
             {error}
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1">
+            <label htmlFor="name" className="block text-sm font-medium mb-2">
               Name *
             </label>
             <input
@@ -89,13 +92,13 @@ export default function NewLPPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="John Smith"
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-sm font-medium mb-2">
               Email *
             </label>
             <input
@@ -104,7 +107,7 @@ export default function NewLPPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="john@example.com"
             />
           </div>
@@ -112,7 +115,7 @@ export default function NewLPPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="firm" className="block text-sm font-medium mb-1">
+            <label htmlFor="firm" className="block text-sm font-medium mb-2">
               Firm
             </label>
             <input
@@ -120,13 +123,13 @@ export default function NewLPPage() {
               type="text"
               value={firm}
               onChange={(e) => setFirm(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="Smith Family Office"
             />
           </div>
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium mb-1">
+            <label htmlFor="title" className="block text-sm font-medium mb-2">
               Title
             </label>
             <input
@@ -134,7 +137,7 @@ export default function NewLPPage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="Managing Partner"
             />
           </div>
@@ -142,7 +145,7 @@ export default function NewLPPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium mb-1">
+            <label htmlFor="phone" className="block text-sm font-medium mb-2">
               Phone
             </label>
             <input
@@ -150,13 +153,13 @@ export default function NewLPPage() {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="+1 (555) 123-4567"
             />
           </div>
 
           <div>
-            <label htmlFor="preferredCheckSize" className="block text-sm font-medium mb-1">
+            <label htmlFor="preferredCheckSize" className="block text-sm font-medium mb-2">
               Preferred Check Size ($)
             </label>
             <input
@@ -164,14 +167,14 @@ export default function NewLPPage() {
               type="number"
               value={preferredCheckSize}
               onChange={(e) => setPreferredCheckSize(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="250000"
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="notes" className="block text-sm font-medium mb-1">
+          <label htmlFor="notes" className="block text-sm font-medium mb-2">
             Notes
           </label>
           <textarea
@@ -179,22 +182,22 @@ export default function NewLPPage() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
             placeholder="Any relevant notes about this LP..."
           />
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 pt-4">
           <button
             type="submit"
             disabled={isLoading}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition disabled:opacity-50"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {isLoading ? "Creating..." : "Add LP"}
           </button>
           <Link
             href="/lps"
-            className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted transition"
+            className="px-6 py-3 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors"
           >
             Cancel
           </Link>

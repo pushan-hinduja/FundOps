@@ -216,7 +216,7 @@ async function processAccount(
                 from_email: insertedEmail.from_email,
                 from_name: insertedEmail.from_name,
               },
-              { lp: parseResult.extractedLp }
+              { lp: { ...parseResult.extractedLp, firm: parseResult.extractedLp.firm ?? undefined } }
             );
             if (scResult.added) {
               stats.suggestedContactsAdded++;

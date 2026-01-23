@@ -46,12 +46,12 @@ export default async function EmailSettingsPage({
     : null;
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="px-8 py-6 max-w-3xl">
       <div className="mb-6">
         <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground">
           ← Back to Settings
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Email Accounts</h1>
+        <h1 className="text-2xl font-medium mt-2">Email Accounts</h1>
       </div>
 
       {successMessage && (
@@ -69,7 +69,7 @@ export default async function EmailSettingsPage({
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-lg font-semibold">Connected Gmail Accounts</h2>
+            <h2 className="text-lg font-medium">Connected Gmail Accounts</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Emails from these accounts will be automatically ingested and parsed.
             </p>

@@ -113,6 +113,6 @@ export async function fetchEmailsWithParsed(
 
   console.log(`[Email Query] Successfully fetched ${emails?.length || 0} emails for organization ${organizationId}`);
 
-  return (emails || []) as EmailWithParsed[];
+  return (emails || []) as unknown as EmailWithParsed[];
 }
 

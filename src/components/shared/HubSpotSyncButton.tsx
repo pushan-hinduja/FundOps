@@ -64,13 +64,13 @@ export function HubSpotSyncButton() {
   return (
     <div className="flex flex-col items-end gap-2">
       {showApiKeyInput && (
-        <div className="flex items-center gap-2 bg-card border border-border rounded-lg p-3">
+        <div className="flex items-center gap-2 bg-card border border-border rounded-xl p-3 shadow-lg">
           <input
             type="password"
             placeholder="Enter HubSpot API Key"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            className="px-3 py-1.5 border border-input rounded text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="px-3 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             onKeyDown={(e) => {
               if (e.key === "Enter" && apiKey) {
                 handleSync();
@@ -82,7 +82,7 @@ export function HubSpotSyncButton() {
               setShowApiKeyInput(false);
               setApiKey("");
             }}
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Cancel
           </button>
@@ -91,19 +91,19 @@ export function HubSpotSyncButton() {
 
       <div className="flex items-center gap-2">
         {error && (
-          <div className="text-sm text-destructive bg-destructive/10 px-3 py-1 rounded">
+          <div className="text-sm text-destructive bg-destructive/10 px-3 py-1.5 rounded-lg">
             {error}
           </div>
         )}
         {success && (
-          <div className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded">
+          <div className="text-sm text-[hsl(var(--success))] bg-[hsl(var(--success))]/10 px-3 py-1.5 rounded-lg">
             {success}
           </div>
         )}
         <button
           onClick={handleSync}
           disabled={isSyncing}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-4 py-2.5 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isSyncing ? (
             <>
@@ -145,7 +145,7 @@ export function HubSpotSyncButton() {
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                 />
               </svg>
-              Sync from HubSpot
+              Sync HubSpot
             </>
           )}
         </button>

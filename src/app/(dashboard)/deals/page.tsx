@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
 import Link from "next/link";
+import { Briefcase, Plus, ArrowUpRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +21,13 @@ export default async function DealsPage() {
 
   if (!userData?.organization_id) {
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Deals</h1>
-        <div className="bg-muted p-8 rounded-lg text-center">
+      <div className="px-8 py-6">
+        <h1 className="text-3xl font-medium tracking-tight mb-4">Deals</h1>
+        <div className="bg-card p-8 rounded-2xl text-center border border-border">
           <p className="text-muted-foreground">
             Set up your organization first.
           </p>
-          <Link href="/settings" className="text-primary hover:underline mt-2 inline-block">
+          <Link href="/settings" className="text-foreground font-medium hover:underline mt-2 inline-block">
             Go to Settings
           </Link>
         </div>
@@ -43,6 +44,12 @@ export default async function DealsPage() {
 
   const formatCurrency = (amount: number | null) => {
     if (!amount) return "-";
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    }
+    if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(1)}k`;
+    }
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -51,51 +58,61 @@ export default async function DealsPage() {
     }).format(amount);
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyles = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800";
+        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
       case "draft":
-        return "bg-gray-100 text-gray-800";
+        return "bg-secondary text-muted-foreground";
       case "closed":
-        return "bg-blue-100 text-blue-800";
+        return "bg-foreground/10 text-foreground";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-destructive/10 text-destructive";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-secondary text-muted-foreground";
     }
   };
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Deals</h1>
+    <div className="px-8 py-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-medium tracking-tight">Deals</h1>
+          <p className="text-muted-foreground mt-1">Manage your fundraising deals</p>
+        </div>
         <div className="flex items-center gap-3">
           <EmailSyncButton />
           <Link
             href="/deals/new"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
           >
+            <Plus className="w-4 h-4" />
             New Deal
           </Link>
         </div>
       </div>
 
       {error && (
-        <div className="bg-destructive/10 text-destructive p-4 rounded-lg mb-4">
+        <div className="bg-destructive/10 text-destructive p-4 rounded-xl mb-6">
           Error loading deals: {error.message}
         </div>
       )}
 
       {!deals || deals.length === 0 ? (
-        <div className="bg-muted p-8 rounded-lg text-center">
-          <p className="text-muted-foreground mb-4">
-            No deals yet. Create your first deal to start tracking LP responses.
+        <div className="bg-card p-12 rounded-2xl text-center border border-border">
+          <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Briefcase className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-medium mb-2">No deals yet</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+            Create your first deal to start tracking LP responses and manage your fundraising pipeline.
           </p>
           <Link
             href="/deals/new"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition inline-block"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
           >
+            <Plus className="w-4 h-4" />
             Create Deal
           </Link>
         </div>
@@ -105,55 +122,66 @@ export default async function DealsPage() {
             <Link
               key={deal.id}
               href={`/deals/${deal.id}`}
-              className="bg-card border border-border rounded-lg p-6 hover:border-primary transition-colors"
+              className="group bg-card border border-border rounded-2xl p-6 hover:border-foreground/20 hover:shadow-sm transition-all"
             >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold">{deal.name}</h3>
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-lg truncate">{deal.name}</h3>
+                  {deal.company_name && (
+                    <p className="text-sm text-muted-foreground truncate">{deal.company_name}</p>
+                  )}
+                </div>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(deal.status)}`}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${getStatusStyles(deal.status)}`}
                 >
                   {deal.status}
                 </span>
               </div>
 
-              {deal.company_name && (
-                <p className="text-sm text-muted-foreground mb-4">{deal.company_name}</p>
-              )}
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Target</span>
-                  <span className="font-medium">{formatCurrency(deal.target_raise)}</span>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Target</span>
+                  <span className="font-medium metric-number text-lg">{formatCurrency(deal.target_raise)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Committed</span>
-                  <span className="font-medium text-green-600">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Committed</span>
+                  <span className="font-medium text-[hsl(var(--success))] metric-number text-lg">
                     {formatCurrency(deal.total_committed)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Interested</span>
-                  <span className="font-medium text-blue-600">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Interested</span>
+                  <span className="font-medium metric-number text-lg">
                     {formatCurrency(deal.total_interested)}
                   </span>
                 </div>
               </div>
 
               {deal.target_raise && deal.target_raise > 0 && (
-                <div className="mt-4">
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="mt-5 pt-4 border-t border-border">
+                  <div className="flex justify-between items-center text-xs mb-2">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">
+                      {Math.round(((deal.total_committed || 0) / deal.target_raise) * 100)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-green-500 rounded-full"
+                      className="h-full bg-foreground rounded-full transition-all"
                       style={{
                         width: `${Math.min(100, ((deal.total_committed || 0) / deal.target_raise) * 100)}%`,
                       }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {Math.round(((deal.total_committed || 0) / deal.target_raise) * 100)}% committed
-                  </p>
                 </div>
               )}
+
+              <div className="mt-4 flex items-center justify-end">
+                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-1">
+                  View details
+                  <ArrowUpRight className="w-3 h-3" />
+                </span>
+              </div>
             </Link>
           ))}
         </div>

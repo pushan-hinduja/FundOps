@@ -183,7 +183,11 @@ export async function parseEmailWithAI(
       lpMatched,
       detectedLpId,
       parsedEntities: {
-        lp: parsed.lp,
+        lp: {
+          name: parsed.lp.name ?? undefined,
+          email: parsed.lp.email ?? undefined,
+          firm: parsed.lp.firm ?? undefined,
+        },
       },
     };
   } catch (err: any) {

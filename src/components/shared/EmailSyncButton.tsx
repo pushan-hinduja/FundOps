@@ -54,7 +54,7 @@ export function EmailSyncButton() {
       <button
         onClick={handleSync}
         disabled={isSyncing}
-        className="px-3 py-2 bg-muted hover:bg-muted/80 text-sm rounded-lg transition flex items-center gap-2 disabled:opacity-50"
+        className="px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50"
       >
         <svg
           className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
@@ -75,23 +75,23 @@ export function EmailSyncButton() {
 
       {result && (
         <div
-          className={`absolute top-full right-0 mt-2 p-3 rounded-lg text-sm w-64 z-50 shadow-lg ${
+          className={`absolute top-full right-0 mt-2 p-4 rounded-xl text-sm w-64 z-50 shadow-lg border ${
             result.success
-              ? "bg-card text-green-600 border border-green-500"
-              : "bg-card text-destructive border border-destructive"
+              ? "bg-card text-[hsl(var(--success))] border-[hsl(var(--success))]/30"
+              : "bg-card text-destructive border-destructive/30"
           }`}
         >
           <div className="flex justify-between items-start">
             <p className="font-medium">{result.message}</p>
             <button
               onClick={() => setResult(null)}
-              className="text-muted-foreground hover:text-foreground ml-2"
+              className="text-muted-foreground hover:text-foreground ml-2 transition-colors"
             >
               ×
             </button>
           </div>
           {result.stats && (
-            <ul className="mt-1 text-xs text-muted-foreground">
+            <ul className="mt-2 text-xs text-muted-foreground space-y-1">
               <li>Emails ingested: {result.stats.emailsIngested}</li>
               <li>Emails parsed: {result.stats.emailsParsed}</li>
               <li>Suggested contacts: {result.stats.suggestedContactsAdded}</li>

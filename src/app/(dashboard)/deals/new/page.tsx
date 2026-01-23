@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function NewDealPage() {
   const [name, setName] = useState("");
@@ -62,23 +63,25 @@ export default function NewDealPage() {
   };
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-6">
-        <Link href="/deals" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Back to Deals
+    <div className="px-8 py-6 max-w-2xl">
+      <div className="mb-8">
+        <Link href="/deals" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Deals
         </Link>
-        <h1 className="text-2xl font-bold mt-2">New Deal</h1>
+        <h1 className="text-3xl font-medium tracking-tight mt-4">New Deal</h1>
+        <p className="text-muted-foreground mt-1">Create a new fundraising deal</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-lg p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-2xl p-8">
         {error && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm">
+          <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm">
             {error}
           </div>
         )}
 
         <div>
-          <label htmlFor="name" className="block text-sm font-medium mb-1">
+          <label htmlFor="name" className="block text-sm font-medium mb-2">
             Deal Name *
           </label>
           <input
@@ -87,13 +90,13 @@ export default function NewDealPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             placeholder="e.g., Acme Series B SPV"
           />
         </div>
 
         <div>
-          <label htmlFor="companyName" className="block text-sm font-medium mb-1">
+          <label htmlFor="companyName" className="block text-sm font-medium mb-2">
             Company Name
           </label>
           <input
@@ -101,13 +104,13 @@ export default function NewDealPage() {
             type="text"
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
-            className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             placeholder="e.g., Acme Corp"
           />
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium mb-1">
+          <label htmlFor="description" className="block text-sm font-medium mb-2">
             Description
           </label>
           <textarea
@@ -115,14 +118,14 @@ export default function NewDealPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
             placeholder="Brief description of the deal..."
           />
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label htmlFor="targetRaise" className="block text-sm font-medium mb-1">
+            <label htmlFor="targetRaise" className="block text-sm font-medium mb-2">
               Target Raise ($)
             </label>
             <input
@@ -130,13 +133,13 @@ export default function NewDealPage() {
               type="number"
               value={targetRaise}
               onChange={(e) => setTargetRaise(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="5000000"
             />
           </div>
 
           <div>
-            <label htmlFor="minCheckSize" className="block text-sm font-medium mb-1">
+            <label htmlFor="minCheckSize" className="block text-sm font-medium mb-2">
               Min Check ($)
             </label>
             <input
@@ -144,13 +147,13 @@ export default function NewDealPage() {
               type="number"
               value={minCheckSize}
               onChange={(e) => setMinCheckSize(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="50000"
             />
           </div>
 
           <div>
-            <label htmlFor="maxCheckSize" className="block text-sm font-medium mb-1">
+            <label htmlFor="maxCheckSize" className="block text-sm font-medium mb-2">
               Max Check ($)
             </label>
             <input
@@ -158,23 +161,23 @@ export default function NewDealPage() {
               type="number"
               value={maxCheckSize}
               onChange={(e) => setMaxCheckSize(e.target.value)}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="500000"
             />
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 pt-4">
           <button
             type="submit"
             disabled={isLoading}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition disabled:opacity-50"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {isLoading ? "Creating..." : "Create Deal"}
           </button>
           <Link
             href="/deals"
-            className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted transition"
+            className="px-6 py-3 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors"
           >
             Cancel
           </Link>

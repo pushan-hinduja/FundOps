@@ -93,11 +93,11 @@ export function SuggestedContacts({
     return (
       <button
         onClick={() => setIsHidden(false)}
-        className="h-full w-10 bg-card border-l border-border flex items-center justify-center hover:bg-muted transition"
+        className="h-full w-12 bg-card border-l border-t border-border flex items-center justify-center hover:bg-secondary transition-colors"
         title="Show Suggested Contacts"
       >
         <svg
-          className="h-4 w-4 rotate-180"
+          className="h-4 w-4 rotate-180 text-muted-foreground"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -115,74 +115,79 @@ export function SuggestedContacts({
   }
 
   return (
-    <div className="h-full w-80 bg-card border-l border-border flex flex-col">
-      <div className="p-4 border-b border-border flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold flex-1">Suggested Contacts</h2>
-        <button
-          onClick={() => fetchContacts()}
-          disabled={isRefreshing}
-          className="p-1.5 hover:bg-muted rounded transition disabled:opacity-50"
-          title="Refresh"
-        >
-          <svg
-            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+    <div className="h-full w-80 bg-card border-l border-t border-border flex flex-col">
+      <div className="p-5 border-b border-border flex items-center justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-medium">Suggested</h2>
+          <p className="text-xs text-muted-foreground">{contacts.length} contacts</p>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => fetchContacts()}
+            disabled={isRefreshing}
+            className="p-2 hover:bg-secondary rounded-lg transition-colors disabled:opacity-50"
+            title="Refresh"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-        </button>
-        <button
-          onClick={() => setIsHidden(true)}
-          className="p-1.5 hover:bg-muted rounded transition"
-          title="Hide panel"
-        >
-          <svg
-            className="h-4 w-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            <svg
+              className={`h-4 w-4 text-muted-foreground ${isRefreshing ? "animate-spin" : ""}`}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={() => setIsHidden(true)}
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+            title="Hide panel"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
+            <svg
+              className="h-4 w-4 text-muted-foreground"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {error && (
-          <div className="p-4 text-sm text-destructive bg-destructive/10 m-2 rounded">
+          <div className="p-4 text-sm text-destructive bg-destructive/10 m-3 rounded-xl">
             {error}
           </div>
         )}
 
         {contacts.length === 0 ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
+          <div className="p-6 text-center text-sm text-muted-foreground">
             No suggested contacts found
           </div>
         ) : (
-          <div className="p-2 space-y-2">
+          <div className="p-3 space-y-2">
             {contacts.map((contact) => (
               <div
                 key={contact.id}
-                className="p-3 bg-muted/50 rounded-lg border border-border hover:bg-muted transition"
+                className="p-4 bg-secondary/30 rounded-xl border border-border hover:bg-secondary/50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{contact.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{contact.email}</p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{contact.email}</p>
                     {contact.firm && (
                       <p className="text-xs text-muted-foreground truncate">{contact.firm}</p>
                     )}
@@ -190,7 +195,7 @@ export function SuggestedContacts({
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       onClick={() => handleAdd(contact.id)}
-                      className="p-1.5 hover:bg-primary/10 rounded transition text-primary"
+                      className="p-2 hover:bg-[hsl(var(--success))]/10 rounded-lg transition-colors text-[hsl(var(--success))]"
                       title="Add to LP contacts"
                     >
                       <svg
@@ -210,7 +215,7 @@ export function SuggestedContacts({
                     </button>
                     <button
                       onClick={() => handleDismiss(contact.id)}
-                      className="p-1.5 hover:bg-destructive/10 rounded transition text-destructive"
+                      className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
                       title="Dismiss"
                     >
                       <svg

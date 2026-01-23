@@ -57,12 +57,12 @@ export default function NewOrganizationPage() {
   };
 
   return (
-    <div className="p-8 max-w-lg">
+    <div className="px-8 py-6 max-w-lg">
       <div className="mb-6">
         <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground">
           ← Back to Settings
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Create Organization</h1>
+        <h1 className="text-2xl font-medium mt-2">Create Organization</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-lg p-6">

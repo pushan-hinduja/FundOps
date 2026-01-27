@@ -10,10 +10,11 @@ import {
 // GET /api/lps/[id] - Get LP profile
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -38,7 +39,7 @@ export async function GET(
     const { data: lp, error } = await supabase
       .from("lp_contacts")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -59,10 +60,11 @@ export async function GET(
 // PATCH /api/lps/[id] - Update LP profile
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -177,7 +179,7 @@ export async function PATCH(
     const { data: lp, error } = await supabase
       .from("lp_contacts")
       .update(updateData)
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .select()
       .single();
@@ -203,10 +205,11 @@ export async function PATCH(
 // DELETE /api/lps/[id] - Delete LP
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -231,7 +234,7 @@ export async function DELETE(
     const { error } = await supabase
       .from("lp_contacts")
       .delete()
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id);
 
     if (error) {

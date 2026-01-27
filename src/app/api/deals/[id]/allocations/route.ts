@@ -5,10 +5,11 @@ import { WireStatus, CloseReadinessMetrics } from "@/lib/supabase/types";
 // GET /api/deals/[id]/allocations - Get allocations and close readiness metrics
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -34,7 +35,7 @@ export async function GET(
     const { data: deal } = await supabase
       .from("deals")
       .select("id, target_raise")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -56,7 +57,7 @@ export async function GET(
           accreditation_status
         )
       `)
-      .eq("deal_id", params.id)
+      .eq("deal_id", id)
       .in("status", ["committed", "allocated"]);
 
     if (relError) {
@@ -148,10 +149,11 @@ export async function GET(
 // PATCH /api/deals/[id]/allocations - Update allocation for an LP
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -177,7 +179,7 @@ export async function PATCH(
     const { data: deal } = await supabase
       .from("deals")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -240,7 +242,7 @@ export async function PATCH(
       .from("deal_lp_relationships")
       .update(updateData)
       .eq("id", body.relationship_id)
-      .eq("deal_id", params.id)
+      .eq("deal_id", id)
       .select(`
         *,
         lp_contacts (
@@ -263,7 +265,7 @@ export async function PATCH(
     }
 
     // Update deal totals
-    await updateDealTotals(supabase, params.id);
+    await updateDealTotals(supabase, id);
 
     return NextResponse.json(relationship);
   } catch (error) {

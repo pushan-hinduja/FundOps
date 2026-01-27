@@ -4,10 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 // GET /api/lps/[id]/wiring - Get LP wiring instructions
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -33,7 +34,7 @@ export async function GET(
     const { data: lp } = await supabase
       .from("lp_contacts")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -44,7 +45,7 @@ export async function GET(
     const { data: wiringInstructions, error } = await supabase
       .from("lp_wiring_instructions")
       .select("*")
-      .eq("lp_contact_id", params.id)
+      .eq("lp_contact_id", id)
       .order("is_primary", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -69,10 +70,11 @@ export async function GET(
 // POST /api/lps/[id]/wiring - Create new wiring instructions
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -98,7 +100,7 @@ export async function POST(
     const { data: lp } = await supabase
       .from("lp_contacts")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -121,14 +123,14 @@ export async function POST(
       await supabase
         .from("lp_wiring_instructions")
         .update({ is_primary: false })
-        .eq("lp_contact_id", params.id)
+        .eq("lp_contact_id", id)
         .eq("is_primary", true);
     }
 
     const { data: wiring, error } = await supabase
       .from("lp_wiring_instructions")
       .insert({
-        lp_contact_id: params.id,
+        lp_contact_id: id,
         account_label: body.account_label,
         bank_name: body.bank_name,
         account_name: body.account_name,
@@ -166,10 +168,11 @@ export async function POST(
 // PATCH /api/lps/[id]/wiring - Update wiring instructions
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -204,7 +207,7 @@ export async function PATCH(
     const { data: lp } = await supabase
       .from("lp_contacts")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -217,7 +220,7 @@ export async function PATCH(
       await supabase
         .from("lp_wiring_instructions")
         .update({ is_primary: false })
-        .eq("lp_contact_id", params.id)
+        .eq("lp_contact_id", id)
         .eq("is_primary", true)
         .neq("id", body.wiring_id);
     }
@@ -255,7 +258,7 @@ export async function PATCH(
       .from("lp_wiring_instructions")
       .update(updateData)
       .eq("id", body.wiring_id)
-      .eq("lp_contact_id", params.id)
+      .eq("lp_contact_id", id)
       .select()
       .single();
 
@@ -280,10 +283,11 @@ export async function PATCH(
 // DELETE /api/lps/[id]/wiring - Delete wiring instructions
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -319,7 +323,7 @@ export async function DELETE(
     const { data: lp } = await supabase
       .from("lp_contacts")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -331,7 +335,7 @@ export async function DELETE(
       .from("lp_wiring_instructions")
       .delete()
       .eq("id", wiringId)
-      .eq("lp_contact_id", params.id);
+      .eq("lp_contact_id", id);
 
     if (error) {
       console.error("Error deleting wiring instructions:", error);

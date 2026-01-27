@@ -11,9 +11,10 @@ export const dynamic = "force-dynamic";
 export default async function DealDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const supabase = await createClient();
+  const { id } = await params;
 
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
@@ -34,7 +35,7 @@ export default async function DealDetailPage({
   const { data: deal, error: dealError } = await supabase
     .from("deals")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("organization_id", userData.organization_id)
     .single();
 
@@ -56,7 +57,7 @@ export default async function DealDetailPage({
         accreditation_status
       )
     `)
-    .eq("deal_id", params.id)
+    .eq("deal_id", id)
     .order("updated_at", { ascending: false });
 
   // Get LP IDs that are committed/allocated to check for docs
@@ -140,7 +141,7 @@ export default async function DealDetailPage({
         received_at
       )
     `)
-    .eq("detected_deal_id", params.id)
+    .eq("detected_deal_id", id)
     .order("parsed_at", { ascending: false })
     .limit(20);
 

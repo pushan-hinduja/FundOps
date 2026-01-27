@@ -5,10 +5,11 @@ import { DocumentType, DocumentStatus } from "@/lib/supabase/types";
 // GET /api/lps/[id]/documents - Get LP documents
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -34,7 +35,7 @@ export async function GET(
     const { data: lp } = await supabase
       .from("lp_contacts")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -45,7 +46,7 @@ export async function GET(
     const { data: documents, error } = await supabase
       .from("lp_documents")
       .select("*")
-      .eq("lp_contact_id", params.id)
+      .eq("lp_contact_id", id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -69,10 +70,11 @@ export async function GET(
 // POST /api/lps/[id]/documents - Create new document
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -98,7 +100,7 @@ export async function POST(
     const { data: lp } = await supabase
       .from("lp_contacts")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -136,7 +138,7 @@ export async function POST(
     const { data: document, error } = await supabase
       .from("lp_documents")
       .insert({
-        lp_contact_id: params.id,
+        lp_contact_id: id,
         document_type: body.document_type,
         document_name: body.document_name,
         file_path: body.file_path || null,
@@ -168,10 +170,11 @@ export async function POST(
 // PATCH /api/lps/[id]/documents - Update document
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -206,7 +209,7 @@ export async function PATCH(
     const { data: lp } = await supabase
       .from("lp_contacts")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -256,7 +259,7 @@ export async function PATCH(
       .from("lp_documents")
       .update(updateData)
       .eq("id", body.document_id)
-      .eq("lp_contact_id", params.id)
+      .eq("lp_contact_id", id)
       .select()
       .single();
 
@@ -281,10 +284,11 @@ export async function PATCH(
 // DELETE /api/lps/[id]/documents - Delete document
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
 
     const {
       data: { user },
@@ -320,7 +324,7 @@ export async function DELETE(
     const { data: lp } = await supabase
       .from("lp_contacts")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("organization_id", userData.organization_id)
       .single();
 
@@ -332,7 +336,7 @@ export async function DELETE(
       .from("lp_documents")
       .delete()
       .eq("id", documentId)
-      .eq("lp_contact_id", params.id);
+      .eq("lp_contact_id", id);
 
     if (error) {
       console.error("Error deleting document:", error);

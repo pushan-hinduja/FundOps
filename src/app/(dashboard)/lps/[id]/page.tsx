@@ -26,9 +26,10 @@ export const dynamic = "force-dynamic";
 export default async function LPDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const supabase = await createClient();
+  const { id } = await params;
 
   // Get current user
   const {
@@ -51,7 +52,7 @@ export default async function LPDetailPage({
   const { data: lpData, error: lpError } = await supabase
     .from("lp_contacts")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("organization_id", userData.organization_id)
     .single();
 
@@ -68,12 +69,12 @@ export default async function LPDetailPage({
       supabase
         .from("lp_documents")
         .select("*")
-        .eq("lp_contact_id", params.id)
+        .eq("lp_contact_id", id)
         .order("created_at", { ascending: false }),
       supabase
         .from("lp_wiring_instructions")
         .select("*")
-        .eq("lp_contact_id", params.id)
+        .eq("lp_contact_id", id)
         .order("is_primary", { ascending: false })
         .order("created_at", { ascending: false }),
       supabase
@@ -90,7 +91,7 @@ export default async function LPDetailPage({
           )
         `
         )
-        .eq("lp_contact_id", params.id)
+        .eq("lp_contact_id", id)
         .order("updated_at", { ascending: false }),
       supabase
         .from("emails_parsed")
@@ -106,7 +107,7 @@ export default async function LPDetailPage({
           )
         `
         )
-        .eq("detected_lp_id", params.id)
+        .eq("detected_lp_id", id)
         .order("parsed_at", { ascending: false })
         .limit(20),
     ]);

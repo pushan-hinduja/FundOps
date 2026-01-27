@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, ExternalLink } from "lucide-react";
+import { DealDetailClient } from "./DealDetailClient";
+import { DealLPRelationshipWithLP } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +42,7 @@ export default async function DealDetailPage({
     return notFound();
   }
 
-  // Fetch LP relationships for this deal
+  // Fetch LP relationships for this deal with LP contact info
   const { data: lpRelationships } = await supabase
     .from("deal_lp_relationships")
     .select(`
@@ -49,11 +51,81 @@ export default async function DealDetailPage({
         id,
         name,
         email,
-        firm
+        firm,
+        kyc_status,
+        accreditation_status
       )
     `)
     .eq("deal_id", params.id)
     .order("updated_at", { ascending: false });
+
+  // Get LP IDs that are committed/allocated to check for docs
+  const committedLpIds = lpRelationships
+    ?.filter((r) => r.status === "committed" || r.status === "allocated")
+    .map((r) => r.lp_contact_id) || [];
+
+  // Fetch documents for committed LPs to calculate close readiness
+  let docsPerLP: Record<string, { hasApprovedDocs: boolean }> = {};
+  if (committedLpIds.length > 0) {
+    const { data: docs } = await supabase
+      .from("lp_documents")
+      .select("lp_contact_id, status")
+      .in("lp_contact_id", committedLpIds);
+
+    if (docs) {
+      for (const doc of docs) {
+        if (!docsPerLP[doc.lp_contact_id]) {
+          docsPerLP[doc.lp_contact_id] = { hasApprovedDocs: false };
+        }
+        if (doc.status === "approved") {
+          docsPerLP[doc.lp_contact_id].hasApprovedDocs = true;
+        }
+      }
+    }
+  }
+
+  // Calculate close readiness metrics
+  const committedRelationships = lpRelationships?.filter(
+    (r) => r.status === "committed" || r.status === "allocated"
+  ) || [];
+
+  const totalLPs = committedRelationships.length;
+  const lpsWithDocs = Object.values(docsPerLP).filter((d) => d.hasApprovedDocs).length;
+  const totalAllocated = committedRelationships.reduce(
+    (sum, r) => sum + (r.allocated_amount || 0),
+    0
+  );
+  const totalWired = committedRelationships.reduce(
+    (sum, r) => sum + (r.wire_amount_received || 0),
+    0
+  );
+  const targetRaise = deal.target_raise || 0;
+
+  const pendingItems = committedRelationships
+    .filter((r) => {
+      const hasDocs = docsPerLP[r.lp_contact_id]?.hasApprovedDocs || false;
+      const pendingWire = r.wire_status !== "complete" && (r.allocated_amount || 0) > 0;
+      return !hasDocs || pendingWire;
+    })
+    .map((r) => ({
+      lpId: r.lp_contact_id,
+      lpName: r.lp_contacts?.name || "Unknown",
+      missingDocs: !docsPerLP[r.lp_contact_id]?.hasApprovedDocs,
+      pendingWire: r.wire_status !== "complete" && (r.allocated_amount || 0) > 0,
+      amount: r.allocated_amount || r.committed_amount || 0,
+    }));
+
+  const closeReadinessMetrics = {
+    docsReceivedPercent: totalLPs > 0 ? (lpsWithDocs / totalLPs) * 100 : 0,
+    wiredPercent: totalAllocated > 0 ? (totalWired / totalAllocated) * 100 : 0,
+    allocatedPercent: targetRaise > 0 ? (totalAllocated / targetRaise) * 100 : 0,
+    totalLPs,
+    lpsWithDocs,
+    totalAllocated,
+    totalWired,
+    targetRaise,
+    pendingItems,
+  };
 
   // Fetch recent emails related to this deal
   const { data: relatedEmails } = await supabase
@@ -173,11 +245,20 @@ export default async function DealDetailPage({
         </div>
       </div>
 
+      {/* Close Readiness Dashboard - Only show if there are committed LPs */}
+      {committedRelationships.length > 0 && (
+        <DealDetailClient
+          dealId={deal.id}
+          closeReadinessMetrics={closeReadinessMetrics}
+          committedRelationships={committedRelationships as DealLPRelationshipWithLP[]}
+        />
+      )}
+
       <div className="grid grid-cols-3 gap-6">
         {/* LP Involvement */}
         <div className="col-span-2 space-y-6">
-          {/* Committed LPs */}
-          {lpsByStatus.committed.length > 0 && (
+          {/* Committed LPs - shown via DealDetailClient above when present */}
+          {committedRelationships.length === 0 && lpsByStatus.committed.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-6">
               <h2 className="text-lg font-medium mb-4 text-[hsl(var(--success))]">
                 Committed ({lpsByStatus.committed.length})

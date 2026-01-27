@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { ArrowUpRight, TrendingUp, Users, Briefcase, DollarSign } from "lucide-react";
+import { ArrowUpRight, TrendingUp } from "lucide-react";
+import DashboardChart from "@/components/dashboard/DashboardChart";
+import { Deal } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +20,22 @@ export default async function DashboardPage() {
     .eq("id", user.id)
     .single();
 
+  // Fetch organization name
+  let organizationName = "Dashboard";
+  if (userData?.organization_id) {
+    const { data: orgData } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", userData.organization_id)
+      .single();
+
+    if (orgData?.name) {
+      organizationName = orgData.name;
+    }
+  }
+
   // Fetch deals for metrics
-  let deals: any[] = [];
+  let deals: Deal[] = [];
   let lpCount = 0;
 
   if (userData?.organization_id) {
@@ -27,7 +43,7 @@ export default async function DashboardPage() {
       .from("deals")
       .select("*")
       .eq("organization_id", userData.organization_id);
-    deals = dealsData || [];
+    deals = (dealsData || []) as Deal[];
 
     const { count } = await supabase
       .from("lp_contacts")
@@ -55,137 +71,19 @@ export default async function DashboardPage() {
     return `$${amount.toLocaleString()}`;
   };
 
-  const formatFullCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   // Commitment progress percentage
   const commitmentProgress = totalTarget > 0 ? Math.round((totalCommitted / totalTarget) * 100) : 0;
 
   return (
     <div className="px-8 py-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-medium tracking-tight">Dashboard</h1>
-          <div className="flex items-center gap-3 mt-2">
-            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Briefcase className="w-4 h-4" />
-              Deals
-            </span>
-            <span className="text-muted-foreground/40">/</span>
-            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Users className="w-4 h-4" />
-              LPs
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Week
-          </button>
-          <button className="px-3 py-1.5 text-sm font-medium text-foreground border-b-2 border-foreground">
-            Month
-          </button>
-          <button className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Quarter
-          </button>
-          <button className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Year
-          </button>
-        </div>
-      </div>
-
-      {/* Main Metric Section */}
-      <div className="mb-12">
-        <p className="section-label mb-4">Total Capital Committed</p>
-
-        <div className="flex items-center gap-3 mb-6">
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-foreground"></span>
-            <span className="text-sm">Committed</span>
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-muted-foreground/30"></span>
-            <span className="text-sm text-muted-foreground">Interested</span>
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-muted-foreground/15"></span>
-            <span className="text-sm text-muted-foreground">Target</span>
-          </span>
-        </div>
-
-        {/* Large Number Display */}
-        <div className="text-center py-8">
-          <h2 className="metric-number text-7xl md:text-8xl tracking-tight">
-            {formatFullCurrency(totalCommitted)}
-          </h2>
-          <p className="text-muted-foreground mt-2">Total Committed</p>
-        </div>
-
-        {/* Progress Visualization */}
-        <div className="mt-8 relative">
-          <div className="h-24 flex items-end gap-px">
-            {/* Simple bar chart visualization */}
-            {Array.from({ length: 40 }).map((_, i) => {
-              const height = Math.random() * 60 + 20;
-              const isHighlighted = i >= 15 && i <= 25;
-              return (
-                <div
-                  key={i}
-                  className={`flex-1 rounded-t transition-all ${
-                    isHighlighted ? "bg-foreground" : "bg-muted-foreground/20"
-                  }`}
-                  style={{ height: `${height}%` }}
-                />
-              );
-            })}
-          </div>
-
-          {/* Trend line overlay */}
-          <div className="absolute inset-0 pointer-events-none">
-            <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
-              <path
-                d="M0,80 Q50,75 100,60 T200,40 T300,35 T400,30"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="text-foreground"
-              />
-            </svg>
-          </div>
-
-          {/* Tooltip */}
-          <div className="absolute top-4 right-1/3 bg-card border border-border rounded-lg px-3 py-2 shadow-lg">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{formatCurrency(totalCommitted)}</span>
-              <span className="text-xs px-1.5 py-0.5 rounded bg-[hsl(var(--success))] text-white">
-                +{commitmentProgress}%
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">of target raised</p>
-          </div>
-        </div>
-
-        {/* Time labels */}
-        <div className="flex justify-between mt-4 text-xs text-muted-foreground">
-          <span>Jan</span>
-          <span>Feb</span>
-          <span>Mar</span>
-          <span>Apr</span>
-          <span>May</span>
-          <span>Jun</span>
-          <span>Jul</span>
-          <span>Aug</span>
-          <span>Sep</span>
-        </div>
-      </div>
+      {/* Chart Section - Client Component */}
+      <DashboardChart
+        deals={deals}
+        organizationName={organizationName}
+        totalCommitted={totalCommitted}
+        totalInterested={totalInterested}
+        totalTarget={totalTarget}
+      />
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

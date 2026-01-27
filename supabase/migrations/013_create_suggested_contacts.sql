@@ -27,3 +27,5 @@ CREATE INDEX idx_suggested_contacts_org ON suggested_contacts(organization_id);
 CREATE INDEX idx_suggested_contacts_email ON suggested_contacts(email);
 CREATE INDEX idx_suggested_contacts_dismissed ON suggested_contacts(organization_id, is_dismissed) WHERE is_dismissed = false;
 
+
+

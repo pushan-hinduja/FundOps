@@ -1,17 +1,4 @@
--- Add parsing method tracking to distinguish between simple regex and AI parsing
-ALTER TABLE emails_parsed
-  ADD COLUMN parsing_method TEXT DEFAULT 'simple'
-  CHECK (parsing_method IN ('simple', 'ai', 'manual'));
-
--- Add extracted questions field
-ALTER TABLE emails_parsed
-  ADD COLUMN extracted_questions TEXT[];
-
--- Index for efficient backfill queries
-CREATE INDEX idx_emails_parsed_method_status
-  ON emails_parsed(parsing_method, processing_status);
-
--- Function to auto-create deal-LP relationships when AI parsing detects a deal
+-- Update the trigger function to auto-create LPs when detecting interested/committed emails
 CREATE OR REPLACE FUNCTION create_deal_lp_relationship_from_email()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -105,8 +92,69 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger to run after email parsing
-CREATE TRIGGER auto_create_deal_lp_relationship
-  AFTER INSERT OR UPDATE ON emails_parsed
-  FOR EACH ROW
-  EXECUTE FUNCTION create_deal_lp_relationship_from_email();
+-- Also backfill any existing parsed emails that have deals but no relationships
+DO $$
+DECLARE
+  r RECORD;
+  v_lp_id UUID;
+BEGIN
+  FOR r IN
+    SELECT ep.*, er.from_email, er.from_name, er.organization_id, er.received_at
+    FROM emails_parsed ep
+    JOIN emails_raw er ON er.id = ep.email_id
+    WHERE ep.detected_deal_id IS NOT NULL
+      AND ep.processing_status = 'success'
+      AND ep.intent IN ('interested', 'committed')
+      AND ep.commitment_amount IS NOT NULL
+      AND ep.commitment_amount > 0
+  LOOP
+    -- Try to find existing LP
+    SELECT id INTO v_lp_id
+    FROM lp_contacts
+    WHERE organization_id = r.organization_id
+      AND LOWER(email) = LOWER(r.from_email)
+    LIMIT 1;
+
+    -- Create LP if not found
+    IF v_lp_id IS NULL THEN
+      INSERT INTO lp_contacts (organization_id, name, email)
+      VALUES (
+        r.organization_id,
+        COALESCE(r.from_name, SPLIT_PART(r.from_email, '@', 1)),
+        r.from_email
+      )
+      ON CONFLICT (organization_id, email) DO UPDATE SET name = EXCLUDED.name
+      RETURNING id INTO v_lp_id;
+    END IF;
+
+    -- Create relationship
+    IF v_lp_id IS NOT NULL THEN
+      INSERT INTO deal_lp_relationships (
+        deal_id,
+        lp_contact_id,
+        status,
+        committed_amount,
+        latest_response_at,
+        first_contact_at
+      )
+      VALUES (
+        r.detected_deal_id,
+        v_lp_id,
+        CASE
+          WHEN r.intent = 'committed' THEN 'committed'
+          WHEN r.intent = 'interested' THEN 'interested'
+          ELSE 'contacted'
+        END,
+        r.commitment_amount,
+        r.received_at,
+        r.received_at
+      )
+      ON CONFLICT (deal_id, lp_contact_id)
+      DO UPDATE SET
+        committed_amount = COALESCE(EXCLUDED.committed_amount, deal_lp_relationships.committed_amount);
+
+      -- Update emails_parsed with LP ID
+      UPDATE emails_parsed SET detected_lp_id = v_lp_id WHERE id = r.id;
+    END IF;
+  END LOOP;
+END $$;

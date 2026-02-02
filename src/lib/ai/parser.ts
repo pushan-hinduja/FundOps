@@ -139,8 +139,8 @@ export async function parseEmailWithAI(
         intent: parsed.intent,
         commitment_amount: parsed.commitment_amount,
         sentiment: parsed.sentiment,
-        topics: parsed.topics,
         extracted_questions: parsed.questions,
+        has_wire_details: parsed.has_wire_details,
         parsing_method: "ai",
         entities: {
           lp: parsed.lp,

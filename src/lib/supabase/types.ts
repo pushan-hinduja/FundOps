@@ -278,11 +278,11 @@ export interface EmailParsed {
   email_id: string;
   detected_lp_id: string | null;
   detected_deal_id: string | null;
-  intent: "interested" | "committed" | "declined" | "question" | "neutral" | null;
+  intent: "interested" | "committed" | "declined" | "question" | null;
   commitment_amount: number | null;
   sentiment: "positive" | "neutral" | "negative" | "urgent" | null;
-  topics: string[];
   extracted_questions: string[];
+  has_wire_details: boolean | null;
   parsing_method: "simple" | "ai" | "manual";
   entities: Json;
   confidence_scores: Json;

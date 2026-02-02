@@ -87,19 +87,14 @@ export function TopNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200",
+                "flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-primary hover:text-primary-foreground"
               )}
             >
               <item.icon className="w-[18px] h-[18px]" />
-              <span
-                className={cn(
-                  "text-sm font-medium overflow-hidden transition-all duration-200",
-                  isActive ? "max-w-[100px]" : "max-w-0 group-hover:max-w-[100px]"
-                )}
-              >
+              <span className="text-sm font-medium">
                 {item.label}
               </span>
             </Link>
@@ -123,19 +118,19 @@ export function TopNav() {
         <div className="flex items-center gap-1">
           <Link
             href="/notifications"
-            className="group flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200"
           >
             <Bell className="w-[18px] h-[18px]" />
-            <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-200">
+            <span className="text-sm font-medium">
               Notifications
             </span>
           </Link>
           <Link
             href="/settings"
-            className="group flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200"
           >
             <Settings className="w-[18px] h-[18px]" />
-            <span className="text-sm font-medium max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-200">
+            <span className="text-sm font-medium">
               Settings
             </span>
           </Link>

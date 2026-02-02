@@ -67,6 +67,7 @@ Return ONLY this JSON structure, no other text:
   "commitment_amount": number or null,
   "sentiment": "positive | neutral | negative | urgent",
   "questions": ["array of specific questions the LP is asking"],
+  "has_wire_details": boolean,
   "confidence": {
     "lp": 0.0-1.0,
     "deal": 0.0-1.0,
@@ -90,6 +91,7 @@ Return ONLY this JSON structure, no other text:
 7. If email is an auto-reply, out-of-office message, or system notification, skip it entirely - return null for all fields except confidence scores set to 0
 8. Extract any direct questions the LP is asking about the deal, investment terms, timeline, or process
 9. Questions should be verbatim or minimally paraphrased for clarity - use empty array if no questions are asked
+10. Set has_wire_details to true if the email contains wire transfer information (bank details, routing numbers, account numbers, wire confirmation, transfer reference numbers, SWIFT codes, etc.)
 
 Now analyze the email and return JSON:`;
 }

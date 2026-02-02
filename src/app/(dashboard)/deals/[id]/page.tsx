@@ -5,6 +5,8 @@ import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { DealDetailClient } from "./DealDetailClient";
 import { DealLPRelationshipWithLP } from "@/lib/supabase/types";
+import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
+import { LPInvolvementSection } from "@/components/deals/LPInvolvementSection";
 
 export const dynamic = "force-dynamic";
 
@@ -234,11 +236,11 @@ export default async function DealDetailPage({
           <p className="metric-number text-3xl">{formatCurrency(deal.target_raise)}</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5">
-          <p className="section-label mb-2">Committed</p>
-          <p className="metric-number text-3xl text-[hsl(var(--success))]">{formatCurrency(deal.total_committed)}</p>
+          <p className="section-label mb-2">Allocated</p>
+          <p className="metric-number text-3xl text-[hsl(var(--success))]">{formatCurrency(totalAllocated)}</p>
           {deal.target_raise && deal.target_raise > 0 && (
             <p className="text-xs text-muted-foreground mt-1">
-              {Math.round(((deal.total_committed || 0) / deal.target_raise) * 100)}% of target
+              {Math.round((totalAllocated / deal.target_raise) * 100)}% of target
             </p>
           )}
         </div>
@@ -264,127 +266,10 @@ export default async function DealDetailPage({
       <div className="grid grid-cols-3 gap-6">
         {/* LP Involvement */}
         <div className="col-span-2 space-y-6">
-          {/* Committed LPs - shown via DealDetailClient above when present */}
-          {committedRelationships.length === 0 && lpsByStatus.committed.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <h2 className="text-lg font-medium mb-4 text-[hsl(var(--success))]">
-                Committed ({lpsByStatus.committed.length})
-              </h2>
-              <div className="space-y-3">
-                {lpsByStatus.committed.map((rel: any) => (
-                  <div key={rel.id} className="flex items-center justify-between p-4 bg-[hsl(var(--success))]/5 rounded-xl">
-                    <div>
-                      <Link href={`/lps/${rel.lp_contacts?.id}`} className="font-medium hover:text-muted-foreground transition-colors">
-                        {rel.lp_contacts?.name}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">{rel.lp_contacts?.firm || rel.lp_contacts?.email}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-[hsl(var(--success))] metric-number text-lg">{formatCurrency(rel.committed_amount)}</p>
-                      {rel.latest_response_at && (
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(rel.latest_response_at), { addSuffix: true })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Interested LPs */}
-          {lpsByStatus.interested.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <h2 className="text-lg font-medium mb-4">
-                Interested ({lpsByStatus.interested.length})
-              </h2>
-              <div className="space-y-3">
-                {lpsByStatus.interested.map((rel: any) => (
-                  <div key={rel.id} className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl">
-                    <div>
-                      <Link href={`/lps/${rel.lp_contacts?.id}`} className="font-medium hover:text-muted-foreground transition-colors">
-                        {rel.lp_contacts?.name}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">{rel.lp_contacts?.firm || rel.lp_contacts?.email}</p>
-                    </div>
-                    <div className="text-right">
-                      {rel.committed_amount && (
-                        <p className="font-medium metric-number text-lg">{formatCurrency(rel.committed_amount)} potential</p>
-                      )}
-                      {rel.latest_response_at && (
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(rel.latest_response_at), { addSuffix: true })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Contacted LPs */}
-          {lpsByStatus.contacted.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <h2 className="text-lg font-medium mb-4">
-                Contacted ({lpsByStatus.contacted.length})
-              </h2>
-              <div className="space-y-3">
-                {lpsByStatus.contacted.map((rel: any) => (
-                  <div key={rel.id} className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
-                    <div>
-                      <Link href={`/lps/${rel.lp_contacts?.id}`} className="font-medium hover:text-muted-foreground transition-colors">
-                        {rel.lp_contacts?.name}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">{rel.lp_contacts?.firm || rel.lp_contacts?.email}</p>
-                    </div>
-                    <div className="text-right">
-                      {rel.first_contact_at && (
-                        <p className="text-xs text-muted-foreground">
-                          Contacted {formatDistanceToNow(new Date(rel.first_contact_at), { addSuffix: true })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Declined LPs */}
-          {lpsByStatus.declined.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <h2 className="text-lg font-medium mb-4 text-destructive">
-                Declined ({lpsByStatus.declined.length})
-              </h2>
-              <div className="space-y-3">
-                {lpsByStatus.declined.map((rel: any) => (
-                  <div key={rel.id} className="flex items-center justify-between p-4 bg-destructive/5 rounded-xl">
-                    <div>
-                      <Link href={`/lps/${rel.lp_contacts?.id}`} className="font-medium hover:text-muted-foreground transition-colors">
-                        {rel.lp_contacts?.name}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">{rel.lp_contacts?.firm || rel.lp_contacts?.email}</p>
-                    </div>
-                    {rel.notes && (
-                      <p className="text-sm text-muted-foreground max-w-xs truncate">{rel.notes}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* No LPs yet */}
-          {(!lpRelationships || lpRelationships.length === 0) && (
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <p className="text-muted-foreground">No LP involvement recorded yet.</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                LP relationships are created when emails mentioning this deal are matched to LPs.
-              </p>
-            </div>
-          )}
+          <LPInvolvementSection
+            lpRelationships={lpRelationships || []}
+            dealId={deal.id}
+          />
         </div>
 
         {/* Sidebar - Recent Activity */}
@@ -430,89 +315,7 @@ export default async function DealDetailPage({
           </div>
 
           {/* Recent Emails */}
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium">Related Emails ({relatedEmails?.length || 0})</h2>
-            </div>
-            {relatedEmails && relatedEmails.length > 0 ? (
-              <div className="space-y-4">
-                {relatedEmails.slice(0, 10).map((parsed: any) => (
-                  <div key={parsed.id} className="p-4 border border-border rounded-xl hover:bg-secondary/30 transition-colors">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-medium text-sm">
-                          {parsed.lp_contacts?.name || parsed.emails_raw?.from_name || parsed.emails_raw?.from_email}
-                        </p>
-                        {parsed.lp_contacts?.firm && (
-                          <p className="text-xs text-muted-foreground">{parsed.lp_contacts.firm}</p>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {parsed.emails_raw?.received_at &&
-                          formatDistanceToNow(new Date(parsed.emails_raw.received_at), { addSuffix: true })}
-                      </span>
-                    </div>
-
-                    {/* Subject */}
-                    <p className="text-sm font-medium mb-2">
-                      {parsed.emails_raw?.subject || "(no subject)"}
-                    </p>
-
-                    {/* Tags */}
-                    <div className="flex items-center gap-2 mb-2">
-                      {parsed.intent && parsed.intent !== "neutral" && (
-                        <span className={`text-xs px-2 py-1 rounded-lg font-medium ${getStatusColor(parsed.intent)}`}>
-                          {parsed.intent}
-                        </span>
-                      )}
-                      {parsed.commitment_amount && (
-                        <span className="text-xs px-2 py-1 rounded-lg bg-success/10 text-success font-medium">
-                          ${(parsed.commitment_amount / 1000).toFixed(0)}K
-                        </span>
-                      )}
-                      {parsed.sentiment && parsed.sentiment === "urgent" && (
-                        <span className="text-xs px-2 py-1 rounded-lg bg-destructive/10 text-destructive font-medium">
-                          Urgent
-                        </span>
-                      )}
-                      {parsed.processing_status === "manual_review" && (
-                        <span className="text-xs px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 font-medium">
-                          Low Confidence
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Questions */}
-                    {parsed.extracted_questions && parsed.extracted_questions.length > 0 && (
-                      <div className="mt-3 p-3 bg-secondary/30 rounded-lg">
-                        <p className="text-xs font-medium text-muted-foreground mb-2">Questions:</p>
-                        <ul className="text-xs space-y-1">
-                          {parsed.extracted_questions.slice(0, 3).map((q: string, i: number) => (
-                            <li key={i} className="text-foreground">• {q}</li>
-                          ))}
-                          {parsed.extracted_questions.length > 3 && (
-                            <li className="text-muted-foreground italic">
-                              +{parsed.extracted_questions.length - 3} more
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground mb-3">
-                  No emails matched to this deal yet.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Click "Backfill & Parse Emails" above to scan existing emails with AI.
-                </p>
-              </div>
-            )}
-          </div>
+          <EmailsWithFilters emails={relatedEmails || []} />
         </div>
       </div>
     </div>

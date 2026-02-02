@@ -27,6 +27,8 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
     accreditation_status: lp.accreditation_status,
     tax_status: lp.tax_status,
     kyc_status: lp.kyc_status,
+    special_fee_percent: lp.special_fee_percent,
+    special_carry_percent: lp.special_carry_percent,
   });
 
   const handleSave = async () => {
@@ -47,6 +49,8 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
       accreditation_status: lp.accreditation_status,
       tax_status: lp.tax_status,
       kyc_status: lp.kyc_status,
+      special_fee_percent: lp.special_fee_percent,
+      special_carry_percent: lp.special_carry_percent,
     });
     setIsEditing(false);
   };
@@ -155,6 +159,40 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
             </span>
           </div>
         </div>
+
+        {/* Special Deal Terms */}
+        {(lp.special_fee_percent !== null || lp.special_carry_percent !== null) && (
+          <div className="mt-6 pt-4 border-t border-border">
+            <h3 className="text-sm font-medium mb-3">Special Deal Terms</h3>
+            <div className="flex items-center gap-4">
+              {lp.special_fee_percent !== null && (
+                <span className="text-sm">
+                  <span className="text-muted-foreground">Fee:</span>{" "}
+                  <span className="font-medium">{lp.special_fee_percent}%</span>
+                </span>
+              )}
+              {lp.special_carry_percent !== null && (
+                <span className="text-sm">
+                  <span className="text-muted-foreground">Carry:</span>{" "}
+                  <span className="font-medium">{lp.special_carry_percent}%</span>
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              These terms override the default deal terms for all deals.
+            </p>
+          </div>
+        )}
+
+        {/* Show placeholder if no special terms set */}
+        {lp.special_fee_percent === null && lp.special_carry_percent === null && (
+          <div className="mt-6 pt-4 border-t border-border">
+            <h3 className="text-sm font-medium mb-2">Special Deal Terms</h3>
+            <p className="text-sm text-muted-foreground">
+              No special terms set. Default deal terms will apply.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -273,6 +311,56 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* Special Deal Terms */}
+      <div className="mt-6 pt-4 border-t border-border">
+        <h3 className="text-sm font-medium mb-3">Special Deal Terms</h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          If set, these terms will override the default deal terms for all deals.
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-muted-foreground mb-1">
+              Special Fee (%)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              value={formData.special_fee_percent ?? ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  special_fee_percent: e.target.value ? parseFloat(e.target.value) : null,
+                })
+              }
+              placeholder="e.g., 1.5"
+              className="w-full px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-muted-foreground mb-1">
+              Special Carry (%)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              value={formData.special_carry_percent ?? ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  special_carry_percent: e.target.value ? parseFloat(e.target.value) : null,
+                })
+              }
+              placeholder="e.g., 15"
+              className="w-full px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
         </div>
       </div>
     </div>

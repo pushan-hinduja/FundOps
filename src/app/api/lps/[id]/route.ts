@@ -167,6 +167,8 @@ export async function PATCH(
       "accreditation_status",
       "tax_status",
       "kyc_status",
+      "special_fee_percent",
+      "special_carry_percent",
     ];
 
     const updateData: Record<string, unknown> = {};

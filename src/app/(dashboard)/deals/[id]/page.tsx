@@ -7,6 +7,7 @@ import { DealDetailClient } from "./DealDetailClient";
 import { DealLPRelationshipWithLP } from "@/lib/supabase/types";
 import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
 import { LPInvolvementSection } from "@/components/deals/LPInvolvementSection";
+import { EditDealButton } from "@/components/deals/EditDealButton";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,9 @@ export default async function DealDetailPage({
         email,
         firm,
         kyc_status,
-        accreditation_status
+        accreditation_status,
+        special_fee_percent,
+        special_carry_percent
       )
     `)
     .eq("deal_id", id)
@@ -222,10 +225,42 @@ export default async function DealDetailPage({
             {deal.company_name && (
               <p className="text-muted-foreground mt-1">{deal.company_name}</p>
             )}
+            {/* Deal Terms */}
+            {(deal.fee_percent || deal.carry_percent) && (
+              <div className="flex items-center gap-4 mt-2">
+                {deal.fee_percent && (
+                  <span className="text-sm text-muted-foreground">
+                    Fee: <span className="font-medium text-foreground">{deal.fee_percent}%</span>
+                  </span>
+                )}
+                {deal.carry_percent && (
+                  <span className="text-sm text-muted-foreground">
+                    Carry: <span className="font-medium text-foreground">{deal.carry_percent}%</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
-          <span className={`px-3 py-1.5 rounded-xl text-sm font-medium capitalize ${getDealStatusColor(deal.status)}`}>
-            {deal.status}
-          </span>
+          <div className="flex items-center gap-3">
+            <EditDealButton
+              deal={{
+                id: deal.id,
+                name: deal.name,
+                company_name: deal.company_name,
+                description: deal.description,
+                target_raise: deal.target_raise,
+                min_check_size: deal.min_check_size,
+                max_check_size: deal.max_check_size,
+                fee_percent: deal.fee_percent,
+                carry_percent: deal.carry_percent,
+                status: deal.status,
+                memo_url: deal.memo_url,
+              }}
+            />
+            <span className={`px-3 py-1.5 rounded-xl text-sm font-medium capitalize ${getDealStatusColor(deal.status)}`}>
+              {deal.status}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -269,6 +304,10 @@ export default async function DealDetailPage({
           <LPInvolvementSection
             lpRelationships={lpRelationships || []}
             dealId={deal.id}
+            dealTerms={{
+              fee_percent: deal.fee_percent,
+              carry_percent: deal.carry_percent,
+            }}
           />
         </div>
 

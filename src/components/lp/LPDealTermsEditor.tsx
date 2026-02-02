@@ -32,16 +32,12 @@ export function LPDealTermsEditor({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<{
-    management_fee_percent: number | null;
-    carry_percent: number | null;
     minimum_commitment: number | null;
     side_letter_terms: string;
     has_mfn_rights: boolean;
     has_coinvest_rights: boolean;
     reporting_frequency: ReportingFrequency | null;
   }>({
-    management_fee_percent: null,
-    carry_percent: null,
     minimum_commitment: null,
     side_letter_terms: "",
     has_mfn_rights: false,
@@ -90,8 +86,6 @@ export function LPDealTermsEditor({
   const handleStartEdit = (rel: DealLPRelationshipWithDeal) => {
     setEditingId(rel.id);
     setFormData({
-      management_fee_percent: rel.management_fee_percent,
-      carry_percent: rel.carry_percent,
       minimum_commitment: rel.minimum_commitment,
       side_letter_terms: rel.side_letter_terms || "",
       has_mfn_rights: rel.has_mfn_rights,
@@ -191,47 +185,7 @@ export function LPDealTermsEditor({
                 {editingId === rel.id ? (
                   // Edit form
                   <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">
-                          Management Fee %
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={formData.management_fee_percent || ""}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              management_fee_percent: e.target.value
-                                ? parseFloat(e.target.value)
-                                : null,
-                            })
-                          }
-                          placeholder="e.g., 2.0"
-                          className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1">
-                          Carry %
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={formData.carry_percent || ""}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              carry_percent: e.target.value
-                                ? parseFloat(e.target.value)
-                                : null,
-                            })
-                          }
-                          placeholder="e.g., 20.0"
-                          className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        />
-                      </div>
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs text-muted-foreground mb-1">
                           Minimum Commitment
@@ -251,9 +205,6 @@ export function LPDealTermsEditor({
                           className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs text-muted-foreground mb-1">
                           Reporting Frequency
@@ -278,7 +229,9 @@ export function LPDealTermsEditor({
                           ))}
                         </select>
                       </div>
-                      <div className="flex items-center gap-4 col-span-2">
+                    </div>
+
+                    <div className="flex items-center gap-4">
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -307,7 +260,6 @@ export function LPDealTermsEditor({
                           />
                           <span className="text-sm">Co-Invest Rights</span>
                         </label>
-                      </div>
                     </div>
 
                     <div>
@@ -399,23 +351,7 @@ export function LPDealTermsEditor({
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-4 mb-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Management Fee
-                        </p>
-                        <p className="font-medium">
-                          {rel.management_fee_percent
-                            ? `${rel.management_fee_percent}%`
-                            : "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Carry</p>
-                        <p className="font-medium">
-                          {rel.carry_percent ? `${rel.carry_percent}%` : "-"}
-                        </p>
-                      </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
                         <p className="text-xs text-muted-foreground">
                           Min Commitment

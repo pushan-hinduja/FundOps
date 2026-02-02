@@ -196,6 +196,9 @@ export interface LPContact {
   accreditation_status: AccreditationStatus | null;
   tax_status: TaxStatus | null;
   kyc_status: KYCStatus;
+  // Special Deal Terms
+  special_fee_percent: number | null;
+  special_carry_percent: number | null;
   created_at: string;
   updated_at: string;
 }

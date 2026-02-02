@@ -22,12 +22,20 @@ interface LPRelationship {
     name: string;
     firm: string | null;
     email: string;
+    special_fee_percent: number | null;
+    special_carry_percent: number | null;
   } | null;
+}
+
+interface DealTerms {
+  fee_percent: number | null;
+  carry_percent: number | null;
 }
 
 interface LPInvolvementSectionProps {
   lpRelationships: LPRelationship[];
   dealId: string;
+  dealTerms: DealTerms;
 }
 
 function formatCurrency(amount: number | null) {
@@ -46,7 +54,7 @@ function formatCurrency(amount: number | null) {
   }).format(amount);
 }
 
-export function LPInvolvementSection({ lpRelationships, dealId }: LPInvolvementSectionProps) {
+export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPInvolvementSectionProps) {
   const [activeFilter, setActiveFilter] = useState<LPFilter>("all");
   const [allocatingLpId, setAllocatingLpId] = useState<string | null>(null);
   const [allocationAmount, setAllocationAmount] = useState("");
@@ -160,6 +168,23 @@ export function LPInvolvementSection({ lpRelationships, dealId }: LPInvolvementS
                 <p className="text-sm text-muted-foreground">
                   {rel.lp_contacts?.firm || rel.lp_contacts?.email}
                 </p>
+                {/* Special Deal Terms Indicator - only show for allocated LPs with special terms */}
+                {rel.status === "allocated" &&
+                  (rel.lp_contacts?.special_fee_percent !== null ||
+                    rel.lp_contacts?.special_carry_percent !== null) && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs px-2 py-0.5 rounded-md bg-white dark:bg-background text-muted-foreground border border-border">
+                        Special Terms:{" "}
+                        {rel.lp_contacts?.special_fee_percent !== null && (
+                          <span>Fee {rel.lp_contacts.special_fee_percent}%</span>
+                        )}
+                        {rel.lp_contacts?.special_fee_percent !== null && rel.lp_contacts?.special_carry_percent !== null && ", "}
+                        {rel.lp_contacts?.special_carry_percent !== null && (
+                          <span className="ml-1">Carry {rel.lp_contacts.special_carry_percent}%</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
               </div>
 
               <div className="flex items-center gap-4">

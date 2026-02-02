@@ -57,7 +57,7 @@ export async function getGmailClient(authAccount: AuthAccount) {
 export async function fetchNewMessages(
   gmail: gmail_v1.Gmail,
   afterTimestamp?: Date,
-  maxResults: number = 200
+  maxResults: number = 500
 ): Promise<gmail_v1.Schema$Message[]> {
   // Build query - fetch all inbox messages, not filtered by date
   // This ensures we get emails even if timestamp is off
@@ -82,6 +82,80 @@ export async function fetchNewMessages(
       console.error(`[Gmail API] Response status: ${error.response.status}`);
       console.error(`[Gmail API] Response data:`, JSON.stringify(error.response.data));
     }
+    throw error;
+  }
+}
+
+/**
+ * Fetch only UNREAD messages from inbox
+ * Use this for regular sync operations (more efficient than fetching all)
+ */
+export async function fetchUnreadMessages(
+  gmail: gmail_v1.Gmail
+): Promise<gmail_v1.Schema$Message[]> {
+  const query = "in:inbox is:unread";
+  const allMessages: gmail_v1.Schema$Message[] = [];
+  let pageToken: string | undefined = undefined;
+
+  console.log(`[Gmail API] Fetching UNREAD messages with query: "${query}"`);
+
+  try {
+    do {
+      const response = await gmail.users.messages.list({
+        userId: "me",
+        q: query,
+        maxResults: 500,
+        pageToken,
+      });
+
+      const messages = response.data.messages || [];
+      allMessages.push(...messages);
+      pageToken = response.data.nextPageToken || undefined;
+
+      console.log(`[Gmail API] Fetched ${messages.length} unread messages (total: ${allMessages.length}), nextPageToken: ${pageToken ? 'yes' : 'no'}`);
+    } while (pageToken);
+
+    console.log(`[Gmail API] Complete! Total unread messages fetched: ${allMessages.length}`);
+    return allMessages;
+  } catch (error: any) {
+    console.error(`[Gmail API] Error fetching unread messages:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Fetch ALL messages from inbox using pagination
+ * Use this for backfill operations
+ */
+export async function fetchAllMessages(
+  gmail: gmail_v1.Gmail
+): Promise<gmail_v1.Schema$Message[]> {
+  const query = "in:inbox";
+  const allMessages: gmail_v1.Schema$Message[] = [];
+  let pageToken: string | undefined = undefined;
+
+  console.log(`[Gmail API] Fetching ALL messages with query: "${query}"`);
+
+  try {
+    do {
+      const response = await gmail.users.messages.list({
+        userId: "me",
+        q: query,
+        maxResults: 500, // Max allowed per request
+        pageToken,
+      });
+
+      const messages = response.data.messages || [];
+      allMessages.push(...messages);
+      pageToken = response.data.nextPageToken || undefined;
+
+      console.log(`[Gmail API] Fetched ${messages.length} messages (total: ${allMessages.length}), nextPageToken: ${pageToken ? 'yes' : 'no'}`);
+    } while (pageToken);
+
+    console.log(`[Gmail API] Complete! Total messages fetched: ${allMessages.length}`);
+    return allMessages;
+  } catch (error: any) {
+    console.error(`[Gmail API] Error fetching all messages:`, error.message);
     throw error;
   }
 }

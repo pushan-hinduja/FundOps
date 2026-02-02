@@ -63,10 +63,10 @@ Return ONLY this JSON structure, no other text:
     "name": "string or null",
     "matched_deal_id": "uuid or null (from Known Deals list above)"
   },
-  "intent": "interested | committed | declined | question | neutral",
+  "intent": "interested | committed | declined | question",
   "commitment_amount": number or null,
   "sentiment": "positive | neutral | negative | urgent",
-  "topics": ["array", "of", "topics"],
+  "questions": ["array of specific questions the LP is asking"],
   "confidence": {
     "lp": 0.0-1.0,
     "deal": 0.0-1.0,
@@ -83,12 +83,13 @@ Return ONLY this JSON structure, no other text:
    - "interested" = positive signal but not explicitly committed
    - "committed" = explicit commitment to invest
    - "declined" = explicit pass or not interested
-   - "question" = primarily asking questions, intent unclear
-   - "neutral" = informational message, no clear investment signal
+   - "question" = primarily asking questions without clear commitment
 4. Match LPs by email first, then by name/firm
 5. Match deals by name, allowing for variations ("Acme Series B" = "Acme deal" = "the Acme opportunity")
 6. If an LP or deal is not in the known lists, return null for matched_*_id but still extract the name/firm
-7. Auto-replies, out-of-office messages, and system notifications should be marked as "neutral" with low confidence
+7. If email is an auto-reply, out-of-office message, or system notification, skip it entirely - return null for all fields except confidence scores set to 0
+8. Extract any direct questions the LP is asking about the deal, investment terms, timeline, or process
+9. Questions should be verbatim or minimally paraphrased for clarity - use empty array if no questions are asked
 
 Now analyze the email and return JSON:`;
 }

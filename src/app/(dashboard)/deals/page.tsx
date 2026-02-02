@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
+import { BackfillSyncButton } from "@/components/shared/BackfillSyncButton";
 import Link from "next/link";
 import { Briefcase, Plus, ArrowUpRight } from "lucide-react";
 
@@ -82,6 +83,7 @@ export default async function DealsPage() {
           <p className="text-muted-foreground mt-1">Manage your fundraising deals</p>
         </div>
         <div className="flex items-center gap-3">
+          <BackfillSyncButton />
           <EmailSyncButton />
           <Link
             href="/deals/new"

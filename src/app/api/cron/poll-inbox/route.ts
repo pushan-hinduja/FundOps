@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { getGmailClient, fetchNewMessages, getMessageDetails } from "@/lib/gmail/client";
-import { parseEmailSimple } from "@/lib/emails/simple-parser";
+import { getGmailClient, fetchUnreadMessages, getMessageDetails } from "@/lib/gmail/client";
+import { parseEmailWithAI } from "@/lib/ai/parser";
 import { processEmailForSuggestedContact } from "@/lib/emails/suggested-contacts";
 import type { AuthAccount } from "@/lib/supabase/types";
 
@@ -119,19 +119,13 @@ async function processAccount(
   stats: { emailsIngested: number; emailsParsed: number; suggestedContactsAdded: number; errors: string[] }
 ) {
   console.log(`[Email Sync] Processing account: ${account.email}`);
-  
+
   const gmail = await getGmailClient(account);
 
-  // Determine start time for fetching messages
-  const afterTimestamp = account.last_sync_at
-    ? new Date(account.last_sync_at)
-    : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default to last 24 hours
-
-  console.log(`[Email Sync] Fetching messages after: ${afterTimestamp.toISOString()}`);
-
-  // Fetch new messages
-  const messages = await fetchNewMessages(gmail, afterTimestamp, 200);
-  console.log(`[Email Sync] Found ${messages.length} messages from Gmail`);
+  // Fetch only UNREAD messages (more efficient than fetching all)
+  console.log(`[Email Sync] Fetching UNREAD messages...`);
+  const messages = await fetchUnreadMessages(gmail);
+  console.log(`[Email Sync] Found ${messages.length} unread messages from Gmail`);
 
   if (messages.length === 0) {
     console.log(`[Email Sync] No new messages, updating last_sync_at`);
@@ -196,32 +190,56 @@ async function processAccount(
       stats.emailsIngested++;
       console.log(`[Email Sync] Ingested email ${stats.emailsIngested}/${messages.length} from ${details.from.email}`);
 
-      // Parse the email with simple regex (no AI required)
+      // SIMPLE CHECK: Add to suggested contacts if not in LP database
+      if (insertedEmail && details.from.email) {
+        try {
+          // Check if email exists in lp_contacts
+          const { data: existingLP } = await supabase
+            .from("lp_contacts")
+            .select("id")
+            .eq("organization_id", organizationId)
+            .ilike("email", details.from.email)
+            .single();
+
+          // If NOT in LP database, add to suggested contacts
+          if (!existingLP) {
+            const { error: suggestError } = await supabase
+              .from("suggested_contacts")
+              .upsert(
+                {
+                  organization_id: organizationId,
+                  email: details.from.email,
+                  name: details.from.name || details.from.email.split("@")[0],
+                  firm: null,
+                  source_email_id: insertedEmail.id,
+                  is_dismissed: false,
+                },
+                {
+                  onConflict: "organization_id,email",
+                  ignoreDuplicates: false,
+                }
+              );
+
+            if (!suggestError) {
+              stats.suggestedContactsAdded++;
+              console.log(`[Email Sync] Added suggested contact: ${details.from.email}`);
+            }
+          } else {
+            console.log(`[Email Sync] Email ${details.from.email} already in LP database, skipping suggested contact`);
+          }
+        } catch (scErr: any) {
+          console.error(`[Email Sync] Error checking suggested contact:`, scErr.message);
+        }
+      }
+
+      // Parse the email with AI
       if (insertedEmail) {
         try {
-          const parseResult = await parseEmailSimple(supabase, insertedEmail, organizationId);
+          const parseResult = await parseEmailWithAI(supabase, insertedEmail, organizationId);
           stats.emailsParsed++;
 
           if (parseResult.detectedDealId) {
             console.log(`[Email Sync] Matched deal for email from ${details.from.email}`);
-          }
-
-          // If no LP was matched, add to suggested contacts
-          if (!parseResult.lpMatched && !parseResult.lpCreated) {
-            const scResult = await processEmailForSuggestedContact(
-              supabase,
-              organizationId,
-              {
-                id: insertedEmail.id,
-                from_email: insertedEmail.from_email,
-                from_name: insertedEmail.from_name,
-              },
-              { lp: { ...parseResult.extractedLp, firm: parseResult.extractedLp.firm ?? undefined } }
-            );
-            if (scResult.added) {
-              stats.suggestedContactsAdded++;
-              console.log(`[Email Sync] Added suggested contact: ${insertedEmail.from_email}`);
-            }
           }
         } catch (parseErr: any) {
           stats.errors.push(`Parse error for ${message.id}: ${parseErr.message}`);

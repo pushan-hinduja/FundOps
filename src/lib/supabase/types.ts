@@ -282,6 +282,8 @@ export interface EmailParsed {
   commitment_amount: number | null;
   sentiment: "positive" | "neutral" | "negative" | "urgent" | null;
   topics: string[];
+  extracted_questions: string[];
+  parsing_method: "simple" | "ai" | "manual";
   entities: Json;
   confidence_scores: Json;
   processing_status: "pending" | "processing" | "success" | "failed" | "manual_review";

@@ -49,7 +49,7 @@ export default async function LPsPage() {
     // First verify auth_accounts exist for debugging
     const { data: authAccounts, error: authError } = await supabase
       .from("auth_accounts")
-      .select("id, email, is_active, organization_id")
+      .select("id, email, is_active")
       .eq("user_id", user.id);
     
     console.log(`[LPs Page] Found ${authAccounts?.length || 0} auth accounts for user`);

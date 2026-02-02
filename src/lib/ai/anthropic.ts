@@ -13,5 +13,8 @@ export function getAnthropicClient(): Anthropic {
   return client;
 }
 
-export const MODEL_ID = "claude-3-5-sonnet-20241022";
-export const MODEL_VERSION = "claude-3.5-sonnet-v1";
+// Use Haiku 4.5 for cost-efficient email parsing
+// Pricing: $1/MTok input, $5/MTok output
+// Switch to Sonnet 4.5 if you need higher accuracy
+export const MODEL_ID = "claude-haiku-4-5-20251001";
+export const MODEL_VERSION = "claude-haiku-4.5-v1";

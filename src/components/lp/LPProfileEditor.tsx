@@ -58,13 +58,13 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
   const getKYCStatusColor = (status: KYCStatus) => {
     switch (status) {
       case "approved":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "pending":
       case "in_review":
-        return "bg-yellow-500/10 text-yellow-600";
+        return "bg-secondary text-yellow-600";
       case "rejected":
       case "expired":
-        return "bg-destructive/10 text-destructive";
+        return "bg-secondary text-red-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -109,7 +109,7 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
 
   if (!isEditing) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-6">
+      <div className="glass-card rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium">Investor Profile</h2>
           <button
@@ -198,7 +198,7 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="glass-card rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-medium">Investor Profile</h2>
         <div className="flex items-center gap-2">

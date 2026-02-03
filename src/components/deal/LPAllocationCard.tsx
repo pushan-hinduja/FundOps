@@ -37,9 +37,9 @@ export function LPAllocationCard({
   const getWireStatusColor = (status: WireStatus) => {
     switch (status) {
       case "complete":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "partial":
-        return "bg-yellow-500/10 text-yellow-600";
+        return "bg-secondary text-yellow-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -48,13 +48,13 @@ export function LPAllocationCard({
   const getKYCStatusColor = (status: KYCStatus) => {
     switch (status) {
       case "approved":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "pending":
       case "in_review":
-        return "bg-yellow-500/10 text-yellow-600";
+        return "bg-secondary text-yellow-600";
       case "rejected":
       case "expired":
-        return "bg-destructive/10 text-destructive";
+        return "bg-secondary text-red-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -69,7 +69,7 @@ export function LPAllocationCard({
 
   return (
     <>
-      <div className="p-4 bg-[hsl(var(--success))]/5 rounded-xl border border-[hsl(var(--success))]/20">
+      <div className="p-4 bg-white dark:bg-background rounded-xl border border-border/50">
         <div className="flex items-start justify-between mb-3">
           <div>
             <Link
@@ -85,7 +85,7 @@ export function LPAllocationCard({
           <div className="flex items-center gap-2">
             {lpContact?.kyc_status && (
               <span
-                className={`px-2 py-0.5 text-xs font-medium rounded ${getKYCStatusColor(
+                className={`px-2 py-0.5 text-xs font-medium rounded-lg ${getKYCStatusColor(
                   lpContact.kyc_status
                 )}`}
               >
@@ -93,7 +93,7 @@ export function LPAllocationCard({
               </span>
             )}
             <span
-              className={`px-2 py-0.5 text-xs font-medium rounded ${getWireStatusColor(
+              className={`px-2 py-0.5 text-xs font-medium rounded-lg ${getWireStatusColor(
                 relationship.wire_status
               )}`}
             >
@@ -117,7 +117,7 @@ export function LPAllocationCard({
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Allocated</p>
-            <p className="font-medium metric-number text-[hsl(var(--success))]">
+            <p className="font-medium metric-number">
               {formatCurrency(relationship.allocated_amount)}
             </p>
           </div>

@@ -80,8 +80,8 @@ export function DealDetailClient({
       <CloseReadinessDashboard metrics={metrics} />
 
       {/* Committed LPs with allocation tracking */}
-      <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-        <h2 className="text-lg font-medium mb-4 text-[hsl(var(--success))]">
+      <div className="glass-card rounded-2xl p-6 mb-6">
+        <h2 className="text-lg font-medium mb-4">
           Committed & Allocated ({relationships.length})
         </h2>
         <div className="space-y-3">

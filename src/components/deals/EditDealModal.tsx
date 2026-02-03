@@ -86,7 +86,7 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="relative glass-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-medium">Edit Deal</h2>
           <button

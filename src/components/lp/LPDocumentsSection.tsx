@@ -77,13 +77,13 @@ export function LPDocumentsSection({
   const getStatusColor = (status: DocumentStatus) => {
     switch (status) {
       case "approved":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "uploaded":
       case "under_review":
-        return "bg-yellow-500/10 text-yellow-600";
+        return "bg-secondary text-yellow-600";
       case "rejected":
       case "expired":
-        return "bg-destructive/10 text-destructive";
+        return "bg-secondary text-red-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -143,7 +143,7 @@ export function LPDocumentsSection({
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="glass-card rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-medium">Documents & KYC</h2>
         {!isAdding && (
@@ -265,14 +265,14 @@ export function LPDocumentsSection({
                 </div>
                 {/* Expiration warnings */}
                 {isExpired(doc.expiration_date) && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 text-xs bg-destructive/10 text-destructive rounded-lg">
+                  <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-secondary text-red-600 rounded-lg">
                     <AlertTriangle className="w-3 h-3" />
                     Expired
                   </span>
                 )}
                 {!isExpired(doc.expiration_date) &&
                   isExpiringSoon(doc.expiration_date) && (
-                    <span className="flex items-center gap-1 px-2 py-0.5 text-xs bg-yellow-500/10 text-yellow-600 rounded-lg">
+                    <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-secondary text-yellow-600 rounded-lg">
                       <AlertTriangle className="w-3 h-3" />
                       Expiring soon
                     </span>

@@ -34,27 +34,27 @@ function getIntentDisplay(intent: string): { label: string; color: string } {
     case "interested":
       return {
         label: "Interested",
-        color: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400 border border-blue-300 dark:border-blue-800",
+        color: "bg-secondary text-blue-600",
       };
     case "committed":
       return {
         label: "Committed",
-        color: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 border border-green-300 dark:border-green-800",
+        color: "bg-secondary text-green-600",
       };
     case "declined":
       return {
         label: "Declined",
-        color: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400 border border-red-300 dark:border-red-800",
+        color: "bg-secondary text-red-600",
       };
     case "question":
       return {
         label: "Question",
-        color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-800",
+        color: "bg-secondary text-yellow-600",
       };
     default:
       return {
         label: intent,
-        color: "bg-secondary text-muted-foreground border border-border",
+        color: "bg-secondary text-muted-foreground",
       };
   }
 }
@@ -85,7 +85,7 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
   ];
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="glass-card rounded-2xl p-6">
       {/* Header with filters */}
       <div className="mb-4">
         <h2 className="text-lg font-medium mb-3">
@@ -117,7 +117,7 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
           {filteredEmails.slice(0, 10).map((parsed) => (
             <div
               key={parsed.id}
-              className="p-4 border border-border rounded-xl hover:bg-secondary/30 transition-colors"
+              className="glass-list-item p-4 rounded-xl"
             >
               {/* Header */}
               <div className="flex items-start justify-between mb-2">
@@ -169,12 +169,12 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
                   </span>
                 )}
                 {parsed.sentiment && parsed.sentiment === "urgent" && (
-                  <span className="text-xs px-2 py-1 rounded-lg bg-destructive/10 text-destructive font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-lg bg-secondary text-red-600 font-medium">
                     Urgent
                   </span>
                 )}
                 {parsed.processing_status === "manual_review" && (
-                  <span className="text-xs px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-lg bg-secondary text-yellow-600 font-medium">
                     Low Confidence
                   </span>
                 )}

@@ -12,7 +12,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Empty State */}
-      <div className="bg-card border border-border rounded-2xl p-12 text-center">
+      <div className="glass-card rounded-2xl p-12 text-center">
         <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Bell className="w-8 h-8 text-muted-foreground" />
         </div>

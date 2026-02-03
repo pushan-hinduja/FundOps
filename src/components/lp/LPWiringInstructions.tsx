@@ -316,7 +316,7 @@ export function LPWiringInstructions({
   );
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="glass-card rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-medium">Wiring Instructions</h2>
         {!isAdding && !editingId && (

@@ -66,7 +66,7 @@ export default async function EmailSettingsPage({
         </div>
       )}
 
-      <div className="bg-card border border-border rounded-lg p-6">
+      <div className="glass-card rounded-2xl p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-lg font-medium">Connected Gmail Accounts</h2>
@@ -105,10 +105,10 @@ export default async function EmailSettingsPage({
                 </div>
                 <div className="flex items-center gap-3">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    className={`px-2 py-0.5 rounded-lg text-xs font-medium ${
                       account.is_active
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
+                        ? "bg-secondary text-green-600"
+                        : "bg-secondary text-muted-foreground"
                     }`}
                   >
                     {account.is_active ? "Active" : "Inactive"}

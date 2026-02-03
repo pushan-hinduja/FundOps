@@ -73,7 +73,7 @@ export default function NewDealPage() {
         <p className="text-muted-foreground mt-1">Create a new fundraising deal</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-2xl p-8">
+      <form onSubmit={handleSubmit} className="space-y-6 glass-card rounded-2xl p-8">
         {error && (
           <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm">
             {error}

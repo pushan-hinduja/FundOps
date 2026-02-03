@@ -76,7 +76,7 @@ function LoginForm() {
       </div>
 
       {/* Form Card */}
-      <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
+      <div className="glass-card rounded-2xl p-8">
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
             <div className={`p-4 rounded-xl text-sm ${error.includes("Check your email") ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" : "bg-destructive/10 text-destructive"}`}>

@@ -26,7 +26,7 @@ export default async function LPsPage() {
     return (
       <div className="px-8 py-6">
         <h1 className="text-3xl font-medium tracking-tight mb-4">LP Contacts</h1>
-        <div className="bg-card p-8 rounded-2xl text-center border border-border">
+        <div className="glass-card p-8 rounded-2xl text-center">
           <p className="text-muted-foreground">
             Set up your organization first.
           </p>
@@ -133,7 +133,7 @@ export default async function LPsPage() {
           )}
 
           {!lps || lps.length === 0 ? (
-            <div className="bg-card p-12 rounded-2xl text-center border border-border">
+            <div className="glass-card p-12 rounded-2xl text-center">
               <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-muted-foreground" />
               </div>
@@ -150,7 +150,7 @@ export default async function LPsPage() {
               </Link>
             </div>
           ) : (
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="glass-card rounded-2xl overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">

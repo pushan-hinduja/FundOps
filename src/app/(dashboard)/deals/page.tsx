@@ -24,7 +24,7 @@ export default async function DealsPage() {
     return (
       <div className="px-8 py-6">
         <h1 className="text-3xl font-medium tracking-tight mb-4">Deals</h1>
-        <div className="bg-card p-8 rounded-2xl text-center border border-border">
+        <div className="glass-card p-8 rounded-2xl text-center">
           <p className="text-muted-foreground">
             Set up your organization first.
           </p>
@@ -102,7 +102,7 @@ export default async function DealsPage() {
       )}
 
       {!deals || deals.length === 0 ? (
-        <div className="bg-card p-12 rounded-2xl text-center border border-border">
+        <div className="glass-card p-12 rounded-2xl text-center">
           <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Briefcase className="w-8 h-8 text-muted-foreground" />
           </div>
@@ -124,7 +124,7 @@ export default async function DealsPage() {
             <Link
               key={deal.id}
               href={`/deals/${deal.id}`}
-              className="group bg-card border border-border rounded-2xl p-6 hover:border-foreground/20 hover:shadow-sm transition-all"
+              className="group glass-card glass-card-hover glass-shimmer rounded-2xl p-6"
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1 min-w-0">

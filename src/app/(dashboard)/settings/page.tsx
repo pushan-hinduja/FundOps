@@ -28,7 +28,7 @@ export default async function SettingsPage() {
 
       <div className="space-y-6">
         {/* Profile Section */}
-        <div className="bg-card border border-border rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
               <User className="w-5 h-5 text-muted-foreground" />
@@ -55,7 +55,7 @@ export default async function SettingsPage() {
         </div>
 
         {/* Organization Section */}
-        <div className="bg-card border border-border rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
               <Building2 className="w-5 h-5 text-muted-foreground" />
@@ -95,7 +95,7 @@ export default async function SettingsPage() {
         </div>
 
         {/* Email Integration Section */}
-        <div className="bg-card border border-border rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
               <Mail className="w-5 h-5 text-muted-foreground" />

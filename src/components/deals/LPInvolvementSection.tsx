@@ -120,7 +120,7 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="glass-card rounded-2xl p-6">
       {/* Header with filters */}
       <div className="mb-4">
         <h2 className="text-lg font-medium mb-3">LP Involvement ({filteredLPs.length})</h2>
@@ -150,21 +150,28 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
           {filteredLPs.map((rel) => (
             <div
               key={rel.id}
-              className={`flex items-center justify-between p-4 rounded-xl ${
-                rel.status === "allocated"
-                  ? "bg-green-100 dark:bg-green-950 border border-green-300 dark:border-green-800"
-                  : rel.status === "committed"
-                  ? "bg-blue-100 dark:bg-blue-950 border border-blue-300 dark:border-blue-800"
-                  : "bg-secondary/50"
-              }`}
+              className="flex items-center justify-between p-4 bg-white dark:bg-background rounded-xl border border-border/50"
             >
               <div className="flex-1">
-                <Link
-                  href={`/lps/${rel.lp_contacts?.id}`}
-                  className="font-medium hover:text-muted-foreground transition-colors"
-                >
-                  {rel.lp_contacts?.name}
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/lps/${rel.lp_contacts?.id}`}
+                    className="font-medium hover:text-muted-foreground transition-colors"
+                  >
+                    {rel.lp_contacts?.name}
+                  </Link>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-lg font-medium ${
+                      rel.status === "allocated"
+                        ? "bg-secondary text-green-600"
+                        : rel.status === "committed"
+                        ? "bg-secondary text-blue-600"
+                        : "bg-secondary text-amber-600"
+                    }`}
+                  >
+                    {rel.status.charAt(0).toUpperCase() + rel.status.slice(1)}
+                  </span>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {rel.lp_contacts?.firm || rel.lp_contacts?.email}
                 </p>

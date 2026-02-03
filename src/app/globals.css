@@ -128,4 +128,167 @@
   .dark .glass-menu {
     background: rgba(30, 30, 30, 0.7);
   }
+
+  /* ==========================================
+     LIQUID GLASS CARD SYSTEM
+     ========================================== */
+
+  /* Base glass card */
+  .glass-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%) !important;
+    border: none !important;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.02),
+      0 4px 12px rgba(0, 0, 0, 0.03),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.3s ease;
+  }
+
+  .dark .glass-card {
+    background: linear-gradient(145deg, #1e1e22 0%, #18181b 100%) !important;
+    border: none !important;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* Glass card with hover lift effect */
+  .glass-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.03),
+      0 8px 24px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .dark .glass-card-hover:hover {
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.15),
+      0 8px 24px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Accent glass card - green tint */
+  .glass-card-accent {
+    background: #ecfdf5 !important;
+    border: none !important;
+    box-shadow: 0 2px 12px rgba(34, 197, 94, 0.08) !important;
+  }
+
+  .dark .glass-card-accent {
+    background: #14532d !important;
+    border: none !important;
+  }
+
+  /* Stat card */
+  .glass-stat-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%) !important;
+    border: none !important;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.02),
+      0 4px 12px rgba(0, 0, 0, 0.03),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .dark .glass-stat-card {
+    background: linear-gradient(145deg, #1e1e22 0%, #18181b 100%) !important;
+    border: none !important;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* List item card */
+  .glass-list-item {
+    background: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%) !important;
+    border: none !important;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.015),
+      0 3px 8px rgba(0, 0, 0, 0.025),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+    transition: all 0.2s ease;
+  }
+
+  .glass-list-item:hover {
+    background: linear-gradient(145deg, #ffffff 0%, #f5f6f7 100%) !important;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.025),
+      0 6px 16px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .dark .glass-list-item {
+    background: linear-gradient(145deg, #27272a 0%, #1f1f22 100%) !important;
+    border: none !important;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      0 3px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  }
+
+  .dark .glass-list-item:hover {
+    background: linear-gradient(145deg, #3f3f46 0%, #35353a 100%) !important;
+  }
+
+  /* Status-specific glass cards */
+  .glass-card-success {
+    background: #ecfdf5 !important;
+    border: none !important;
+    box-shadow: 0 2px 12px rgba(34, 197, 94, 0.08) !important;
+  }
+
+  .dark .glass-card-success {
+    background: #14532d !important;
+    border: none !important;
+  }
+
+  .glass-card-info {
+    background: #eff6ff !important;
+    border: none !important;
+    box-shadow: 0 2px 12px rgba(59, 130, 246, 0.08) !important;
+  }
+
+  .dark .glass-card-info {
+    background: #1e3a8a !important;
+    border: none !important;
+  }
+
+  /* Shimmer effect for premium feel */
+  .glass-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.5) 50%,
+      transparent 100%
+    );
+    transform: skewX(-20deg);
+    transition: left 0.6s ease;
+    pointer-events: none;
+  }
+
+  .glass-shimmer:hover::after {
+    left: 150%;
+  }
+
+  .dark .glass-shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+  }
 }

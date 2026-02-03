@@ -133,13 +133,13 @@ export default async function LPDetailPage({
   const getKYCStatusColor = (status: KYCStatus) => {
     switch (status) {
       case "approved":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "pending":
       case "in_review":
-        return "bg-yellow-500/10 text-yellow-600";
+        return "bg-secondary text-yellow-600";
       case "rejected":
       case "expired":
-        return "bg-destructive/10 text-destructive";
+        return "bg-secondary text-red-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -149,12 +149,12 @@ export default async function LPDetailPage({
     if (!status) return "bg-secondary text-muted-foreground";
     switch (status) {
       case "qualified_purchaser":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "accredited_investor":
       case "qualified_client":
-        return "bg-foreground/10 text-foreground";
+        return "bg-secondary text-foreground";
       case "non_accredited":
-        return "bg-destructive/10 text-destructive";
+        return "bg-secondary text-red-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -163,11 +163,11 @@ export default async function LPDetailPage({
   const getIntentColor = (intent: string | null) => {
     switch (intent) {
       case "committed":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "interested":
-        return "bg-foreground/10 text-foreground";
+        return "bg-secondary text-blue-600";
       case "declined":
-        return "bg-destructive/10 text-destructive";
+        return "bg-secondary text-red-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -213,7 +213,7 @@ export default async function LPDetailPage({
 
         <div className="flex items-center gap-2">
           <span
-            className={`px-3 py-1.5 rounded-xl text-sm font-medium ${getKYCStatusColor(
+            className={`px-2 py-0.5 rounded-lg text-xs font-medium ${getKYCStatusColor(
               lp.kyc_status
             )}`}
           >
@@ -221,7 +221,7 @@ export default async function LPDetailPage({
           </span>
           {lp.accreditation_status && (
             <span
-              className={`px-3 py-1.5 rounded-xl text-sm font-medium ${getAccreditationColor(
+              className={`px-2 py-0.5 rounded-lg text-xs font-medium ${getAccreditationColor(
                 lp.accreditation_status
               )}`}
             >
@@ -233,19 +233,19 @@ export default async function LPDetailPage({
 
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="glass-stat-card glass-card-accent rounded-2xl p-5">
           <p className="section-label mb-2">Total Commitments</p>
           <p className="metric-number text-2xl text-[hsl(var(--success))]">
             {formatCurrency(lp.total_commitments)}
           </p>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="glass-stat-card rounded-2xl p-5">
           <p className="section-label mb-2">Preferred Check Size</p>
           <p className="metric-number text-2xl">
             {formatCurrency(lp.preferred_check_size)}
           </p>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="glass-stat-card rounded-2xl p-5">
           <p className="section-label mb-2">Participation Rate</p>
           <p className="metric-number text-2xl">
             {lp.participation_rate
@@ -253,7 +253,7 @@ export default async function LPDetailPage({
               : "-"}
           </p>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="glass-stat-card rounded-2xl p-5">
           <p className="section-label mb-2">Avg Response Time</p>
           <p className="metric-number text-2xl">
             {lp.avg_response_time_hours
@@ -278,7 +278,7 @@ export default async function LPDetailPage({
         <div className="space-y-6">
           {/* Notes */}
           {lp.notes && (
-            <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="glass-card rounded-2xl p-6">
               <h2 className="text-lg font-medium mb-3">Notes</h2>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {lp.notes}
@@ -287,7 +287,7 @@ export default async function LPDetailPage({
           )}
 
           {/* Recent Emails */}
-          <div className="bg-card border border-border rounded-2xl p-6">
+          <div className="glass-card rounded-2xl p-6">
             <h2 className="text-lg font-medium mb-4">Recent Emails</h2>
             {recentEmails && recentEmails.length > 0 ? (
               <div className="space-y-3">

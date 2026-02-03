@@ -26,7 +26,7 @@ export function CloseReadinessDashboard({ metrics }: CloseReadinessDashboardProp
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 mb-6">
+    <div className="glass-card rounded-2xl p-6 mb-6">
       <h2 className="text-lg font-medium mb-4">Close Readiness</h2>
 
       <div className="grid grid-cols-3 gap-6 mb-6">
@@ -128,12 +128,12 @@ export function CloseReadinessDashboard({ metrics }: CloseReadinessDashboardProp
                   </span>
                   <div className="flex gap-1.5">
                     {item.missingDocs && (
-                      <span className="px-2 py-0.5 text-xs bg-destructive/10 text-destructive rounded">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-secondary text-red-600 rounded-lg">
                         Missing docs
                       </span>
                     )}
                     {item.pendingWire && (
-                      <span className="px-2 py-0.5 text-xs bg-yellow-500/10 text-yellow-600 rounded">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-secondary text-yellow-600 rounded-lg">
                         Pending wire
                       </span>
                     )}

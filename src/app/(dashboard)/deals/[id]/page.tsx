@@ -266,11 +266,11 @@ export default async function DealDetailPage({
 
       {/* Deal Stats */}
       <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">Target Raise</p>
           <p className="metric-number text-3xl">{formatCurrency(deal.target_raise)}</p>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">Allocated</p>
           <p className="metric-number text-3xl text-[hsl(var(--success))]">{formatCurrency(totalAllocated)}</p>
           {deal.target_raise && deal.target_raise > 0 && (
@@ -279,11 +279,11 @@ export default async function DealDetailPage({
             </p>
           )}
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">Interested</p>
           <p className="metric-number text-3xl">{formatCurrency(deal.total_interested)}</p>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">LPs Involved</p>
           <p className="metric-number text-3xl">{lpRelationships?.length || 0}</p>
         </div>
@@ -314,7 +314,7 @@ export default async function DealDetailPage({
         {/* Sidebar - Recent Activity */}
         <div className="space-y-6">
           {/* Deal Info */}
-          <div className="bg-card border border-border rounded-2xl p-6">
+          <div className="glass-card rounded-2xl p-6">
             <h2 className="text-lg font-medium mb-4">Deal Info</h2>
             <div className="space-y-4 text-sm">
               {deal.description && (

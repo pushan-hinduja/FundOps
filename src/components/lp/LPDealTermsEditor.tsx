@@ -60,13 +60,13 @@ export function LPDealTermsEditor({
     switch (status) {
       case "committed":
       case "allocated":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "interested":
-        return "bg-foreground/10 text-foreground";
+        return "bg-secondary text-blue-600";
       case "contacted":
         return "bg-secondary text-muted-foreground";
       case "declined":
-        return "bg-destructive/10 text-destructive";
+        return "bg-secondary text-red-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -75,9 +75,9 @@ export function LPDealTermsEditor({
   const getWireStatusColor = (status: WireStatus) => {
     switch (status) {
       case "complete":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
+        return "bg-secondary text-green-600";
       case "partial":
-        return "bg-yellow-500/10 text-yellow-600";
+        return "bg-secondary text-yellow-600";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -117,7 +117,7 @@ export function LPDealTermsEditor({
 
   if (relationships.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-6">
+      <div className="glass-card rounded-2xl p-6">
         <h2 className="text-lg font-medium mb-4">Deal History</h2>
         <div className="text-center py-8 text-muted-foreground">
           <p className="text-sm">No deal participation yet</p>
@@ -127,7 +127,7 @@ export function LPDealTermsEditor({
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="glass-card rounded-2xl p-6">
       <h2 className="text-lg font-medium mb-4">Deal History</h2>
 
       <div className="space-y-3">
@@ -327,7 +327,7 @@ export function LPDealTermsEditor({
                             Wire Status
                           </p>
                           <span
-                            className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${getWireStatusColor(
+                            className={`inline-block px-2 py-0.5 text-xs font-medium rounded-lg ${getWireStatusColor(
                               rel.wire_status
                             )}`}
                           >
@@ -374,12 +374,12 @@ export function LPDealTermsEditor({
 
                     <div className="flex gap-4 mb-4">
                       {rel.has_mfn_rights && (
-                        <span className="px-2 py-1 text-xs bg-secondary rounded font-medium">
+                        <span className="px-2 py-0.5 text-xs bg-secondary rounded-lg font-medium">
                           MFN Rights
                         </span>
                       )}
                       {rel.has_coinvest_rights && (
-                        <span className="px-2 py-1 text-xs bg-secondary rounded font-medium">
+                        <span className="px-2 py-0.5 text-xs bg-secondary rounded-lg font-medium">
                           Co-Invest Rights
                         </span>
                       )}

@@ -65,7 +65,7 @@ export default function NewOrganizationPage() {
         <h1 className="text-2xl font-medium mt-2">Create Organization</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-lg p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 glass-card rounded-2xl p-6">
         {error && (
           <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm">
             {error}

@@ -182,7 +182,7 @@ export function SuggestedContacts({
             {contacts.map((contact) => (
               <div
                 key={contact.id}
-                className="p-4 bg-secondary/30 rounded-xl border border-border hover:bg-secondary/50 transition-colors"
+                className="glass-list-item p-4 rounded-xl"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">

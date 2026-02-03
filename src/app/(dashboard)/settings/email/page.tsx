@@ -46,7 +46,7 @@ export default async function EmailSettingsPage({
     : null;
 
   return (
-    <div className="px-8 py-6 max-w-3xl">
+    <div className="px-8 py-6">
       <div className="mb-6">
         <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground">
           ← Back to Settings

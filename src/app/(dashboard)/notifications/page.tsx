@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function NotificationsPage() {
   return (
-    <div className="px-8 py-6 max-w-3xl">
+    <div className="px-8 py-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-medium tracking-tight">Notifications</h1>

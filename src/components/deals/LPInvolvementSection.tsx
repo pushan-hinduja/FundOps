@@ -183,11 +183,11 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
                       <span className="text-xs px-2 py-0.5 rounded-md bg-white dark:bg-background text-muted-foreground border border-border">
                         Special Terms:{" "}
                         {rel.lp_contacts?.special_fee_percent !== null && (
-                          <span>Fee {rel.lp_contacts.special_fee_percent}%</span>
+                          <span>Fee {rel.lp_contacts?.special_fee_percent}%</span>
                         )}
                         {rel.lp_contacts?.special_fee_percent !== null && rel.lp_contacts?.special_carry_percent !== null && ", "}
                         {rel.lp_contacts?.special_carry_percent !== null && (
-                          <span className="ml-1">Carry {rel.lp_contacts.special_carry_percent}%</span>
+                          <span className="ml-1">Carry {rel.lp_contacts?.special_carry_percent}%</span>
                         )}
                       </span>
                     </div>

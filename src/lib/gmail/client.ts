@@ -1,4 +1,4 @@
-import { google, gmail_v1 } from "googleapis";
+import { google, gmail_v1, Common } from "googleapis";
 import { getOAuth2Client, refreshAccessToken } from "./oauth";
 import { decrypt, encrypt } from "../utils/encryption";
 import { createServiceClient } from "../supabase/server";
@@ -100,20 +100,22 @@ export async function fetchUnreadMessages(
   console.log(`[Gmail API] Fetching UNREAD messages with query: "${query}"`);
 
   try {
-    do {
-      const response = await gmail.users.messages.list({
+    let hasMore = true;
+    while (hasMore) {
+      const listResponse: Common.GaxiosResponse<gmail_v1.Schema$ListMessagesResponse> = await gmail.users.messages.list({
         userId: "me",
         q: query,
         maxResults: 500,
         pageToken,
       });
 
-      const messages = response.data.messages || [];
+      const messages = listResponse.data.messages || [];
       allMessages.push(...messages);
-      pageToken = response.data.nextPageToken || undefined;
+      pageToken = listResponse.data.nextPageToken || undefined;
+      hasMore = !!pageToken;
 
       console.log(`[Gmail API] Fetched ${messages.length} unread messages (total: ${allMessages.length}), nextPageToken: ${pageToken ? 'yes' : 'no'}`);
-    } while (pageToken);
+    }
 
     console.log(`[Gmail API] Complete! Total unread messages fetched: ${allMessages.length}`);
     return allMessages;
@@ -137,20 +139,22 @@ export async function fetchAllMessages(
   console.log(`[Gmail API] Fetching ALL messages with query: "${query}"`);
 
   try {
-    do {
-      const response = await gmail.users.messages.list({
+    let hasMore = true;
+    while (hasMore) {
+      const listResponse: Common.GaxiosResponse<gmail_v1.Schema$ListMessagesResponse> = await gmail.users.messages.list({
         userId: "me",
         q: query,
         maxResults: 500, // Max allowed per request
         pageToken,
       });
 
-      const messages = response.data.messages || [];
+      const messages = listResponse.data.messages || [];
       allMessages.push(...messages);
-      pageToken = response.data.nextPageToken || undefined;
+      pageToken = listResponse.data.nextPageToken || undefined;
+      hasMore = !!pageToken;
 
       console.log(`[Gmail API] Fetched ${messages.length} messages (total: ${allMessages.length}), nextPageToken: ${pageToken ? 'yes' : 'no'}`);
-    } while (pageToken);
+    }
 
     console.log(`[Gmail API] Complete! Total messages fetched: ${allMessages.length}`);
     return allMessages;

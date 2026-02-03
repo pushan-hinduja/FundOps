@@ -75,7 +75,7 @@ export default async function DashboardPage() {
   const commitmentProgress = totalTarget > 0 ? Math.round((totalCommitted / totalTarget) * 100) : 0;
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-8 py-6 pb-36">
       {/* Chart Section - Client Component */}
       <DashboardChart
         deals={deals}

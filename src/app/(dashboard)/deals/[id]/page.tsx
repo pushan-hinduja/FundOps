@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { DealDetailClient } from "./DealDetailClient";
 import { DealLPRelationshipWithLP } from "@/lib/supabase/types";
 import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
@@ -143,7 +143,10 @@ export default async function DealDetailPage({
         from_email,
         from_name,
         subject,
-        received_at
+        received_at,
+        body_text,
+        thread_id,
+        message_id
       ),
       lp_contacts (
         id,
@@ -311,50 +314,13 @@ export default async function DealDetailPage({
           />
         </div>
 
-        {/* Sidebar - Recent Activity */}
+        {/* Sidebar - Recent Emails */}
         <div className="space-y-6">
-          {/* Deal Info */}
-          <div className="glass-card rounded-2xl p-6">
-            <h2 className="text-lg font-medium mb-4">Deal Info</h2>
-            <div className="space-y-4 text-sm">
-              {deal.description && (
-                <div className="py-3 border-b border-border">
-                  <p className="text-muted-foreground mb-1">Description</p>
-                  <p>{deal.description}</p>
-                </div>
-              )}
-              <div className="py-3 border-b border-border">
-                <p className="text-muted-foreground mb-1">Check Size Range</p>
-                <p className="font-medium">
-                  {deal.min_check_size || deal.max_check_size
-                    ? `${formatCurrency(deal.min_check_size)} - ${formatCurrency(deal.max_check_size)}`
-                    : "-"}
-                </p>
-              </div>
-              {deal.deadline && (
-                <div className="py-3 border-b border-border">
-                  <p className="text-muted-foreground mb-1">Deadline</p>
-                  <p className="font-medium">{new Date(deal.deadline).toLocaleDateString()}</p>
-                </div>
-              )}
-              {deal.memo_url && (
-                <div className="py-3">
-                  <a
-                    href={deal.memo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-foreground hover:text-muted-foreground transition-colors font-medium"
-                  >
-                    View Memo
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Recent Emails */}
-          <EmailsWithFilters emails={relatedEmails || []} />
+          <EmailsWithFilters
+            emails={relatedEmails || []}
+            dealId={deal.id}
+            dealName={deal.name}
+          />
         </div>
       </div>
     </div>

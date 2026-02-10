@@ -2,8 +2,20 @@
 
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { EmailResponseOverlay } from "@/components/email/EmailResponseOverlay";
 
 type EmailFilter = "all" | "questions" | "interest" | "wires";
+
+interface EmailRawData {
+  id: string;
+  from_name: string | null;
+  from_email: string;
+  subject: string | null;
+  received_at: string;
+  body_text: string | null;
+  thread_id: string | null;
+  message_id: string | null;
+}
 
 interface ParsedEmail {
   id: string;
@@ -13,20 +25,22 @@ interface ParsedEmail {
   extracted_questions: string[] | null;
   has_wire_details: boolean | null;
   processing_status: string | null;
-  emails_raw: {
-    from_name: string | null;
-    from_email: string;
-    subject: string | null;
-    received_at: string;
-  } | null;
+  emails_raw: EmailRawData | null;
   lp_contacts: {
     name: string;
     firm: string | null;
   } | null;
 }
 
+interface SelectedQuestion {
+  email: EmailRawData;
+  question: string;
+}
+
 interface EmailsWithFiltersProps {
   emails: ParsedEmail[];
+  dealId?: string;
+  dealName?: string;
 }
 
 function getIntentDisplay(intent: string): { label: string; color: string } {
@@ -59,8 +73,27 @@ function getIntentDisplay(intent: string): { label: string; color: string } {
   }
 }
 
-export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
+export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFiltersProps) {
   const [activeFilter, setActiveFilter] = useState<EmailFilter>("all");
+  const [selectedQuestion, setSelectedQuestion] = useState<SelectedQuestion | null>(null);
+
+  const handleQuestionClick = (email: ParsedEmail, question: string) => {
+    if (!dealId || !dealName || !email.emails_raw) return;
+
+    setSelectedQuestion({
+      email: {
+        id: email.emails_raw.id,
+        from_email: email.emails_raw.from_email,
+        from_name: email.emails_raw.from_name,
+        subject: email.emails_raw.subject,
+        received_at: email.emails_raw.received_at,
+        body_text: email.emails_raw.body_text || null,
+        thread_id: email.emails_raw.thread_id || null,
+        message_id: email.emails_raw.message_id || null,
+      },
+      question,
+    });
+  };
 
   // Filter emails based on active filter
   const filteredEmails = emails.filter((email) => {
@@ -85,9 +118,9 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
   ];
 
   return (
-    <div className="glass-card rounded-2xl p-6">
+    <div className="glass-card rounded-2xl overflow-hidden">
       {/* Header with filters */}
-      <div className="mb-4">
+      <div className="px-6 py-4 border-b border-border">
         <h2 className="text-lg font-medium mb-3">
           Related Emails ({filteredEmails.length})
         </h2>
@@ -113,11 +146,11 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
 
       {/* Email List */}
       {filteredEmails.length > 0 ? (
-        <div className="space-y-4">
+        <div className="divide-y divide-border">
           {filteredEmails.slice(0, 10).map((parsed) => (
             <div
               key={parsed.id}
-              className="glass-list-item p-4 rounded-xl"
+              className="px-6 py-4"
             >
               {/* Header */}
               <div className="flex items-start justify-between mb-2">
@@ -133,7 +166,7 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
                     </p>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
                   {parsed.emails_raw?.received_at &&
                     formatDistanceToNow(new Date(parsed.emails_raw.received_at), {
                       addSuffix: true,
@@ -189,7 +222,16 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
                     </p>
                     <ul className="text-xs space-y-1">
                       {parsed.extracted_questions.slice(0, 3).map((q, i) => (
-                        <li key={i} className="text-foreground">
+                        <li
+                          key={i}
+                          className={`text-foreground ${
+                            dealId && dealName
+                              ? "cursor-pointer hover:bg-secondary/50 rounded px-2 py-1 -mx-2 transition-colors"
+                              : ""
+                          }`}
+                          onClick={() => dealId && dealName && handleQuestionClick(parsed, q)}
+                          title={dealId && dealName ? "Click to reply" : undefined}
+                        >
                           • {q}
                         </li>
                       ))}
@@ -205,7 +247,7 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-8">
+        <div className="text-center py-8 px-6">
           <p className="text-sm text-muted-foreground mb-3">
             {activeFilter === "all"
               ? "No emails matched to this deal yet."
@@ -217,6 +259,17 @@ export function EmailsWithFilters({ emails }: EmailsWithFiltersProps) {
             </p>
           )}
         </div>
+      )}
+
+      {/* Email Response Overlay */}
+      {selectedQuestion && dealId && dealName && (
+        <EmailResponseOverlay
+          email={selectedQuestion.email}
+          question={selectedQuestion.question}
+          dealId={dealId}
+          dealName={dealName}
+          onClose={() => setSelectedQuestion(null)}
+        />
       )}
     </div>
   );

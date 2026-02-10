@@ -376,3 +376,50 @@ export interface CloseReadinessMetrics {
     amount: number;
   }[];
 }
+
+// ============================================
+// AI Email Response Types
+// ============================================
+
+export type ResponseTone = "professional" | "friendly" | "formal" | "concise";
+
+export interface UserSettings {
+  id: string;
+  user_id: string;
+  settings: {
+    ai_response_tone?: ResponseTone;
+    [key: string]: unknown;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailResponse {
+  id: string;
+  organization_id: string;
+  original_email_id: string;
+  question_text: string;
+  ai_generated_response: string;
+  final_response: string;
+  sent_at: string | null;
+  sent_by: string | null;
+  gmail_message_id: string | null;
+  gmail_thread_id: string | null;
+  tone_used: ResponseTone | null;
+  deal_context: {
+    deal_id: string;
+    deal_name: string;
+    company_name: string | null;
+    target_raise: number | null;
+    fee_percent: number | null;
+    carry_percent: number | null;
+  } | null;
+  created_at: string;
+}
+
+export const RESPONSE_TONE_LABELS: Record<ResponseTone, string> = {
+  professional: "Professional",
+  friendly: "Friendly",
+  formal: "Formal",
+  concise: "Concise",
+};

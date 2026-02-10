@@ -183,9 +183,9 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
         <div className="relative">
           <div className="flex items-center gap-2 bg-primary rounded-2xl p-2 shadow-lg">
             {/* Icon Button */}
-            <button className="w-12 h-12 rounded-xl bg-[hsl(var(--accent))] flex items-center justify-center flex-shrink-0 hover:opacity-90 transition-opacity">
+            <div className="w-12 h-12 rounded-xl bg-[#1e3a5f] flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-5 h-5 text-white" />
-            </button>
+            </div>
 
             {/* Input */}
             <form onSubmit={handleSubmit} className="flex-1">
@@ -331,9 +331,9 @@ function DashboardAISearch({
         {/* Main Search Bar - used for all messages */}
         <div className="flex items-center gap-2 bg-primary rounded-2xl p-2">
           {/* Icon Button */}
-          <button className="w-12 h-12 rounded-xl bg-[hsl(var(--accent))] flex items-center justify-center flex-shrink-0 hover:opacity-90 transition-opacity">
+          <div className="w-12 h-12 rounded-xl bg-[#1e3a5f] flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-5 h-5 text-white" />
-          </button>
+          </div>
 
           {/* Input */}
           <form onSubmit={handleSubmit} className="flex-1">

@@ -381,14 +381,11 @@ export default function DashboardChart({
                       transform: hoveredIndex > 40 ? "translateX(-100%)" : hoveredIndex < 10 ? "translateX(0%)" : "translateX(-50%)",
                     }}
                   >
-                    <div className="flex items-center justify-between gap-4 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-base">{formatCurrency(hoveredData.committed)}</span>
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-[hsl(var(--success))] text-white">
-                          {hoveredProgress}%
-                        </span>
-                      </div>
-                      <span className="text-muted-foreground text-sm">&times;</span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-base">{formatCurrency(hoveredData.committed)}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-[hsl(var(--success))] text-white">
+                        {hoveredProgress}%
+                      </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {formatCurrency(hoveredData.interested)} interested

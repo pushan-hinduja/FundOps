@@ -2,70 +2,89 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSyncContext } from "./SyncContext";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 export function BackfillSyncButton() {
-  const [isBackfilling, setIsBackfilling] = useState(false);
-  const [result, setResult] = useState<{
-    success: boolean;
-    message: string;
-    stats?: {
-      totalGmailMessages: number;
-      newEmailsIngested: number;
-      emailsParsed: number;
-      dealsMatched: number;
-    };
-  } | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const { isSyncing, startSync, updateProgress, completeSync, failSync } = useSyncContext();
   const router = useRouter();
 
   const handleBackfill = async () => {
-    const confirmed = confirm(
-      "This will fetch ALL emails from your Gmail inbox and parse them with AI. This may take several minutes and use API credits. Continue?"
-    );
-
-    if (!confirmed) return;
-
-    setIsBackfilling(true);
-    setResult(null);
+    startSync("backfill");
 
     try {
-      const response = await fetch("/api/emails/backfill", {
-        method: "POST",
+      // Use SSE endpoint for real-time progress
+      const eventSource = new EventSource("/api/emails/backfill-stream");
+
+      eventSource.addEventListener("status", (e) => {
+        const data = JSON.parse(e.data);
+        updateProgress({
+          status: data.status,
+          message: data.message,
+          total: data.total,
+        });
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Backfill failed");
-      }
-
-      setResult({
-        success: true,
-        message: data.message || "Backfill complete",
-        stats: data.stats,
+      eventSource.addEventListener("progress", (e) => {
+        const data = JSON.parse(e.data);
+        updateProgress({
+          status: "processing",
+          message:
+            data.phase === "ingest"
+              ? `Ingesting emails (${data.newEmailsIngested} new)...`
+              : `Parsing with AI (${data.dealsMatched} deals matched)...`,
+          current: data.current,
+          total: data.total,
+        });
       });
 
-      // Refresh the page to show new data
-      router.refresh();
-    } catch (err: any) {
-      setResult({
-        success: false,
-        message: err.message || "Backfill failed",
+      eventSource.addEventListener("complete", (e) => {
+        const data = JSON.parse(e.data);
+        eventSource.close();
+        completeSync(data.stats);
+        router.refresh();
       });
-    } finally {
-      setIsBackfilling(false);
+
+      eventSource.addEventListener("error", (e) => {
+        // Check if this is a real error or just the stream closing
+        if (eventSource.readyState === EventSource.CLOSED) {
+          return;
+        }
+
+        try {
+          const data = JSON.parse((e as MessageEvent).data);
+          failSync(data.message || "Backfill failed");
+        } catch {
+          failSync("Connection lost. Please try again.");
+        }
+        eventSource.close();
+      });
+
+      // Handle connection errors
+      eventSource.onerror = () => {
+        if (eventSource.readyState === EventSource.CONNECTING) {
+          // Still trying to connect, don't fail yet
+          return;
+        }
+        eventSource.close();
+      };
+    } catch (err: unknown) {
+      const error = err as Error;
+      failSync(error.message || "Backfill failed");
     }
   };
 
   return (
-    <div className="relative">
+    <>
       <button
-        onClick={handleBackfill}
-        disabled={isBackfilling}
-        className="px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50"
+        onClick={() => setShowConfirm(true)}
+        disabled={isSyncing}
+        className="px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         title="Parse ALL emails from inbox with AI"
       >
         <svg
-          className={`h-4 w-4 ${isBackfilling ? "animate-spin" : ""}`}
+          className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -78,36 +97,25 @@ export function BackfillSyncButton() {
             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
           />
         </svg>
-        {isBackfilling ? "Backfilling..." : "Backfill All Emails"}
+        Backfill All Emails
       </button>
 
-      {result && (
-        <div
-          className={`absolute top-full right-0 mt-2 p-4 rounded-xl text-sm w-72 z-50 glass-menu ${
-            result.success
-              ? "text-[hsl(var(--success))]"
-              : "text-destructive"
-          }`}
-        >
-          <div className="flex justify-between items-start">
-            <p className="font-medium">{result.message}</p>
-            <button
-              onClick={() => setResult(null)}
-              className="text-muted-foreground hover:text-foreground ml-2 transition-colors"
-            >
-              ×
-            </button>
-          </div>
-          {result.stats && (
-            <ul className="mt-2 text-xs text-muted-foreground space-y-1">
-              <li>Gmail messages: {result.stats.totalGmailMessages}</li>
-              <li>New emails ingested: {result.stats.newEmailsIngested}</li>
-              <li>Emails parsed: {result.stats.emailsParsed}</li>
-              <li>Deals matched: {result.stats.dealsMatched}</li>
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleBackfill}
+        variant="warning"
+        title="Backfill All Emails?"
+        description={`This will reprocess ALL emails in your inbox with AI parsing. This operation:
+
+• May take several minutes to complete
+• Uses AI credits for each email parsed
+• Should only be done if there are issues with email processing
+
+Only proceed if you're experiencing problems with email sync or need to re-analyze all emails.`}
+        confirmText="Start Backfill"
+        cancelText="Cancel"
+      />
+    </>
   );
 }

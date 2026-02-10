@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 interface Deal {
   id: string;
@@ -136,11 +137,9 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
           {/* Target Raise */}
           <div>
             <label className="block text-sm font-medium mb-1">Target Raise (K)</label>
-            <input
-              type="number"
-              step="0.1"
+            <CurrencyInput
               value={formData.target_raise}
-              onChange={(e) => setFormData({ ...formData, target_raise: e.target.value })}
+              onChange={(val) => setFormData({ ...formData, target_raise: val })}
               className="w-full px-3 py-2 border border-border rounded-lg bg-background"
               placeholder="e.g., 5000 for $5M"
             />
@@ -150,21 +149,17 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Min Check (K)</label>
-              <input
-                type="number"
-                step="0.1"
+              <CurrencyInput
                 value={formData.min_check_size}
-                onChange={(e) => setFormData({ ...formData, min_check_size: e.target.value })}
+                onChange={(val) => setFormData({ ...formData, min_check_size: val })}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Max Check (K)</label>
-              <input
-                type="number"
-                step="0.1"
+              <CurrencyInput
                 value={formData.max_check_size}
-                onChange={(e) => setFormData({ ...formData, max_check_size: e.target.value })}
+                onChange={(val) => setFormData({ ...formData, max_check_size: val })}
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background"
               />
             </div>

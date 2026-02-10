@@ -272,3 +272,119 @@ function hasMessageAttachments(payload: gmail_v1.Schema$MessagePart | undefined)
 
   return false;
 }
+
+export interface SendEmailOptions {
+  to: string;
+  subject: string;
+  body: string;
+  inReplyTo?: string;
+  references?: string;
+  threadId?: string;
+}
+
+export interface SendEmailResult {
+  messageId: string;
+  threadId: string;
+}
+
+/**
+ * Create a MIME message for sending via Gmail API
+ * Includes proper headers for email threading when replying
+ */
+function createMimeMessage(options: SendEmailOptions & { from: string }): string {
+  const { to, subject, body, from, inReplyTo, references } = options;
+
+  const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  let headers = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ];
+
+  // Add threading headers if this is a reply
+  if (inReplyTo) {
+    headers.push(`In-Reply-To: ${inReplyTo}`);
+  }
+  if (references) {
+    headers.push(`References: ${references}`);
+  }
+
+  const messageParts = [
+    headers.join("\r\n"),
+    "",
+    `--${boundary}`,
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: 7bit",
+    "",
+    body,
+    "",
+    `--${boundary}`,
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: 7bit",
+    "",
+    body.replace(/\n/g, "<br>"),
+    "",
+    `--${boundary}--`,
+  ];
+
+  return messageParts.join("\r\n");
+}
+
+/**
+ * Send an email reply via Gmail API
+ * Supports threading when inReplyTo and threadId are provided
+ */
+export async function sendEmailReply(
+  gmail: gmail_v1.Gmail,
+  fromEmail: string,
+  options: SendEmailOptions
+): Promise<SendEmailResult> {
+  const mimeMessage = createMimeMessage({
+    ...options,
+    from: fromEmail,
+  });
+
+  // Base64url encode the message
+  const encodedMessage = Buffer.from(mimeMessage)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  console.log(`[Gmail API] Sending email reply to ${options.to}, subject: "${options.subject}"`);
+  if (options.threadId) {
+    console.log(`[Gmail API] Threading with threadId: ${options.threadId}`);
+  }
+
+  try {
+    const response = await gmail.users.messages.send({
+      userId: "me",
+      requestBody: {
+        raw: encodedMessage,
+        threadId: options.threadId,
+      },
+    });
+
+    if (!response.data.id || !response.data.threadId) {
+      throw new Error("Failed to get message ID from Gmail response");
+    }
+
+    console.log(`[Gmail API] Email sent successfully. MessageId: ${response.data.id}, ThreadId: ${response.data.threadId}`);
+
+    return {
+      messageId: response.data.id,
+      threadId: response.data.threadId,
+    };
+  } catch (error: unknown) {
+    const err = error as { message?: string; response?: { status?: number; data?: unknown } };
+    console.error(`[Gmail API] Error sending email:`, err.message);
+    if (err.response) {
+      console.error(`[Gmail API] Response status: ${err.response.status}`);
+      console.error(`[Gmail API] Response data:`, JSON.stringify(err.response.data));
+    }
+    throw error;
+  }
+}

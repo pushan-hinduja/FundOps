@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 export default function NewDealPage() {
   const [name, setName] = useState("");
@@ -128,13 +129,12 @@ export default function NewDealPage() {
             <label htmlFor="targetRaise" className="block text-sm font-medium mb-2">
               Target Raise ($)
             </label>
-            <input
+            <CurrencyInput
               id="targetRaise"
-              type="number"
               value={targetRaise}
-              onChange={(e) => setTargetRaise(e.target.value)}
+              onChange={(val) => setTargetRaise(val)}
               className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              placeholder="5000000"
+              placeholder="5,000,000"
             />
           </div>
 
@@ -142,13 +142,12 @@ export default function NewDealPage() {
             <label htmlFor="minCheckSize" className="block text-sm font-medium mb-2">
               Min Check ($)
             </label>
-            <input
+            <CurrencyInput
               id="minCheckSize"
-              type="number"
               value={minCheckSize}
-              onChange={(e) => setMinCheckSize(e.target.value)}
+              onChange={(val) => setMinCheckSize(val)}
               className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              placeholder="50000"
+              placeholder="50,000"
             />
           </div>
 
@@ -156,13 +155,12 @@ export default function NewDealPage() {
             <label htmlFor="maxCheckSize" className="block text-sm font-medium mb-2">
               Max Check ($)
             </label>
-            <input
+            <CurrencyInput
               id="maxCheckSize"
-              type="number"
               value={maxCheckSize}
-              onChange={(e) => setMaxCheckSize(e.target.value)}
+              onChange={(val) => setMaxCheckSize(val)}
               className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              placeholder="500000"
+              placeholder="500,000"
             />
           </div>
         </div>

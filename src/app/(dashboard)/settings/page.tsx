@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { User, Building2, Mail, ArrowRight } from "lucide-react";
+import { AIResponseSettings } from "@/components/settings/AIResponseSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +117,9 @@ export default async function SettingsPage() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+
+        {/* AI Response Settings */}
+        <AIResponseSettings />
       </div>
     </div>
   );

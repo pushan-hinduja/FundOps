@@ -95,3 +95,124 @@ Return ONLY this JSON structure, no other text:
 
 Now analyze the email and return JSON:`;
 }
+
+export type ResponseTone = "professional" | "friendly" | "formal" | "concise";
+
+export interface EmailResponseContext {
+  // Original email details
+  originalEmail: {
+    fromEmail: string;
+    fromName: string | null;
+    subject: string | null;
+    bodyText: string | null;
+    question: string;
+  };
+  // Deal context
+  deal: {
+    name: string;
+    companyName: string | null;
+    targetRaise: number | null;
+    minCheckSize: number | null;
+    maxCheckSize: number | null;
+    feePercent: number | null;
+    carryPercent: number | null;
+    deadline: string | null;
+    description: string | null;
+  };
+  // LP-specific context (if available)
+  lpTerms?: {
+    committedAmount: number | null;
+    allocatedAmount: number | null;
+    specialFeePercent: number | null;
+    specialCarryPercent: number | null;
+    sideLetterTerms: string | null;
+    hasMfnRights: boolean;
+    hasCoinvestRights: boolean;
+  };
+  // User's name for signing
+  senderName: string;
+  // Tone preference
+  tone: ResponseTone;
+}
+
+const TONE_INSTRUCTIONS: Record<ResponseTone, string> = {
+  professional: "Write in a professional, business-appropriate tone. Be clear, respectful, and thorough while maintaining a warm but not overly casual style.",
+  friendly: "Write in a warm, approachable tone. Be personable and conversational while still maintaining professionalism. Use a slightly more casual style.",
+  formal: "Write in a formal, traditional business tone. Use proper salutations and closings. Be precise and respectful, avoiding casual language.",
+  concise: "Write in a brief, direct tone. Get to the point quickly while remaining polite. Use short sentences and bullet points where appropriate.",
+};
+
+export function buildEmailResponsePrompt(context: EmailResponseContext): string {
+  const { originalEmail, deal, lpTerms, senderName, tone } = context;
+
+  // Format currency helper
+  const formatCurrency = (amount: number | null) => {
+    if (!amount) return "not specified";
+    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+    return `$${amount}`;
+  };
+
+  // Build deal terms section
+  let dealTermsSection = `DEAL INFORMATION:
+- Deal Name: ${deal.name}
+- Company: ${deal.companyName || "Not specified"}
+- Target Raise: ${formatCurrency(deal.targetRaise)}
+- Check Size Range: ${formatCurrency(deal.minCheckSize)} - ${formatCurrency(deal.maxCheckSize)}
+- Management Fee: ${deal.feePercent ? `${deal.feePercent}%` : "Not specified"}
+- Carry: ${deal.carryPercent ? `${deal.carryPercent}%` : "Not specified"}
+- Deadline: ${deal.deadline ? new Date(deal.deadline).toLocaleDateString() : "Not specified"}`;
+
+  if (deal.description) {
+    dealTermsSection += `\n- Description: ${deal.description}`;
+  }
+
+  // Build LP-specific terms section if available
+  let lpTermsSection = "";
+  if (lpTerms) {
+    lpTermsSection = `
+
+LP-SPECIFIC TERMS FOR THIS INVESTOR:
+- Committed Amount: ${formatCurrency(lpTerms.committedAmount)}
+- Allocated Amount: ${formatCurrency(lpTerms.allocatedAmount)}
+- Special Management Fee: ${lpTerms.specialFeePercent !== null ? `${lpTerms.specialFeePercent}%` : "Standard terms"}
+- Special Carry: ${lpTerms.specialCarryPercent !== null ? `${lpTerms.specialCarryPercent}%` : "Standard terms"}
+- MFN Rights: ${lpTerms.hasMfnRights ? "Yes" : "No"}
+- Co-invest Rights: ${lpTerms.hasCoinvestRights ? "Yes" : "No"}`;
+
+    if (lpTerms.sideLetterTerms) {
+      lpTermsSection += `\n- Side Letter Terms: ${lpTerms.sideLetterTerms}`;
+    }
+  }
+
+  return `You are an AI assistant helping a fund manager respond to investor (LP) questions about a venture capital deal.
+
+${dealTermsSection}${lpTermsSection}
+
+ORIGINAL EMAIL CONTEXT:
+---
+From: ${originalEmail.fromName || originalEmail.fromEmail} <${originalEmail.fromEmail}>
+Subject: ${originalEmail.subject || "(no subject)"}
+Body:
+"""
+${originalEmail.bodyText || "(empty body)"}
+"""
+---
+
+SPECIFIC QUESTION TO ADDRESS:
+"${originalEmail.question}"
+
+RESPONSE TONE:
+${TONE_INSTRUCTIONS[tone]}
+
+INSTRUCTIONS:
+1. Write a response that directly addresses the investor's question
+2. Use the deal terms and LP-specific terms (if available) to provide accurate information
+3. If the question asks about something not covered in the provided context, acknowledge this and offer to follow up
+4. Be helpful and informative without over-promising or making commitments the fund manager hasn't authorized
+5. Do NOT include a subject line - just write the email body
+6. End with an appropriate sign-off using the name: ${senderName}
+7. Keep the response focused and relevant to the question asked
+
+Write the email response now:`;
+}

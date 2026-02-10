@@ -1,24 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSyncContext } from "./SyncContext";
 
 export function EmailSyncButton() {
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [result, setResult] = useState<{
-    success: boolean;
-    message: string;
-    stats?: {
-      emailsIngested: number;
-      emailsParsed: number;
-      suggestedContactsAdded: number;
-    };
-  } | null>(null);
+  const { isSyncing, startSync, updateProgress, completeSync, failSync } = useSyncContext();
   const router = useRouter();
 
   const handleSync = async () => {
-    setIsSyncing(true);
-    setResult(null);
+    startSync("sync");
+    updateProgress({ status: "fetching", message: "Fetching unread emails..." });
 
     try {
       const response = await fetch("/api/cron/poll-inbox", {
@@ -31,75 +22,42 @@ export function EmailSyncButton() {
         throw new Error(data.error || "Sync failed");
       }
 
-      setResult({
-        success: true,
-        message: data.message || "Sync complete",
-        stats: data.stats,
+      completeSync({
+        emailsIngested: data.stats?.emailsIngested || 0,
+        emailsParsed: data.stats?.emailsParsed || 0,
+        suggestedContactsAdded: data.stats?.suggestedContactsAdded || 0,
       });
 
       // Refresh the page to show new data
       router.refresh();
-    } catch (err: any) {
-      setResult({
-        success: false,
-        message: err.message || "Sync failed",
-      });
-    } finally {
-      setIsSyncing(false);
+    } catch (err: unknown) {
+      const error = err as Error;
+      failSync(error.message || "Sync failed");
     }
   };
 
   return (
-    <div className="relative">
-      <button
-        onClick={handleSync}
-        disabled={isSyncing}
-        className="px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50"
-        title="Sync only unread emails from inbox"
+    <button
+      onClick={handleSync}
+      disabled={isSyncing}
+      className="px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      title="Sync only unread emails from inbox"
+    >
+      <svg
+        className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
       >
-        <svg
-          className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
-        </svg>
-        {isSyncing ? "Syncing..." : "Sync Unread"}
-      </button>
-
-      {result && (
-        <div
-          className={`absolute top-full right-0 mt-2 p-4 rounded-xl text-sm w-64 z-50 glass-menu ${
-            result.success
-              ? "text-[hsl(var(--success))]"
-              : "text-destructive"
-          }`}
-        >
-          <div className="flex justify-between items-start">
-            <p className="font-medium">{result.message}</p>
-            <button
-              onClick={() => setResult(null)}
-              className="text-muted-foreground hover:text-foreground ml-2 transition-colors"
-            >
-              ×
-            </button>
-          </div>
-          {result.stats && (
-            <ul className="mt-2 text-xs text-muted-foreground space-y-1">
-              <li>Emails ingested: {result.stats.emailsIngested}</li>
-              <li>Emails parsed: {result.stats.emailsParsed}</li>
-              <li>Suggested contacts: {result.stats.suggestedContactsAdded}</li>
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+        />
+      </svg>
+      {isSyncing ? "Syncing..." : "Sync Unread"}
+    </button>
   );
 }

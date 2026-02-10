@@ -12,9 +12,9 @@ export const ParsedEmailSchema = z.object({
     name: z.string().nullable(),
     matched_deal_id: z.string().uuid().nullable(),
   }),
-  intent: z.enum(["interested", "committed", "declined", "question"]),
+  intent: z.enum(["interested", "committed", "declined", "question"]).nullable(),
   commitment_amount: z.number().nullable(),
-  sentiment: z.enum(["positive", "neutral", "negative", "urgent"]),
+  sentiment: z.enum(["positive", "neutral", "negative", "urgent"]).nullable(),
   questions: z.array(z.string()),
   has_wire_details: z.boolean(),
   confidence: z.object({

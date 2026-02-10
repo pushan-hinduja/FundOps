@@ -125,7 +125,7 @@ export default async function EmailSettingsPage({
         <h3 className="font-medium mb-2">How it works</h3>
         <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
           <li>Connect your Gmail account by clicking &quot;Connect Gmail&quot;</li>
-          <li>Authorize FundOps to read your emails (we only read, never send)</li>
+          <li>Authorize FundOps to read and send emails on your behalf</li>
           <li>Click &quot;Sync Emails&quot; on the LPs or Deals page to pull emails</li>
           <li>Our AI parses each email to identify LPs, deals, and intent</li>
           <li>Suggested contacts appear automatically from your emails</li>

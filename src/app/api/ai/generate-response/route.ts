@@ -1,0 +1,191 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { buildEmailResponsePrompt, ResponseTone } from "@/lib/ai/prompts";
+
+export async function POST(request: NextRequest) {
+  try {
+    const { emailId, question, dealId } = await request.json();
+
+    if (!emailId || !question || !dealId) {
+      return NextResponse.json(
+        { error: "emailId, question, and dealId are required" },
+        { status: 400 }
+      );
+    }
+
+    // Get Supabase client and user
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get user's organization and name
+    const { data: userData } = await supabase
+      .from("users")
+      .select("organization_id, name")
+      .eq("id", user.id)
+      .single();
+
+    if (!userData?.organization_id) {
+      return NextResponse.json(
+        { error: "Organization not found" },
+        { status: 404 }
+      );
+    }
+
+    // Get user's tone preference from user_settings
+    const { data: userSettings } = await supabase
+      .from("user_settings")
+      .select("settings")
+      .eq("user_id", user.id)
+      .single();
+
+    const tone: ResponseTone = userSettings?.settings?.ai_response_tone || "professional";
+
+    // Fetch the original email
+    const { data: email, error: emailError } = await supabase
+      .from("emails_raw")
+      .select("*")
+      .eq("id", emailId)
+      .eq("organization_id", userData.organization_id)
+      .single();
+
+    if (emailError || !email) {
+      return NextResponse.json(
+        { error: "Email not found" },
+        { status: 404 }
+      );
+    }
+
+    // Fetch deal details
+    const { data: deal, error: dealError } = await supabase
+      .from("deals")
+      .select("*")
+      .eq("id", dealId)
+      .eq("organization_id", userData.organization_id)
+      .single();
+
+    if (dealError || !deal) {
+      return NextResponse.json(
+        { error: "Deal not found" },
+        { status: 404 }
+      );
+    }
+
+    // Try to find LP relationship based on email sender
+    let lpTerms = undefined;
+    const { data: lpContact } = await supabase
+      .from("lp_contacts")
+      .select("id, special_fee_percent, special_carry_percent")
+      .eq("organization_id", userData.organization_id)
+      .eq("email", email.from_email)
+      .single();
+
+    if (lpContact) {
+      // Fetch LP relationship for this deal
+      const { data: relationship } = await supabase
+        .from("deal_lp_relationships")
+        .select("*")
+        .eq("deal_id", dealId)
+        .eq("lp_contact_id", lpContact.id)
+        .single();
+
+      if (relationship) {
+        lpTerms = {
+          committedAmount: relationship.committed_amount,
+          allocatedAmount: relationship.allocated_amount,
+          specialFeePercent: lpContact.special_fee_percent ?? relationship.management_fee_percent,
+          specialCarryPercent: lpContact.special_carry_percent ?? relationship.carry_percent,
+          sideLetterTerms: relationship.side_letter_terms,
+          hasMfnRights: relationship.has_mfn_rights || false,
+          hasCoinvestRights: relationship.has_coinvest_rights || false,
+        };
+      }
+    }
+
+    // Build the prompt
+    const prompt = buildEmailResponsePrompt({
+      originalEmail: {
+        fromEmail: email.from_email,
+        fromName: email.from_name,
+        subject: email.subject,
+        bodyText: email.body_text,
+        question,
+      },
+      deal: {
+        name: deal.name,
+        companyName: deal.company_name,
+        targetRaise: deal.target_raise,
+        minCheckSize: deal.min_check_size,
+        maxCheckSize: deal.max_check_size,
+        feePercent: deal.fee_percent,
+        carryPercent: deal.carry_percent,
+        deadline: deal.deadline,
+        description: deal.description,
+      },
+      lpTerms,
+      senderName: userData.name || user.email?.split("@")[0] || "Fund Manager",
+      tone,
+    });
+
+    // Check for Anthropic API key
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "AI service not configured" },
+        { status: 500 }
+      );
+    }
+
+    // Initialize Anthropic client
+    const anthropic = new Anthropic({ apiKey });
+
+    // Call Anthropic API
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+
+    // Extract text response
+    const textContent = response.content.find((block) => block.type === "text");
+    const aiResponse = textContent
+      ? (textContent as { type: "text"; text: string }).text
+      : "";
+
+    if (!aiResponse) {
+      return NextResponse.json(
+        { error: "Failed to generate response" },
+        { status: 500 }
+      );
+    }
+
+    // Return the generated response along with context
+    return NextResponse.json({
+      response: aiResponse,
+      context: {
+        dealName: deal.name,
+        lpEmail: email.from_email,
+        lpName: email.from_name,
+        tone,
+        hasLpSpecificTerms: !!lpTerms,
+      },
+    });
+  } catch (error) {
+    console.error("AI Generate Response error:", error);
+    return NextResponse.json(
+      { error: "Failed to generate response" },
+      { status: 500 }
+    );
+  }
+}

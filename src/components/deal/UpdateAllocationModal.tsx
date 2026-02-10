@@ -7,6 +7,7 @@ import {
   WIRE_STATUS_LABELS,
 } from "@/lib/supabase/types";
 import { X, Loader2 } from "lucide-react";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 interface UpdateAllocationModalProps {
   isOpen: boolean;
@@ -88,11 +89,10 @@ export function UpdateAllocationModal({
               <label className="block text-sm font-medium mb-1.5">
                 Reserved Amount ($)
               </label>
-              <input
-                type="number"
+              <CurrencyInput
                 value={formData.reserved_amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, reserved_amount: e.target.value })
+                onChange={(val) =>
+                  setFormData({ ...formData, reserved_amount: val })
                 }
                 placeholder="Soft commitment"
                 className="w-full px-4 py-2.5 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -105,11 +105,10 @@ export function UpdateAllocationModal({
               <label className="block text-sm font-medium mb-1.5">
                 Committed Amount ($)
               </label>
-              <input
-                type="number"
+              <CurrencyInput
                 value={formData.committed_amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, committed_amount: e.target.value })
+                onChange={(val) =>
+                  setFormData({ ...formData, committed_amount: val })
                 }
                 placeholder="Signed commitment"
                 className="w-full px-4 py-2.5 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -125,11 +124,10 @@ export function UpdateAllocationModal({
               <label className="block text-sm font-medium mb-1.5">
                 Allocated Amount ($)
               </label>
-              <input
-                type="number"
+              <CurrencyInput
                 value={formData.allocated_amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, allocated_amount: e.target.value })
+                onChange={(val) =>
+                  setFormData({ ...formData, allocated_amount: val })
                 }
                 placeholder="Final allocation"
                 className="w-full px-4 py-2.5 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -142,13 +140,12 @@ export function UpdateAllocationModal({
               <label className="block text-sm font-medium mb-1.5">
                 Wire Amount Received ($)
               </label>
-              <input
-                type="number"
+              <CurrencyInput
                 value={formData.wire_amount_received}
-                onChange={(e) =>
+                onChange={(val) =>
                   setFormData({
                     ...formData,
-                    wire_amount_received: e.target.value,
+                    wire_amount_received: val,
                   })
                 }
                 placeholder="Amount received"

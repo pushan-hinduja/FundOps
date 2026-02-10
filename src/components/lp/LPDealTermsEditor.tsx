@@ -18,6 +18,7 @@ import {
   Pencil,
 } from "lucide-react";
 import Link from "next/link";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 interface LPDealTermsEditorProps {
   relationships: DealLPRelationshipWithDeal[];
@@ -190,18 +191,17 @@ export function LPDealTermsEditor({
                         <label className="block text-xs text-muted-foreground mb-1">
                           Minimum Commitment
                         </label>
-                        <input
-                          type="number"
+                        <CurrencyInput
                           value={formData.minimum_commitment || ""}
-                          onChange={(e) =>
+                          onChange={(val) =>
                             setFormData({
                               ...formData,
-                              minimum_commitment: e.target.value
-                                ? parseFloat(e.target.value)
+                              minimum_commitment: val
+                                ? parseFloat(val)
                                 : null,
                             })
                           }
-                          placeholder="e.g., 100000"
+                          placeholder="e.g., 100,000"
                           className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
                         />
                       </div>

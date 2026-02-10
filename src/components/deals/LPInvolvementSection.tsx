@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 type LPFilter = "all" | "interested" | "committed" | "allocated";
 
@@ -120,9 +121,9 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6">
+    <div className="glass-card rounded-2xl overflow-hidden">
       {/* Header with filters */}
-      <div className="mb-4">
+      <div className="px-6 py-4 border-b border-border">
         <h2 className="text-lg font-medium mb-3">LP Involvement ({filteredLPs.length})</h2>
 
         {/* Filter Pills */}
@@ -146,11 +147,11 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
 
       {/* LP List */}
       {filteredLPs.length > 0 ? (
-        <div className="space-y-3">
+        <div className="divide-y divide-border">
           {filteredLPs.map((rel) => (
             <div
               key={rel.id}
-              className="flex items-center justify-between p-4 bg-white dark:bg-background rounded-xl border border-border/50"
+              className="flex items-center justify-between px-6 py-4"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -220,12 +221,11 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
                   <div>
                     {allocatingLpId === rel.id ? (
                       <div className="flex items-center gap-2">
-                        <input
-                          type="number"
+                        <CurrencyInput
                           placeholder="Amount (K)"
                           value={allocationAmount}
-                          onChange={(e) => setAllocationAmount(e.target.value)}
-                          className="w-24 px-2 py-1 text-sm border border-border rounded-lg bg-background"
+                          onChange={(val) => setAllocationAmount(val)}
+                          className="w-28 px-2 py-1 text-sm border border-border rounded-lg bg-background"
                           autoFocus
                         />
                         <button
@@ -263,7 +263,7 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
           ))}
         </div>
       ) : (
-        <div className="text-center py-8">
+        <div className="text-center py-8 px-6">
           <p className="text-sm text-muted-foreground">
             {activeFilter === "all"
               ? "No LP involvement recorded yet."

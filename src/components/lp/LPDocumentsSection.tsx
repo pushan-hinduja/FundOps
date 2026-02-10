@@ -285,7 +285,7 @@ export function LPDocumentsSection({
                   onChange={(e) =>
                     handleStatusChange(doc.id, e.target.value as DocumentStatus)
                   }
-                  className={`px-2.5 py-1 text-xs font-medium rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-primary/20 ${getStatusColor(
+                  className={`select-inline px-2.5 py-1 text-xs font-medium rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-primary/20 ${getStatusColor(
                     doc.status
                   )}`}
                 >

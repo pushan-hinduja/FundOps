@@ -1,11 +1,79 @@
 "use client";
 
 import { CloseReadinessMetrics } from "@/lib/supabase/types";
-import { FileCheck, DollarSign, PieChart, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 interface CloseReadinessDashboardProps {
   metrics: CloseReadinessMetrics;
+}
+
+function DonutChart({
+  percent,
+  label,
+  detail,
+  size = 100,
+  strokeWidth = 8,
+}: {
+  percent: number;
+  label: string;
+  detail: string;
+  size?: number;
+  strokeWidth?: number;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clampedPercent = Math.min(Math.max(percent, 0), 100);
+  const offset = circumference - (clampedPercent / 100) * circumference;
+
+  const getColor = (pct: number) => {
+    if (pct >= 80) return "#4ade80"; // bright green
+    if (pct >= 50) return "#facc15"; // bright yellow
+    return "#e5e7eb"; // light gray
+  };
+
+  const color = getColor(clampedPercent);
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          {/* Background track */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="rgba(255,255,255,0.15)"
+            strokeWidth={strokeWidth}
+          />
+          {/* Progress arc */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="transition-all duration-700 ease-out"
+          />
+        </svg>
+        {/* Center text */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-lg font-semibold" style={{ color }}>
+            {Math.round(clampedPercent)}%
+          </span>
+        </div>
+      </div>
+      <div className="text-center">
+        <p className="text-xs font-medium text-white/90">{label}</p>
+        <p className="text-[10px] text-white/60 mt-0.5">{detail}</p>
+      </div>
+    </div>
+  );
 }
 
 export function CloseReadinessDashboard({ metrics }: CloseReadinessDashboardProps) {
@@ -19,121 +87,59 @@ export function CloseReadinessDashboard({ metrics }: CloseReadinessDashboardProp
     }).format(amount);
   };
 
-  const getProgressColor = (percent: number) => {
-    if (percent >= 80) return "bg-[hsl(var(--success))]";
-    if (percent >= 50) return "bg-yellow-500";
-    return "bg-muted-foreground";
-  };
-
   return (
-    <div className="glass-card rounded-2xl p-6 mb-6">
-      <h2 className="text-lg font-medium mb-4">Close Readiness</h2>
+    <div className="glass-card-readiness rounded-2xl p-6 h-full">
+      <h2 className="text-lg font-medium mb-6 text-white">Close Readiness</h2>
 
-      <div className="grid grid-cols-3 gap-6 mb-6">
-        {/* Docs Received */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center">
-              <FileCheck className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Docs Received</p>
-              <p className="text-lg font-semibold">
-                {Math.round(metrics.docsReceivedPercent)}%
-              </p>
-            </div>
-          </div>
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
-            <div
-              className={`h-full transition-all ${getProgressColor(metrics.docsReceivedPercent)}`}
-              style={{ width: `${Math.min(metrics.docsReceivedPercent, 100)}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {metrics.lpsWithDocs} of {metrics.totalLPs} LPs
-          </p>
-        </div>
-
-        {/* Wired */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Wired</p>
-              <p className="text-lg font-semibold">
-                {Math.round(metrics.wiredPercent)}%
-              </p>
-            </div>
-          </div>
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
-            <div
-              className={`h-full transition-all ${getProgressColor(metrics.wiredPercent)}`}
-              style={{ width: `${Math.min(metrics.wiredPercent, 100)}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {formatCurrency(metrics.totalWired)} of {formatCurrency(metrics.totalAllocated)}
-          </p>
-        </div>
-
-        {/* Allocated */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center">
-              <PieChart className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Allocated</p>
-              <p className="text-lg font-semibold">
-                {Math.round(metrics.allocatedPercent)}%
-              </p>
-            </div>
-          </div>
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
-            <div
-              className={`h-full transition-all ${getProgressColor(metrics.allocatedPercent)}`}
-              style={{ width: `${Math.min(metrics.allocatedPercent, 100)}%` }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {formatCurrency(metrics.totalAllocated)} of {formatCurrency(metrics.targetRaise)} target
-          </p>
-        </div>
+      <div className="flex items-start justify-around mb-6">
+        <DonutChart
+          percent={metrics.docsReceivedPercent}
+          label="Docs Received"
+          detail={`${metrics.lpsWithDocs} of ${metrics.totalLPs} LPs`}
+        />
+        <DonutChart
+          percent={metrics.wiredPercent}
+          label="Wired"
+          detail={`${formatCurrency(metrics.totalWired)} of ${formatCurrency(metrics.totalAllocated)}`}
+        />
+        <DonutChart
+          percent={metrics.allocatedPercent}
+          label="Allocated"
+          detail={`${formatCurrency(metrics.totalAllocated)} of ${formatCurrency(metrics.targetRaise)}`}
+        />
       </div>
 
       {/* Pending Items */}
       {metrics.pendingItems.length > 0 && (
-        <div className="border-t border-border pt-4">
+        <div className="border-t border-white/10 pt-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-4 h-4 text-yellow-500" />
-            <p className="text-sm font-medium">Pending Items ({metrics.pendingItems.length})</p>
+            <AlertCircle className="w-4 h-4 text-yellow-400" />
+            <p className="text-sm font-medium text-white">Pending Items ({metrics.pendingItems.length})</p>
           </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {metrics.pendingItems.map((item) => (
               <div
                 key={item.lpId}
-                className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg text-sm"
+                className="flex items-center justify-between p-3 bg-white/5 rounded-lg text-sm"
               >
                 <Link
                   href={`/lps/${item.lpId}`}
-                  className="font-medium hover:text-muted-foreground transition-colors"
+                  className="font-medium text-white hover:text-white/80 transition-colors"
                 >
                   {item.lpName}
                 </Link>
                 <div className="flex items-center gap-3">
-                  <span className="metric-number">
+                  <span className="metric-number text-white">
                     {formatCurrency(item.amount)}
                   </span>
                   <div className="flex gap-1.5">
                     {item.missingDocs && (
-                      <span className="px-2 py-0.5 text-xs font-medium bg-secondary text-red-600 rounded-lg">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-red-500/20 text-red-400 rounded-lg">
                         Missing docs
                       </span>
                     )}
                     {item.pendingWire && (
-                      <span className="px-2 py-0.5 text-xs font-medium bg-secondary text-yellow-600 rounded-lg">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-lg">
                         Pending wire
                       </span>
                     )}

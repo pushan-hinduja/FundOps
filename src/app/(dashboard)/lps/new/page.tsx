@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import {
   InvestorType,
   AccreditationStatus,
@@ -241,13 +242,12 @@ export default function NewLPPage() {
               >
                 Preferred Check Size ($)
               </label>
-              <input
+              <CurrencyInput
                 id="preferredCheckSize"
-                type="number"
                 value={preferredCheckSize}
-                onChange={(e) => setPreferredCheckSize(e.target.value)}
+                onChange={(val) => setPreferredCheckSize(val)}
                 className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                placeholder="250000"
+                placeholder="250,000"
               />
             </div>
           </div>

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Urbanist } from "next/font/google";
+import { Hedvig_Letters_Sans } from "next/font/google";
 import "./globals.css";
 
-const urbanist = Urbanist({ 
+const hedvig = Hedvig_Letters_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  weight: ["400"],
+  style: ["normal"],
   display: "swap",
 });
 
@@ -21,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={urbanist.className}>{children}</body>
+      <body className={hedvig.className}>{children}</body>
     </html>
   );
 }

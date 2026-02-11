@@ -78,25 +78,26 @@ export function TopNav() {
       </div>
 
       {/* Center: Navigation */}
-      <nav className="flex-1 flex items-center justify-center gap-1">
+      <nav className="flex-1 flex items-center justify-center gap-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-primary hover:text-primary-foreground"
-              )}
-            >
-              <item.icon className="w-[18px] h-[18px]" />
-              <span className="text-sm font-medium">
-                {item.label}
-              </span>
-            </Link>
+            <div key={item.href} className="relative group">
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "text-muted-foreground border-border hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                )}
+              >
+                <item.icon className="w-[18px] h-[18px]" />
+              </Link>
+              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 glass-menu rounded-lg px-3 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
+                <span className="text-xs font-medium">{item.label}</span>
+              </div>
+            </div>
           );
         })}
       </nav>
@@ -104,25 +105,31 @@ export function TopNav() {
       {/* Right: Actions and Profile */}
       <div className="flex items-center gap-3">
         {/* Action Icons */}
-        <div className="flex items-center gap-1">
-          <Link
-            href="/notifications"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200"
-          >
-            <Bell className="w-[18px] h-[18px]" />
-            <span className="text-sm font-medium">
-              Notifications
-            </span>
-          </Link>
-          <Link
-            href="/settings"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-200"
-          >
-            <Settings className="w-[18px] h-[18px]" />
-            <span className="text-sm font-medium">
-              Settings
-            </span>
-          </Link>
+        <div className="flex items-center gap-2">
+          {[
+            { href: "/notifications", icon: Bell, label: "Notifications" },
+            { href: "/settings", icon: Settings, label: "Settings" },
+          ].map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <div key={item.href} className="relative group">
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200",
+                    isActive
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "text-muted-foreground border-border hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                  )}
+                >
+                  <item.icon className="w-[18px] h-[18px]" />
+                </Link>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 glass-menu rounded-lg px-3 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
+                  <span className="text-xs font-medium">{item.label}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Profile */}

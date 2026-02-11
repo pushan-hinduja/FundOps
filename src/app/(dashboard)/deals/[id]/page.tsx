@@ -224,9 +224,14 @@ export default async function DealDetailPage({
         </Link>
         <div className="flex items-center justify-between mt-4">
           <div>
-            <h1 className="text-3xl font-medium tracking-tight">{deal.name}</h1>
-            {deal.company_name && (
-              <p className="text-muted-foreground mt-1">{deal.company_name}</p>
+            <h1 className="text-3xl font-medium tracking-tight">
+              {deal.name}
+              {deal.company_name && (
+                <span className="text-muted-foreground"> ({deal.company_name})</span>
+              )}
+            </h1>
+            {deal.description && (
+              <p className="text-sm text-muted-foreground mt-1">{deal.description}</p>
             )}
             {/* Deal Terms */}
             {(deal.fee_percent || deal.carry_percent) && (

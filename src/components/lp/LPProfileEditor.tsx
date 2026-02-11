@@ -109,18 +109,19 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
 
   if (!isEditing) {
     return (
-      <div className="glass-card rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="glass-card rounded-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-lg font-medium">Investor Profile</h2>
           <button
             onClick={() => setIsEditing(true)}
-            className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
           >
             <Pencil className="w-4 h-4" />
+            Edit Profile
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 p-6">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Investor Type</p>
             <p className="font-medium">
@@ -158,48 +159,26 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
               {KYC_STATUS_LABELS[lp.kyc_status]}
             </span>
           </div>
+
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Special Deal Terms</p>
+            <p className="font-medium">
+              {lp.special_fee_percent !== null || lp.special_carry_percent !== null
+                ? [
+                    lp.special_fee_percent !== null && `Fee ${lp.special_fee_percent}%`,
+                    lp.special_carry_percent !== null && `Carry ${lp.special_carry_percent}%`,
+                  ].filter(Boolean).join(", ")
+                : "Not set"}
+            </p>
+          </div>
         </div>
-
-        {/* Special Deal Terms */}
-        {(lp.special_fee_percent !== null || lp.special_carry_percent !== null) && (
-          <div className="mt-6 pt-4 border-t border-border">
-            <h3 className="text-sm font-medium mb-3">Special Deal Terms</h3>
-            <div className="flex items-center gap-4">
-              {lp.special_fee_percent !== null && (
-                <span className="text-sm">
-                  <span className="text-muted-foreground">Fee:</span>{" "}
-                  <span className="font-medium">{lp.special_fee_percent}%</span>
-                </span>
-              )}
-              {lp.special_carry_percent !== null && (
-                <span className="text-sm">
-                  <span className="text-muted-foreground">Carry:</span>{" "}
-                  <span className="font-medium">{lp.special_carry_percent}%</span>
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              These terms override the default deal terms for all deals.
-            </p>
-          </div>
-        )}
-
-        {/* Show placeholder if no special terms set */}
-        {lp.special_fee_percent === null && lp.special_carry_percent === null && (
-          <div className="mt-6 pt-4 border-t border-border">
-            <h3 className="text-sm font-medium mb-2">Special Deal Terms</h3>
-            <p className="text-sm text-muted-foreground">
-              No special terms set. Default deal terms will apply.
-            </p>
-          </div>
-        )}
       </div>
     );
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="glass-card rounded-2xl">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
         <h2 className="text-lg font-medium">Investor Profile</h2>
         <div className="flex items-center gap-2">
           <button
@@ -223,7 +202,7 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-6 p-6">
         <div>
           <label className="block text-sm text-muted-foreground mb-1">
             Investor Type
@@ -312,55 +291,46 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
             ))}
           </select>
         </div>
-      </div>
 
-      {/* Special Deal Terms */}
-      <div className="mt-6 pt-4 border-t border-border">
-        <h3 className="text-sm font-medium mb-3">Special Deal Terms</h3>
-        <p className="text-xs text-muted-foreground mb-3">
-          If set, these terms will override the default deal terms for all deals.
-        </p>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-muted-foreground mb-1">
-              Special Fee (%)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={formData.special_fee_percent ?? ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  special_fee_percent: e.target.value ? parseFloat(e.target.value) : null,
-                })
-              }
-              placeholder="e.g., 1.5"
-              className="w-full px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-muted-foreground mb-1">
-              Special Carry (%)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={formData.special_carry_percent ?? ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  special_carry_percent: e.target.value ? parseFloat(e.target.value) : null,
-                })
-              }
-              placeholder="e.g., 15"
-              className="w-full px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
+        <div>
+          <label className="block text-sm text-muted-foreground mb-1">
+            Special Fee (%)
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            value={formData.special_fee_percent ?? ""}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                special_fee_percent: e.target.value ? parseFloat(e.target.value) : null,
+              })
+            }
+            placeholder="e.g., 1.5"
+            className="w-full px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-muted-foreground mb-1">
+            Special Carry (%)
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            value={formData.special_carry_percent ?? ""}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                special_carry_percent: e.target.value ? parseFloat(e.target.value) : null,
+              })
+            }
+            placeholder="e.g., 15"
+            className="w-full px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
         </div>
       </div>
     </div>

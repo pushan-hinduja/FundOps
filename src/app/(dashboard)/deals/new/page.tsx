@@ -14,6 +14,9 @@ export default function NewDealPage() {
   const [targetRaise, setTargetRaise] = useState("");
   const [minCheckSize, setMinCheckSize] = useState("");
   const [maxCheckSize, setMaxCheckSize] = useState("");
+  const [feePercent, setFeePercent] = useState("");
+  const [carryPercent, setCarryPercent] = useState("");
+  const [memoUrl, setMemoUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +52,9 @@ export default function NewDealPage() {
         target_raise: targetRaise ? parseFloat(targetRaise) : null,
         min_check_size: minCheckSize ? parseFloat(minCheckSize) : null,
         max_check_size: maxCheckSize ? parseFloat(maxCheckSize) : null,
+        fee_percent: feePercent ? parseFloat(feePercent) : null,
+        carry_percent: carryPercent ? parseFloat(carryPercent) : null,
+        memo_url: memoUrl || null,
         status: "draft",
       });
 
@@ -64,7 +70,7 @@ export default function NewDealPage() {
   };
 
   return (
-    <div className="px-8 py-6 max-w-2xl">
+    <div className="px-8 py-6">
       <div className="mb-8">
         <Link href="/deals" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -163,6 +169,60 @@ export default function NewDealPage() {
               placeholder="500,000"
             />
           </div>
+        </div>
+
+        {/* Deal Terms */}
+        <div className="border-t border-border pt-6 mt-6">
+          <h3 className="text-sm font-medium mb-4">Deal Terms</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="feePercent" className="block text-sm font-medium mb-2">
+                Management Fee (%)
+              </label>
+              <input
+                id="feePercent"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={feePercent}
+                onChange={(e) => setFeePercent(e.target.value)}
+                className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                placeholder="e.g., 2"
+              />
+            </div>
+            <div>
+              <label htmlFor="carryPercent" className="block text-sm font-medium mb-2">
+                Carry (%)
+              </label>
+              <input
+                id="carryPercent"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={carryPercent}
+                onChange={(e) => setCarryPercent(e.target.value)}
+                className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                placeholder="e.g., 20"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Memo URL */}
+        <div>
+          <label htmlFor="memoUrl" className="block text-sm font-medium mb-2">
+            Memo URL
+          </label>
+          <input
+            id="memoUrl"
+            type="url"
+            value={memoUrl}
+            onChange={(e) => setMemoUrl(e.target.value)}
+            className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            placeholder="https://..."
+          />
         </div>
 
         <div className="flex gap-3 pt-4">

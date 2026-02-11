@@ -124,7 +124,7 @@ export default async function DealsPage() {
             <Link
               key={deal.id}
               href={`/deals/${deal.id}`}
-              className="group glass-card glass-card-hover glass-shimmer rounded-2xl p-6"
+              className="group glass-card glass-card-hover rounded-2xl p-6"
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1 min-w-0">

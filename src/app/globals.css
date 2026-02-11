@@ -75,12 +75,12 @@
   body {
     @apply bg-background text-foreground;
     font-weight: 400;
-    letter-spacing: -0.01em; /* Urbanist benefits from tighter letter spacing */
+    letter-spacing: 0.005em;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-weight: 600; /* Urbanist looks better with slightly heavier weight for headings */
-    letter-spacing: -0.02em;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 
   /* Normalize select elements to match input height/styling */
@@ -100,15 +100,15 @@
   /* Large metric number styling - italic style */
   .metric-number {
     font-style: italic;
-    font-weight: 600; /* Urbanist italic looks better with slightly more weight */
-    letter-spacing: -0.025em;
+    font-weight: 400;
+    letter-spacing: -0.02em;
   }
 
   /* Section label styling */
   .section-label {
     font-size: 0.6875rem;
-    font-weight: 600; /* Urbanist needs slightly more weight for small caps */
-    letter-spacing: 0.08em; /* Increased spacing for better readability with Urbanist */
+    font-weight: 400;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: hsl(var(--muted-foreground));
   }

@@ -143,8 +143,8 @@ export function LPDocumentsSection({
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="glass-card rounded-2xl">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
         <h2 className="text-lg font-medium">Documents & KYC</h2>
         {!isAdding && (
           <button
@@ -157,6 +157,7 @@ export function LPDocumentsSection({
         )}
       </div>
 
+      <div className="p-6">
       {/* Add New Document Form */}
       {isAdding && (
         <div className="mb-4 p-4 bg-secondary/30 rounded-xl border border-border">
@@ -306,6 +307,7 @@ export function LPDocumentsSection({
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

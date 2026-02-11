@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
   Mail,
@@ -10,6 +9,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { LPDetailClient } from "./LPDetailClient";
+import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
 import {
   LPContact,
   LPDocument,
@@ -103,13 +103,22 @@ export default async function LPDetailPage({
             from_email,
             from_name,
             subject,
-            received_at
+            received_at,
+            body_text,
+            thread_id,
+            message_id
+          ),
+          lp_contacts (
+            id,
+            name,
+            email,
+            firm
           )
         `
         )
         .eq("detected_lp_id", id)
         .order("parsed_at", { ascending: false })
-        .limit(20),
+        .limit(50),
     ]);
 
   const documents = (documentsResult.data || []) as LPDocument[];
@@ -160,18 +169,6 @@ export default async function LPDetailPage({
     }
   };
 
-  const getIntentColor = (intent: string | null) => {
-    switch (intent) {
-      case "committed":
-        return "bg-secondary text-green-600";
-      case "interested":
-        return "bg-secondary text-blue-600";
-      case "declined":
-        return "bg-secondary text-red-600";
-      default:
-        return "bg-secondary text-muted-foreground";
-    }
-  };
 
   return (
     <div className="px-8 py-6">
@@ -233,29 +230,29 @@ export default async function LPDetailPage({
 
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="glass-stat-card glass-card-accent rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">Total Commitments</p>
-          <p className="metric-number text-2xl text-[hsl(var(--success))]">
+          <p className="metric-number text-3xl text-[hsl(var(--success))]">
             {formatCurrency(lp.total_commitments)}
           </p>
         </div>
-        <div className="glass-stat-card rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">Preferred Check Size</p>
-          <p className="metric-number text-2xl">
+          <p className="metric-number text-3xl">
             {formatCurrency(lp.preferred_check_size)}
           </p>
         </div>
-        <div className="glass-stat-card rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">Participation Rate</p>
-          <p className="metric-number text-2xl">
+          <p className="metric-number text-3xl">
             {lp.participation_rate
               ? `${Math.round(lp.participation_rate * 100)}%`
               : "-"}
           </p>
         </div>
-        <div className="glass-stat-card rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">Avg Response Time</p>
-          <p className="metric-number text-2xl">
+          <p className="metric-number text-3xl">
             {lp.avg_response_time_hours
               ? `${Math.round(lp.avg_response_time_hours)}h`
               : "-"}
@@ -278,58 +275,22 @@ export default async function LPDetailPage({
         <div className="space-y-6">
           {/* Notes */}
           {lp.notes && (
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="text-lg font-medium mb-3">Notes</h2>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {lp.notes}
-              </p>
+            <div className="glass-card rounded-2xl">
+              <div className="px-6 py-4 border-b border-border">
+                <h2 className="text-lg font-medium">Notes</h2>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {lp.notes}
+                </p>
+              </div>
             </div>
           )}
 
           {/* Recent Emails */}
-          <div className="glass-card rounded-2xl p-6">
-            <h2 className="text-lg font-medium mb-4">Recent Emails</h2>
-            {recentEmails && recentEmails.length > 0 ? (
-              <div className="space-y-3">
-                {recentEmails.slice(0, 10).map((parsed: any) => (
-                  <div
-                    key={parsed.id}
-                    className="py-3 border-b border-border last:border-0"
-                  >
-                    <p className="font-medium text-sm truncate">
-                      {parsed.emails_raw?.from_name ||
-                        parsed.emails_raw?.from_email}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {parsed.emails_raw?.subject || "(no subject)"}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      {parsed.intent && parsed.intent !== "neutral" && (
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-lg font-medium ${getIntentColor(
-                            parsed.intent
-                          )}`}
-                        >
-                          {parsed.intent}
-                        </span>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {parsed.emails_raw?.received_at &&
-                          formatDistanceToNow(
-                            new Date(parsed.emails_raw.received_at),
-                            { addSuffix: true }
-                          )}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No emails matched to this LP yet.
-              </p>
-            )}
-          </div>
+          <EmailsWithFilters
+            emails={recentEmails || []}
+          />
         </div>
       </div>
     </div>

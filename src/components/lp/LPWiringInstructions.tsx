@@ -316,8 +316,8 @@ export function LPWiringInstructions({
   );
 
   return (
-    <div className="glass-card rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="glass-card rounded-2xl">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
         <h2 className="text-lg font-medium">Wiring Instructions</h2>
         {!isAdding && !editingId && (
           <button
@@ -330,6 +330,7 @@ export function LPWiringInstructions({
         )}
       </div>
 
+      <div className="p-6">
       {/* Add/Edit Form */}
       {(isAdding || editingId) && <div className="mb-4">{renderForm()}</div>}
 
@@ -476,6 +477,7 @@ export function LPWiringInstructions({
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

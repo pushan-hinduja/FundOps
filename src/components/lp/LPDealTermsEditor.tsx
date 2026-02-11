@@ -118,24 +118,30 @@ export function LPDealTermsEditor({
 
   if (relationships.length === 0) {
     return (
-      <div className="glass-card rounded-2xl p-6">
-        <h2 className="text-lg font-medium mb-4">Deal History</h2>
-        <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">No deal participation yet</p>
+      <div className="glass-card rounded-2xl">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-medium">Deal History</h2>
+        </div>
+        <div className="p-6">
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">No deal participation yet</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6">
-      <h2 className="text-lg font-medium mb-4">Deal History</h2>
+    <div className="glass-card rounded-2xl">
+      <div className="px-6 py-4 border-b border-border">
+        <h2 className="text-lg font-medium">Deal History</h2>
+      </div>
 
-      <div className="space-y-3">
+      <div className="p-6 space-y-3">
         {relationships.map((rel) => (
           <div
             key={rel.id}
-            className="border border-border rounded-xl overflow-hidden"
+            className="bg-secondary/30 rounded-lg overflow-hidden"
           >
             {/* Header - always visible */}
             <div
@@ -182,7 +188,7 @@ export function LPDealTermsEditor({
 
             {/* Expanded details */}
             {expandedId === rel.id && (
-              <div className="border-t border-border p-4 bg-secondary/20">
+              <div className="border-t border-border/50 p-4">
                 {editingId === rel.id ? (
                   // Edit form
                   <div className="space-y-4">

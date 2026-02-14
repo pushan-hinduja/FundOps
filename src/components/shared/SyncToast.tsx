@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncContext } from "./SyncContext";
-import { X, Loader2, CheckCircle, AlertCircle, Mail, Archive } from "lucide-react";
+import { X, Loader2, CheckCircle, AlertCircle, Mail, Archive, RefreshCw } from "lucide-react";
 
 export function SyncToast() {
   const { progress, clearSync } = useSyncContext();
@@ -21,7 +21,7 @@ export function SyncToast() {
   return (
     <div className="fixed bottom-6 left-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
       <div
-        className={`glass-menu rounded-xl p-4 w-80 shadow-lg ${
+        className={`glass-menu rounded-xl p-4 w-80 shadow-lg overflow-hidden ${
           isError ? "border border-destructive/30" : ""
         }`}
       >
@@ -44,13 +44,15 @@ export function SyncToast() {
                 <CheckCircle className="w-5 h-5 text-[hsl(var(--success))]" />
               ) : progress.type === "backfill" ? (
                 <Archive className="w-5 h-5 text-primary" />
+              ) : progress.type === "hubspot" ? (
+                <RefreshCw className={`w-5 h-5 text-primary ${isProcessing ? "animate-spin" : ""}`} />
               ) : (
                 <Mail className="w-5 h-5 text-primary" />
               )}
             </div>
             <div>
               <p className="font-medium text-sm">
-                {progress.type === "backfill" ? "Email Backfill" : "Email Sync"}
+                {progress.type === "backfill" ? "Email Backfill" : progress.type === "hubspot" ? "HubSpot Sync" : "Email Sync"}
               </p>
               <p
                 className={`text-xs ${
@@ -108,7 +110,34 @@ export function SyncToast() {
         {isComplete && progress.stats && (
           <div className="mt-3 pt-3 border-t border-border">
             <ul className="text-xs text-muted-foreground space-y-1">
-              {progress.type === "backfill" ? (
+              {progress.type === "hubspot" ? (
+                <>
+                  {progress.stats.contactsFetched !== undefined && (
+                    <li className="flex justify-between">
+                      <span>Contacts fetched</span>
+                      <span className="font-medium text-foreground">
+                        {progress.stats.contactsFetched}
+                      </span>
+                    </li>
+                  )}
+                  {progress.stats.contactsCreated !== undefined && (
+                    <li className="flex justify-between">
+                      <span>Contacts created</span>
+                      <span className="font-medium text-[hsl(var(--success))]">
+                        {progress.stats.contactsCreated}
+                      </span>
+                    </li>
+                  )}
+                  {progress.stats.contactsUpdated !== undefined && (
+                    <li className="flex justify-between">
+                      <span>Contacts updated</span>
+                      <span className="font-medium text-foreground">
+                        {progress.stats.contactsUpdated}
+                      </span>
+                    </li>
+                  )}
+                </>
+              ) : progress.type === "backfill" ? (
                 <>
                   {progress.stats.totalGmailMessages !== undefined && (
                     <li className="flex justify-between">
@@ -178,7 +207,9 @@ export function SyncToast() {
         {/* Error details */}
         {isError && progress.error && (
           <div className="mt-3 pt-3 border-t border-border">
-            <p className="text-xs text-destructive">{progress.error}</p>
+            <p className="text-xs text-destructive line-clamp-3 break-words">
+              {progress.error.length > 150 ? progress.error.slice(0, 150) + "..." : progress.error}
+            </p>
           </div>
         )}
       </div>

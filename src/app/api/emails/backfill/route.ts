@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { getGmailClient, fetchAllMessages, getMessageDetails } from "@/lib/gmail/client";
+import { getGmailClient, fetchAllMessages, getMessageDetails, getCurrentHistoryId } from "@/lib/gmail/client";
 import { parseEmailWithAI } from "@/lib/ai/parser";
 import type { AuthAccount } from "@/lib/supabase/types";
 
@@ -195,6 +195,21 @@ export async function POST(request: NextRequest) {
           stats.errors.push(`Parse ${email.from_email}: ${err.message}`);
         }
       }
+    }
+
+    // Save sync_cursor so future syncs use incremental history API
+    try {
+      const currentHistoryId = await getCurrentHistoryId(gmail);
+      await supabase
+        .from("auth_accounts")
+        .update({
+          sync_cursor: currentHistoryId,
+          last_sync_at: new Date().toISOString(),
+        })
+        .eq("id", authAccount.id);
+      console.log(`[Backfill] Saved sync_cursor: ${currentHistoryId}`);
+    } catch (cursorErr) {
+      console.error(`[Backfill] Failed to save sync_cursor:`, cursorErr);
     }
 
     console.log(`[Backfill] Complete!`);

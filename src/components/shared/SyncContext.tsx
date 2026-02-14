@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
-export type SyncType = "sync" | "backfill";
+export type SyncType = "sync" | "backfill" | "hubspot";
 
 export interface SyncProgress {
   type: SyncType;
@@ -17,6 +17,9 @@ export interface SyncProgress {
     totalGmailMessages?: number;
     newEmailsIngested?: number;
     dealsMatched?: number;
+    contactsFetched?: number;
+    contactsCreated?: number;
+    contactsUpdated?: number;
   };
   error?: string;
 }
@@ -40,7 +43,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setProgress({
       type,
       status: "pending",
-      message: type === "backfill" ? "Starting backfill..." : "Starting sync...",
+      message: type === "backfill" ? "Starting backfill..." : type === "hubspot" ? "Starting HubSpot sync..." : "Starting sync...",
     });
   }, []);
 
@@ -54,7 +57,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         ? {
             ...prev,
             status: "complete",
-            message: prev.type === "backfill" ? "Backfill complete!" : "Sync complete!",
+            message: prev.type === "backfill" ? "Backfill complete!" : prev.type === "hubspot" ? "HubSpot sync complete!" : "Sync complete!",
             stats,
           }
         : null

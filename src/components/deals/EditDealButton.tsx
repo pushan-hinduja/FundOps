@@ -16,6 +16,10 @@ interface Deal {
   carry_percent: number | null;
   status: string;
   memo_url: string | null;
+  created_date: string | null;
+  close_date: string | null;
+  investment_stage: string | null;
+  investment_type: string | null;
 }
 
 interface EditDealButtonProps {

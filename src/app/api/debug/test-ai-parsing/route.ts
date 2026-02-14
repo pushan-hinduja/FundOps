@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getGmailClient, fetchNewMessages, getMessageDetails } from "@/lib/gmail/client";
+import { getGmailClient, getMessageDetails } from "@/lib/gmail/client";
 import { parseEmailWithAI } from "@/lib/ai/parser";
 import type { AuthAccount } from "@/lib/supabase/types";
 import { randomUUID } from "crypto";
@@ -55,9 +55,14 @@ export async function POST() {
 
     // Get Gmail client and fetch latest message
     const gmail = await getGmailClient(authAccount as AuthAccount);
-    const messages = await fetchNewMessages(gmail, undefined, 1);
+    const listResponse = await gmail.users.messages.list({
+      userId: "me",
+      q: "in:inbox",
+      maxResults: 1,
+    });
+    const messages = listResponse.data.messages || [];
 
-    if (!messages || messages.length === 0) {
+    if (messages.length === 0) {
       return NextResponse.json(
         { error: "No emails found in Gmail inbox" },
         { status: 404 }

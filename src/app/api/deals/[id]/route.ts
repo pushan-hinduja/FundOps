@@ -56,6 +56,10 @@ export async function PATCH(
         carry_percent: body.carry_percent,
         status: body.status,
         memo_url: body.memo_url,
+        created_date: body.created_date,
+        close_date: body.close_date,
+        investment_stage: body.investment_stage,
+        investment_type: body.investment_type,
         updated_at: new Date().toISOString(),
       })
       .eq("id", dealId)

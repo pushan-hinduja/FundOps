@@ -127,7 +127,8 @@ export async function parseEmailWithAI(
         detectedLpId = existingLp.id;
         lpMatched = true;
       }
-      // Removed auto-creation - contacts should go through suggested contacts flow
+      // LP auto-creation is handled by the DB trigger on emails_parsed
+      // (fires for interested/committed/question intents with a detected deal)
     }
 
     // Update parse record

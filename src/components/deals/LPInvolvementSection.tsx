@@ -180,7 +180,7 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
                 {rel.status === "allocated" &&
                   (rel.lp_contacts?.special_fee_percent !== null ||
                     rel.lp_contacts?.special_carry_percent !== null) && (
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-2.5">
                       <span className="text-xs px-2 py-0.5 rounded-md bg-white dark:bg-background text-muted-foreground border border-border">
                         Special Terms:{" "}
                         {rel.lp_contacts?.special_fee_percent !== null && (

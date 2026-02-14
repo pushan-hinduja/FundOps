@@ -54,38 +54,6 @@ export async function getGmailClient(authAccount: AuthAccount) {
   return google.gmail({ version: "v1", auth: oauth2Client });
 }
 
-export async function fetchNewMessages(
-  gmail: gmail_v1.Gmail,
-  afterTimestamp?: Date,
-  maxResults: number = 500
-): Promise<gmail_v1.Schema$Message[]> {
-  // Build query - fetch all inbox messages, not filtered by date
-  // This ensures we get emails even if timestamp is off
-  const query = "in:inbox";
-
-  console.log(`[Gmail API] Fetching messages with query: "${query}", maxResults: ${maxResults}`);
-
-  try {
-    const response = await gmail.users.messages.list({
-      userId: "me",
-      q: query,
-      maxResults,
-    });
-
-    const messages = response.data.messages || [];
-    console.log(`[Gmail API] Response: ${messages.length} messages found, resultSizeEstimate: ${response.data.resultSizeEstimate}`);
-
-    return messages;
-  } catch (error: any) {
-    console.error(`[Gmail API] Error fetching messages:`, error.message);
-    if (error.response) {
-      console.error(`[Gmail API] Response status: ${error.response.status}`);
-      console.error(`[Gmail API] Response data:`, JSON.stringify(error.response.data));
-    }
-    throw error;
-  }
-}
-
 /**
  * Fetch only UNREAD messages from inbox
  * Use this for regular sync operations (more efficient than fetching all)
@@ -160,6 +128,78 @@ export async function fetchAllMessages(
     return allMessages;
   } catch (error: any) {
     console.error(`[Gmail API] Error fetching all messages:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get the current historyId from Gmail profile.
+ * Used to seed sync_cursor on first sync.
+ */
+export async function getCurrentHistoryId(
+  gmail: gmail_v1.Gmail
+): Promise<string> {
+  const profile = await gmail.users.getProfile({ userId: "me" });
+  return profile.data.historyId!;
+}
+
+/**
+ * Fetch new message IDs since a given historyId using Gmail's History API.
+ * Returns only messages that were added to the inbox since the last sync.
+ * Throws with code 404 if the historyId is too old / expired.
+ */
+export async function fetchMessagesSinceHistory(
+  gmail: gmail_v1.Gmail,
+  startHistoryId: string
+): Promise<{ messageIds: string[]; newHistoryId: string }> {
+  const messageIds: string[] = [];
+  let pageToken: string | undefined = undefined;
+  let latestHistoryId = startHistoryId;
+
+  console.log(`[Gmail API] Fetching history since historyId: ${startHistoryId}`);
+
+  try {
+    let hasMore = true;
+    while (hasMore) {
+      const response: Common.GaxiosResponse<gmail_v1.Schema$ListHistoryResponse> = await gmail.users.history.list({
+        userId: "me",
+        startHistoryId,
+        historyTypes: ["messageAdded"],
+        pageToken,
+      });
+
+      // Update the latest historyId from the response
+      if (response.data.historyId) {
+        latestHistoryId = response.data.historyId;
+      }
+
+      // Extract message IDs from messagesAdded events
+      const history = response.data.history || [];
+      for (const record of history) {
+        if (record.messagesAdded) {
+          for (const added of record.messagesAdded) {
+            if (added.message?.id) {
+              messageIds.push(added.message.id);
+            }
+          }
+        }
+      }
+
+      pageToken = response.data.nextPageToken || undefined;
+      hasMore = !!pageToken;
+    }
+
+    // Deduplicate (same message can appear in multiple history records)
+    const uniqueIds = [...new Set(messageIds)];
+    console.log(`[Gmail API] History sync found ${uniqueIds.length} new messages (historyId: ${startHistoryId} -> ${latestHistoryId})`);
+
+    return { messageIds: uniqueIds, newHistoryId: latestHistoryId };
+  } catch (error: any) {
+    // 404 means the historyId is too old / invalid
+    if (error.code === 404 || error.response?.status === 404) {
+      console.warn(`[Gmail API] History ID ${startHistoryId} expired, full sync required`);
+      throw error;
+    }
     throw error;
   }
 }

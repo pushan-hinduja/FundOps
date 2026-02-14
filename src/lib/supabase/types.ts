@@ -253,6 +253,10 @@ export interface Deal {
   total_committed: number;
   total_interested: number;
   memo_url: string | null;
+  created_date: string | null;
+  close_date: string | null;
+  investment_stage: string | null;
+  investment_type: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -296,27 +300,6 @@ export interface EmailParsed {
   reviewed_at: string | null;
   model_version: string | null;
   parsed_at: string;
-}
-
-export interface Tag {
-  id: string;
-  organization_id: string;
-  name: string;
-  type: "intent" | "topic" | "priority" | "sentiment" | "custom";
-  color: string;
-  description: string | null;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface EmailTag {
-  id: string;
-  email_id: string;
-  tag_id: string;
-  confidence: number | null;
-  source: "ai" | "manual";
-  created_by: string | null;
-  created_at: string;
 }
 
 export interface DealLPRelationship {

@@ -17,6 +17,10 @@ export default function NewDealPage() {
   const [feePercent, setFeePercent] = useState("");
   const [carryPercent, setCarryPercent] = useState("");
   const [memoUrl, setMemoUrl] = useState("");
+  const [createdDate, setCreatedDate] = useState("");
+  const [closeDate, setCloseDate] = useState("");
+  const [investmentStage, setInvestmentStage] = useState("");
+  const [investmentType, setInvestmentType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +59,10 @@ export default function NewDealPage() {
         fee_percent: feePercent ? parseFloat(feePercent) : null,
         carry_percent: carryPercent ? parseFloat(carryPercent) : null,
         memo_url: memoUrl || null,
+        created_date: createdDate || null,
+        close_date: closeDate || null,
+        investment_stage: investmentStage || null,
+        investment_type: investmentType || null,
         status: "draft",
       });
 
@@ -128,6 +136,64 @@ export default function NewDealPage() {
             className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
             placeholder="Brief description of the deal..."
           />
+        </div>
+
+        {/* Dates */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="createdDate" className="block text-sm font-medium mb-2">
+              Created Date
+            </label>
+            <input
+              id="createdDate"
+              type="date"
+              value={createdDate}
+              onChange={(e) => setCreatedDate(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            />
+          </div>
+          <div>
+            <label htmlFor="closeDate" className="block text-sm font-medium mb-2">
+              Close Date
+            </label>
+            <input
+              id="closeDate"
+              type="date"
+              value={closeDate}
+              onChange={(e) => setCloseDate(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            />
+          </div>
+        </div>
+
+        {/* Investment Info */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="investmentStage" className="block text-sm font-medium mb-2">
+              Investment Stage
+            </label>
+            <input
+              id="investmentStage"
+              type="text"
+              value={investmentStage}
+              onChange={(e) => setInvestmentStage(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              placeholder="e.g., Series B"
+            />
+          </div>
+          <div>
+            <label htmlFor="investmentType" className="block text-sm font-medium mb-2">
+              Investment Type
+            </label>
+            <input
+              id="investmentType"
+              type="text"
+              value={investmentType}
+              onChange={(e) => setInvestmentType(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              placeholder="e.g., Equity"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">

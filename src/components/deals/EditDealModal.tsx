@@ -17,6 +17,10 @@ interface Deal {
   carry_percent: number | null;
   status: string;
   memo_url: string | null;
+  created_date: string | null;
+  close_date: string | null;
+  investment_stage: string | null;
+  investment_type: string | null;
 }
 
 interface EditDealModalProps {
@@ -39,6 +43,10 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
     carry_percent: deal.carry_percent?.toString() || "",
     status: deal.status,
     memo_url: deal.memo_url || "",
+    created_date: deal.created_date || "",
+    close_date: deal.close_date || "",
+    investment_stage: deal.investment_stage || "",
+    investment_type: deal.investment_type || "",
   });
 
   if (!isOpen) return null;
@@ -62,6 +70,10 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
           carry_percent: formData.carry_percent ? parseFloat(formData.carry_percent) : null,
           status: formData.status,
           memo_url: formData.memo_url || null,
+          created_date: formData.created_date || null,
+          close_date: formData.close_date || null,
+          investment_stage: formData.investment_stage || null,
+          investment_type: formData.investment_type || null,
         }),
       });
 
@@ -132,6 +144,52 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3 py-2 border border-border rounded-lg bg-background resize-none"
             />
+          </div>
+
+          {/* Dates */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Created Date</label>
+              <input
+                type="date"
+                value={formData.created_date}
+                onChange={(e) => setFormData({ ...formData, created_date: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Close Date</label>
+              <input
+                type="date"
+                value={formData.close_date}
+                onChange={(e) => setFormData({ ...formData, close_date: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+              />
+            </div>
+          </div>
+
+          {/* Investment Info */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Investment Stage</label>
+              <input
+                type="text"
+                value={formData.investment_stage}
+                onChange={(e) => setFormData({ ...formData, investment_stage: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                placeholder="e.g., Series B"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Investment Type</label>
+              <input
+                type="text"
+                value={formData.investment_type}
+                onChange={(e) => setFormData({ ...formData, investment_type: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                placeholder="e.g., Equity"
+              />
+            </div>
           </div>
 
           {/* Target Raise */}

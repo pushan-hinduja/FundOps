@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { getGmailClient, fetchUnreadMessages, getMessageDetails } from "@/lib/gmail/client";
+import { getGmailClient, fetchUnreadMessages, fetchMessagesSinceHistory, getCurrentHistoryId, getMessageDetails } from "@/lib/gmail/client";
 import { parseEmailWithAI } from "@/lib/ai/parser";
-import { processEmailForSuggestedContact } from "@/lib/emails/suggested-contacts";
 import type { AuthAccount } from "@/lib/supabase/types";
 
 export const maxDuration = 60; // Maximum execution time in seconds
@@ -121,45 +120,71 @@ async function processAccount(
   console.log(`[Email Sync] Processing account: ${account.email}`);
 
   const gmail = await getGmailClient(account);
+  const organizationId = account.users.organization_id;
 
-  // Fetch only UNREAD messages (more efficient than fetching all)
-  console.log(`[Email Sync] Fetching UNREAD messages...`);
-  const messages = await fetchUnreadMessages(gmail);
-  console.log(`[Email Sync] Found ${messages.length} unread messages from Gmail`);
+  // Determine which message IDs to process
+  let messageIdsToProcess: string[] = [];
+  let newSyncCursor: string | null = null;
 
-  if (messages.length === 0) {
-    console.log(`[Email Sync] No new messages, updating last_sync_at`);
-    // Update last_sync_at even if no new messages
+  if (account.sync_cursor) {
+    // INCREMENTAL SYNC: Use Gmail History API
+    console.log(`[Email Sync] Using incremental sync (historyId: ${account.sync_cursor})`);
+    try {
+      const { messageIds, newHistoryId } = await fetchMessagesSinceHistory(gmail, account.sync_cursor);
+      messageIdsToProcess = messageIds;
+      newSyncCursor = newHistoryId;
+      console.log(`[Email Sync] History API returned ${messageIds.length} new messages`);
+    } catch (err: any) {
+      // History ID expired (404) — fall back to full unread fetch
+      console.warn(`[Email Sync] History ID expired for ${account.email}, falling back to unread fetch`);
+      const messages = await fetchUnreadMessages(gmail);
+      messageIdsToProcess = messages.map((m) => m.id!).filter(Boolean);
+      // Get fresh historyId to seed for next sync
+      newSyncCursor = await getCurrentHistoryId(gmail);
+    }
+  } else {
+    // FIRST SYNC: No cursor yet — fetch unread and seed the cursor
+    console.log(`[Email Sync] First sync for ${account.email}, fetching unread messages`);
+    const messages = await fetchUnreadMessages(gmail);
+    messageIdsToProcess = messages.map((m) => m.id!).filter(Boolean);
+    // Seed the sync cursor for future incremental syncs
+    newSyncCursor = await getCurrentHistoryId(gmail);
+    console.log(`[Email Sync] Seeding sync_cursor: ${newSyncCursor}`);
+  }
+
+  if (messageIdsToProcess.length === 0) {
+    console.log(`[Email Sync] No new messages, updating last_sync_at and sync_cursor`);
     await supabase
       .from("auth_accounts")
-      .update({ last_sync_at: new Date().toISOString() })
+      .update({
+        last_sync_at: new Date().toISOString(),
+        ...(newSyncCursor ? { sync_cursor: newSyncCursor } : {}),
+      })
       .eq("id", account.id);
     return;
   }
 
-  const organizationId = account.users.organization_id;
-  let duplicateCount = 0;
+  console.log(`[Email Sync] Processing ${messageIdsToProcess.length} messages`);
 
-  // Process each message
-  for (const message of messages) {
-    if (!message.id) continue;
+  // Batch check which messages already exist (avoids N individual queries)
+  const { data: existingEmails } = await supabase
+    .from("emails_raw")
+    .select("message_id")
+    .eq("organization_id", organizationId)
+    .in("message_id", messageIdsToProcess);
 
+  const existingMessageIds = new Set(
+    (existingEmails || []).map((e: { message_id: string }) => e.message_id)
+  );
+
+  const newMessageIds = messageIdsToProcess.filter((id) => !existingMessageIds.has(id));
+  console.log(`[Email Sync] ${existingMessageIds.size} already ingested, ${newMessageIds.length} new`);
+
+  // Process only new messages
+  for (const messageId of newMessageIds) {
     try {
-      // Check if message already exists (deduplication)
-      const { data: existing } = await supabase
-        .from("emails_raw")
-        .select("id")
-        .eq("organization_id", organizationId)
-        .eq("message_id", message.id)
-        .single();
-
-      if (existing) {
-        duplicateCount++;
-        continue; // Skip already ingested messages
-      }
-
       // Get full message details
-      const details = await getMessageDetails(gmail, message.id);
+      const details = await getMessageDetails(gmail, messageId);
       console.log(`[Email Sync] Processing email from: ${details.from.email} (${details.subject || 'no subject'})`);
 
       // Insert into emails_raw
@@ -188,12 +213,11 @@ async function processAccount(
       }
 
       stats.emailsIngested++;
-      console.log(`[Email Sync] Ingested email ${stats.emailsIngested}/${messages.length} from ${details.from.email}`);
+      console.log(`[Email Sync] Ingested email ${stats.emailsIngested}/${newMessageIds.length} from ${details.from.email}`);
 
-      // SIMPLE CHECK: Add to suggested contacts if not in LP database
+      // Add to suggested contacts if not in LP database
       if (insertedEmail && details.from.email) {
         try {
-          // Check if email exists in lp_contacts
           const { data: existingLP } = await supabase
             .from("lp_contacts")
             .select("id")
@@ -201,7 +225,6 @@ async function processAccount(
             .ilike("email", details.from.email)
             .single();
 
-          // If NOT in LP database, add to suggested contacts
           if (!existingLP) {
             const { error: suggestError } = await supabase
               .from("suggested_contacts")
@@ -222,10 +245,7 @@ async function processAccount(
 
             if (!suggestError) {
               stats.suggestedContactsAdded++;
-              console.log(`[Email Sync] Added suggested contact: ${details.from.email}`);
             }
-          } else {
-            console.log(`[Email Sync] Email ${details.from.email} already in LP database, skipping suggested contact`);
           }
         } catch (scErr: any) {
           console.error(`[Email Sync] Error checking suggested contact:`, scErr.message);
@@ -242,28 +262,34 @@ async function processAccount(
             console.log(`[Email Sync] Matched deal for email from ${details.from.email}`);
           }
         } catch (parseErr: any) {
-          stats.errors.push(`Parse error for ${message.id}: ${parseErr.message}`);
-          console.error(`[Email Sync] Parse error for ${message.id}:`, parseErr.message);
+          stats.errors.push(`Parse error for ${messageId}: ${parseErr.message}`);
+          console.error(`[Email Sync] Parse error for ${messageId}:`, parseErr.message);
         }
       }
     } catch (err: any) {
-      stats.errors.push(`Message ${message.id}: ${err.message}`);
+      stats.errors.push(`Message ${messageId}: ${err.message}`);
     }
   }
 
-  // Update last_sync_at
+  // Update last_sync_at and sync_cursor
   await supabase
     .from("auth_accounts")
-    .update({ last_sync_at: new Date().toISOString() })
+    .update({
+      last_sync_at: new Date().toISOString(),
+      ...(newSyncCursor ? { sync_cursor: newSyncCursor } : {}),
+    })
     .eq("id", account.id);
 
   console.log(`[Email Sync] Account ${account.email} sync complete:`);
-  console.log(`  - Messages from Gmail: ${messages.length}`);
-  console.log(`  - Duplicates skipped: ${duplicateCount}`);
+  console.log(`  - Messages from Gmail: ${messageIdsToProcess.length}`);
+  console.log(`  - Already ingested: ${existingMessageIds.size}`);
   console.log(`  - New emails ingested: ${stats.emailsIngested}`);
   console.log(`  - Emails parsed with AI: ${stats.emailsParsed}`);
   console.log(`  - Suggested contacts added: ${stats.suggestedContactsAdded}`);
   console.log(`  - Errors: ${stats.errors.length}`);
+  if (newSyncCursor) {
+    console.log(`  - New sync_cursor: ${newSyncCursor}`);
+  }
 }
 
 // Also allow POST for manual triggering (authenticated users)

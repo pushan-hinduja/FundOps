@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No organization found" }, { status: 400 });
   }
 
-  // Simple database read - contacts are updated by cron job
+  // Fetch suggested contacts
   const { data: contacts, error } = await supabase
     .from("suggested_contacts")
     .select("id, email, name, firm, title, phone, source_email_id")
@@ -38,6 +38,27 @@ export async function GET(request: NextRequest) {
       { error: error.message || "Failed to fetch suggested contacts" },
       { status: 500 }
     );
+  }
+
+  // Filter out anyone who has since been added to lp_contacts
+  // (e.g., auto-created by the deal_lp trigger after AI parsing)
+  if (contacts && contacts.length > 0) {
+    const emails = contacts.map((c) => c.email.toLowerCase());
+    const { data: existingLPs } = await supabase
+      .from("lp_contacts")
+      .select("email")
+      .eq("organization_id", userData.organization_id)
+      .in("email", emails);
+
+    const lpEmails = new Set(
+      (existingLPs || []).map((lp) => lp.email.toLowerCase())
+    );
+
+    const filtered = contacts.filter(
+      (c) => !lpEmails.has(c.email.toLowerCase())
+    );
+
+    return NextResponse.json({ contacts: filtered });
   }
 
   return NextResponse.json({ contacts: contacts || [] });

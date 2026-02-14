@@ -233,9 +233,9 @@ export default async function DealDetailPage({
             {deal.description && (
               <p className="text-sm text-muted-foreground mt-1">{deal.description}</p>
             )}
-            {/* Deal Terms */}
-            {(deal.fee_percent || deal.carry_percent) && (
-              <div className="flex items-center gap-4 mt-2">
+            {/* Deal Terms & Metadata */}
+            {(deal.fee_percent || deal.carry_percent || deal.investment_stage || deal.investment_type || deal.created_date || deal.close_date) && (
+              <div className="flex items-center gap-4 mt-2 flex-wrap">
                 {deal.fee_percent && (
                   <span className="text-sm text-muted-foreground">
                     Fee: <span className="font-medium text-foreground">{deal.fee_percent}%</span>
@@ -244,6 +244,26 @@ export default async function DealDetailPage({
                 {deal.carry_percent && (
                   <span className="text-sm text-muted-foreground">
                     Carry: <span className="font-medium text-foreground">{deal.carry_percent}%</span>
+                  </span>
+                )}
+                {deal.investment_stage && (
+                  <span className="text-sm text-muted-foreground">
+                    Stage: <span className="font-medium text-foreground">{deal.investment_stage}</span>
+                  </span>
+                )}
+                {deal.investment_type && (
+                  <span className="text-sm text-muted-foreground">
+                    Type: <span className="font-medium text-foreground">{deal.investment_type}</span>
+                  </span>
+                )}
+                {deal.created_date && (
+                  <span className="text-sm text-muted-foreground">
+                    Created: <span className="font-medium text-foreground">{new Date(deal.created_date).toLocaleDateString()}</span>
+                  </span>
+                )}
+                {deal.close_date && (
+                  <span className="text-sm text-muted-foreground">
+                    Close: <span className="font-medium text-foreground">{new Date(deal.close_date).toLocaleDateString()}</span>
                   </span>
                 )}
               </div>
@@ -263,9 +283,13 @@ export default async function DealDetailPage({
                 carry_percent: deal.carry_percent,
                 status: deal.status,
                 memo_url: deal.memo_url,
+                created_date: deal.created_date,
+                close_date: deal.close_date,
+                investment_stage: deal.investment_stage,
+                investment_type: deal.investment_type,
               }}
             />
-            <span className={`px-3 py-1.5 rounded-xl text-sm font-medium capitalize ${getDealStatusColor(deal.status)}`}>
+            <span className={`px-4 py-2 rounded-xl text-sm font-medium capitalize ${getDealStatusColor(deal.status)}`}>
               {deal.status}
             </span>
           </div>

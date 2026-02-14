@@ -51,8 +51,12 @@ export async function fetchHubSpotContacts(apiKey: string): Promise<HubSpotConta
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HubSpot API error: ${response.status} ${response.statusText} - ${errorText}`);
+      let message = `HubSpot API error: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.message) message = errorData.message;
+      } catch {}
+      throw new Error(message);
     }
 
     const data: HubSpotContactsResponse = await response.json();
@@ -103,6 +107,7 @@ export async function testHubSpotConnection(apiKey: string): Promise<boolean> {
     return false;
   }
 }
+
 
 
 

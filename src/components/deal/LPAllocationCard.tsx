@@ -146,9 +146,9 @@ export function LPAllocationCard({
         <div className="absolute inset-0 flex items-center justify-end pr-6 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+            className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
           >
-            Update Allocation
+            Update
           </button>
         </div>
       </div>

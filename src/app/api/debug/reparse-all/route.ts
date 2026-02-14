@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { parseEmailWithAI } from "@/lib/ai/parser";
+import { parseEmailWithAI, fetchParsingContext } from "@/lib/ai/parser";
+import { processInBatches } from "@/lib/utils/batch";
+
+const AI_BATCH_SIZE = 5;
 
 export const maxDuration = 300; // 5 minutes
 
@@ -81,41 +84,36 @@ export async function POST() {
     });
   }
 
-  let processed = 0;
-  let succeeded = 0;
-  let failed = 0;
-  const errors: string[] = [];
+  // Pre-fetch AI parsing context once for all emails
+  const parsingContext = await fetchParsingContext(supabase, organizationId);
 
-  // Process each email
-  for (const parsed of parsedEmails) {
-    try {
+  console.log(`[Reparse] Processing ${parsedEmails.length} emails in batches of ${AI_BATCH_SIZE}`);
+
+  const { results, errors: batchErrors } = await processInBatches(
+    parsedEmails,
+    async (parsed, index) => {
       const email = parsed.emails_raw;
-
-      // Delete old parse record
-      await supabase.from("emails_parsed").delete().eq("id", parsed.id);
-
-      // Re-parse with AI
-      await parseEmailWithAI(supabase, email as any, organizationId);
-
-      processed++;
-      succeeded++;
-
-      if (processed % 10 === 0) {
-        console.log(`[Reparse] Processed ${processed}/${parsedEmails.length}`);
+      // parseEmailWithAI uses upsert, so it will overwrite the existing record
+      await parseEmailWithAI(supabase, email as any, organizationId, parsingContext);
+      if ((index + 1) % 10 === 0) {
+        console.log(`[Reparse] Processed ${index + 1}/${parsedEmails.length}`);
       }
-    } catch (err: any) {
-      failed++;
-      errors.push(`Email ${parsed.email_id}: ${err.message}`);
-      console.error(`Error re-parsing email ${parsed.email_id}:`, err);
-    }
-  }
+    },
+    AI_BATCH_SIZE
+  );
+
+  const succeeded = results.length;
+  const failed = batchErrors.length;
+  const errors = batchErrors.map(
+    (e) => `Email ${parsedEmails[e.index].email_id}: ${e.error.message}`
+  );
 
   return NextResponse.json({
     message: "Reparse complete",
     total: parsedEmails.length,
-    processed,
+    processed: succeeded + failed,
     succeeded,
     failed,
-    errors: errors.length > 0 ? errors.slice(0, 10) : undefined, // Only first 10 errors
+    errors: errors.length > 0 ? errors.slice(0, 10) : undefined,
   });
 }

@@ -16,10 +16,26 @@ export interface ParseEmailResult {
   };
 }
 
+/**
+ * Fetch deals and LPs context once, to be passed into parseEmailWithAI.
+ * Call this before a loop of parseEmailWithAI calls to avoid redundant DB queries.
+ */
+export async function fetchParsingContext(
+  supabase: any,
+  organizationId: string
+): Promise<{ deals: DealContext[]; lps: LPContext[] }> {
+  const [lps, deals] = await Promise.all([
+    getCachedLPs(supabase, organizationId),
+    getCachedDeals(supabase, organizationId),
+  ]);
+  return { deals, lps };
+}
+
 export async function parseEmailWithAI(
   supabase: any,
   email: EmailRaw,
-  organizationId: string
+  organizationId: string,
+  context?: { deals: DealContext[]; lps: LPContext[] }
 ): Promise<ParseEmailResult> {
   // Create or update pending parse record (use upsert to handle existing records)
   const { data: parseRecord, error: createError } = await supabase
@@ -43,11 +59,8 @@ export async function parseEmailWithAI(
   }
 
   try {
-    // Fetch context: known LPs and deals (cached)
-    const [lps, deals] = await Promise.all([
-      getCachedLPs(supabase, organizationId),
-      getCachedDeals(supabase, organizationId),
-    ]);
+    // Use pre-fetched context if available, otherwise fetch (for single-email callers)
+    const { lps, deals } = context || await fetchParsingContext(supabase, organizationId);
 
     // Build prompt
     const prompt = buildParsingPrompt(

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getGmailClient, fetchUnreadMessages, fetchMessagesSinceHistory, getCurrentHistoryId, getMessageDetails } from "@/lib/gmail/client";
-import { parseEmailWithAI } from "@/lib/ai/parser";
+import { parseEmailWithAI, fetchParsingContext } from "@/lib/ai/parser";
+import { processInBatches } from "@/lib/utils/batch";
 import type { AuthAccount } from "@/lib/supabase/types";
+
+const AI_BATCH_SIZE = 5;
 
 export const maxDuration = 60; // Maximum execution time in seconds
 
@@ -180,14 +183,14 @@ async function processAccount(
   const newMessageIds = messageIdsToProcess.filter((id) => !existingMessageIds.has(id));
   console.log(`[Email Sync] ${existingMessageIds.size} already ingested, ${newMessageIds.length} new`);
 
-  // Process only new messages
+  // Phase 1: Ingest new messages sequentially (Gmail API rate limits)
+  const ingestedEmails: any[] = [];
+
   for (const messageId of newMessageIds) {
     try {
-      // Get full message details
       const details = await getMessageDetails(gmail, messageId);
-      console.log(`[Email Sync] Processing email from: ${details.from.email} (${details.subject || 'no subject'})`);
+      console.log(`[Email Sync] Ingesting: ${details.from.email} (${details.subject || 'no subject'})`);
 
-      // Insert into emails_raw
       const { data: insertedEmail, error: insertError } = await supabase
         .from("emails_raw")
         .insert({
@@ -209,11 +212,12 @@ async function processAccount(
         .single();
 
       if (insertError) {
-        throw new Error(`Insert failed: ${insertError.message}`);
+        stats.errors.push(`Insert ${messageId}: ${insertError.message}`);
+        continue;
       }
 
       stats.emailsIngested++;
-      console.log(`[Email Sync] Ingested email ${stats.emailsIngested}/${newMessageIds.length} from ${details.from.email}`);
+      ingestedEmails.push(insertedEmail);
 
       // Add to suggested contacts if not in LP database
       if (insertedEmail && details.from.email) {
@@ -251,23 +255,34 @@ async function processAccount(
           console.error(`[Email Sync] Error checking suggested contact:`, scErr.message);
         }
       }
-
-      // Parse the email with AI
-      if (insertedEmail) {
-        try {
-          const parseResult = await parseEmailWithAI(supabase, insertedEmail, organizationId);
-          stats.emailsParsed++;
-
-          if (parseResult.detectedDealId) {
-            console.log(`[Email Sync] Matched deal for email from ${details.from.email}`);
-          }
-        } catch (parseErr: any) {
-          stats.errors.push(`Parse error for ${messageId}: ${parseErr.message}`);
-          console.error(`[Email Sync] Parse error for ${messageId}:`, parseErr.message);
-        }
-      }
     } catch (err: any) {
       stats.errors.push(`Message ${messageId}: ${err.message}`);
+    }
+  }
+
+  console.log(`[Email Sync] Ingested ${ingestedEmails.length} emails, now parsing with AI in batches of ${AI_BATCH_SIZE}...`);
+
+  // Phase 2: Parse all newly ingested emails with AI in parallel batches
+  if (ingestedEmails.length > 0) {
+    const parsingContext = await fetchParsingContext(supabase, organizationId);
+
+    const { errors: batchErrors } = await processInBatches(
+      ingestedEmails,
+      async (email) => {
+        const result = await parseEmailWithAI(supabase, email, organizationId, parsingContext);
+        stats.emailsParsed++;
+        if (result.detectedDealId) {
+          console.log(`[Email Sync] Matched deal for email from ${email.from_email}`);
+        }
+        return result;
+      },
+      AI_BATCH_SIZE
+    );
+
+    for (const err of batchErrors) {
+      const email = ingestedEmails[err.index];
+      stats.errors.push(`Parse error for ${email.message_id}: ${err.error.message}`);
+      console.error(`[Email Sync] Parse error for ${email.message_id}:`, err.error.message);
     }
   }
 

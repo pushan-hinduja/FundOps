@@ -1,8 +1,11 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGmailClient, fetchAllMessages, getMessageDetails, getCurrentHistoryId } from "@/lib/gmail/client";
-import { parseEmailWithAI } from "@/lib/ai/parser";
+import { parseEmailWithAI, fetchParsingContext } from "@/lib/ai/parser";
+import { processInBatches } from "@/lib/utils/batch";
 import type { AuthAccount } from "@/lib/supabase/types";
+
+const AI_BATCH_SIZE = 5; // Concurrent AI parsing calls
 
 export const maxDuration = 300; // 5 minutes for backfill
 
@@ -186,47 +189,64 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Phase 2: Parse all emails with AI
+        // Phase 2: Parse only unparsed/failed emails with AI
+        // Get IDs of emails already successfully parsed
+        const { data: parsedRecords } = await supabase
+          .from("emails_parsed")
+          .select("email_id")
+          .eq("processing_status", "success");
+
+        const parsedEmailIds = new Set(
+          (parsedRecords || []).map((r: { email_id: string }) => r.email_id)
+        );
+
+        // Fetch only emails that need parsing
         const { data: allEmails } = await supabase
           .from("emails_raw")
           .select("*")
           .eq("organization_id", organizationId)
           .order("received_at", { ascending: false });
 
-        if (allEmails && allEmails.length > 0) {
+        const emailsToParse = (allEmails || []).filter(
+          (e: { id: string }) => !parsedEmailIds.has(e.id)
+        );
+
+        if (emailsToParse.length > 0) {
+          const parsingContext = await fetchParsingContext(supabase, organizationId);
+
           sendEvent("status", {
             status: "processing",
-            message: `Parsing ${allEmails.length} emails with AI...`,
+            message: `Parsing ${emailsToParse.length} unparsed emails with AI (${parsedEmailIds.size} already done)...`,
             phase: "parse",
             current: 0,
-            total: allEmails.length,
+            total: emailsToParse.length,
           });
 
-          for (let i = 0; i < allEmails.length; i++) {
-            const email = allEmails[i];
-
-            try {
-              const result = await parseEmailWithAI(supabase, email, organizationId);
+          const { errors: batchErrors } = await processInBatches(
+            emailsToParse,
+            async (email) => {
+              const result = await parseEmailWithAI(supabase, email, organizationId, parsingContext);
               stats.emailsParsed++;
-
               if (result.detectedDealId) {
                 stats.dealsMatched++;
               }
-            } catch (err: unknown) {
-              const error = err as Error;
-              stats.errors.push(`Parse ${email.from_email}: ${error.message}`);
-            }
-
-            // Send progress every 3 emails during parsing (slower operation)
-            if (i % 3 === 0 || i === allEmails.length - 1) {
+              return result;
+            },
+            AI_BATCH_SIZE,
+            (completed) => {
               sendEvent("progress", {
                 phase: "parse",
-                current: i + 1,
-                total: allEmails.length,
+                current: completed,
+                total: emailsToParse.length,
                 emailsParsed: stats.emailsParsed,
                 dealsMatched: stats.dealsMatched,
               });
             }
+          );
+
+          for (const err of batchErrors) {
+            const email = emailsToParse[err.index];
+            stats.errors.push(`Parse ${email.from_email}: ${err.error.message}`);
           }
         }
 

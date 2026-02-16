@@ -102,7 +102,7 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           relationshipId: lpRelationshipId,
-          amount: parseFloat(allocationAmount) * 1000, // Convert K to dollars
+          amount: parseFloat(allocationAmount),
         }),
       });
 
@@ -222,7 +222,7 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
                     {allocatingLpId === rel.id ? (
                       <div className="flex items-center gap-2">
                         <CurrencyInput
-                          placeholder="Amount (K)"
+                          placeholder="Amount ($)"
                           value={allocationAmount}
                           onChange={(val) => setAllocationAmount(val)}
                           className="w-28 px-2 py-1 text-sm border border-border rounded-lg bg-background"

@@ -191,6 +191,11 @@ export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFilter
                     </span>
                   );
                 })()}
+                {parsed.extracted_questions && parsed.extracted_questions.length > 0 && parsed.intent !== "question" && (
+                  <span className="text-xs px-2 py-1 rounded-lg bg-secondary text-yellow-600 font-medium">
+                    Question
+                  </span>
+                )}
                 {parsed.commitment_amount && (
                   <span className="text-xs px-2 py-1 rounded-lg bg-success/10 text-success font-medium">
                     ${(parsed.commitment_amount / 1000).toFixed(0)}K

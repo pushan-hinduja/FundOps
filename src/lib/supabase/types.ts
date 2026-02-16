@@ -300,6 +300,7 @@ export interface EmailParsed {
   reviewed_at: string | null;
   model_version: string | null;
   parsed_at: string;
+  is_answered: boolean;
 }
 
 export interface DealLPRelationship {

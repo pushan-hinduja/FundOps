@@ -111,13 +111,21 @@ export interface EmailResponseContext {
   deal: {
     name: string;
     companyName: string | null;
+    description: string | null;
+    status: string | null;
     targetRaise: number | null;
+    totalCommitted: number;
+    totalInterested: number;
     minCheckSize: number | null;
     maxCheckSize: number | null;
     feePercent: number | null;
     carryPercent: number | null;
+    closeDate: string | null;
     deadline: string | null;
-    description: string | null;
+    createdDate: string | null;
+    investmentStage: string | null;
+    investmentType: string | null;
+    memoUrl: string | null;
   };
   // LP-specific context (if available)
   lpTerms?: {
@@ -157,14 +165,22 @@ export function buildEmailResponsePrompt(context: EmailResponseContext): string 
   let dealTermsSection = `DEAL INFORMATION:
 - Deal Name: ${deal.name}
 - Company: ${deal.companyName || "Not specified"}
+- Description: ${deal.description || "Not specified"}
+- Status: ${deal.status || "Not specified"}
+- Investment Stage: ${deal.investmentStage || "Not specified"}
+- Investment Type: ${deal.investmentType || "Not specified"}
 - Target Raise: ${formatCurrency(deal.targetRaise)}
+- Total Committed So Far: ${formatCurrency(deal.totalCommitted)}
+- Total Interested So Far: ${formatCurrency(deal.totalInterested)}
 - Check Size Range: ${formatCurrency(deal.minCheckSize)} - ${formatCurrency(deal.maxCheckSize)}
 - Management Fee: ${deal.feePercent ? `${deal.feePercent}%` : "Not specified"}
 - Carry: ${deal.carryPercent ? `${deal.carryPercent}%` : "Not specified"}
-- Deadline: ${deal.deadline ? new Date(deal.deadline).toLocaleDateString() : "Not specified"}`;
+- Close Date: ${deal.closeDate ? new Date(deal.closeDate).toLocaleDateString() : "Not specified"}
+- Deadline: ${deal.deadline ? new Date(deal.deadline).toLocaleDateString() : "Not specified"}
+- Created Date: ${deal.createdDate ? new Date(deal.createdDate).toLocaleDateString() : "Not specified"}`;
 
-  if (deal.description) {
-    dealTermsSection += `\n- Description: ${deal.description}`;
+  if (deal.memoUrl) {
+    dealTermsSection += `\n- Deal Memo: ${deal.memoUrl}`;
   }
 
   // Build LP-specific terms section if available

@@ -36,9 +36,9 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
     name: deal.name,
     company_name: deal.company_name || "",
     description: deal.description || "",
-    target_raise: deal.target_raise ? (deal.target_raise / 1000).toString() : "",
-    min_check_size: deal.min_check_size ? (deal.min_check_size / 1000).toString() : "",
-    max_check_size: deal.max_check_size ? (deal.max_check_size / 1000).toString() : "",
+    target_raise: deal.target_raise ? deal.target_raise.toString() : "",
+    min_check_size: deal.min_check_size ? deal.min_check_size.toString() : "",
+    max_check_size: deal.max_check_size ? deal.max_check_size.toString() : "",
     fee_percent: deal.fee_percent?.toString() || "",
     carry_percent: deal.carry_percent?.toString() || "",
     status: deal.status,
@@ -63,9 +63,9 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
           name: formData.name,
           company_name: formData.company_name || null,
           description: formData.description || null,
-          target_raise: formData.target_raise ? parseFloat(formData.target_raise) * 1000 : null,
-          min_check_size: formData.min_check_size ? parseFloat(formData.min_check_size) * 1000 : null,
-          max_check_size: formData.max_check_size ? parseFloat(formData.max_check_size) * 1000 : null,
+          target_raise: formData.target_raise ? parseFloat(formData.target_raise) : null,
+          min_check_size: formData.min_check_size ? parseFloat(formData.min_check_size) : null,
+          max_check_size: formData.max_check_size ? parseFloat(formData.max_check_size) : null,
           fee_percent: formData.fee_percent ? parseFloat(formData.fee_percent) : null,
           carry_percent: formData.carry_percent ? parseFloat(formData.carry_percent) : null,
           status: formData.status,
@@ -194,19 +194,19 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
 
           {/* Target Raise */}
           <div>
-            <label className="block text-sm font-medium mb-1">Target Raise (K)</label>
+            <label className="block text-sm font-medium mb-1">Target Raise ($)</label>
             <CurrencyInput
               value={formData.target_raise}
               onChange={(val) => setFormData({ ...formData, target_raise: val })}
               className="w-full px-3 py-2 border border-border rounded-lg bg-background"
-              placeholder="e.g., 5000 for $5M"
+              placeholder="e.g., 5000000 for $5M"
             />
           </div>
 
           {/* Check Size Range */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Min Check (K)</label>
+              <label className="block text-sm font-medium mb-1">Min Check ($)</label>
               <CurrencyInput
                 value={formData.min_check_size}
                 onChange={(val) => setFormData({ ...formData, min_check_size: val })}
@@ -214,7 +214,7 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Max Check (K)</label>
+              <label className="block text-sm font-medium mb-1">Max Check ($)</label>
               <CurrencyInput
                 value={formData.max_check_size}
                 onChange={(val) => setFormData({ ...formData, max_check_size: val })}

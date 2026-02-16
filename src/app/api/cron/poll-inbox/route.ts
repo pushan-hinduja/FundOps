@@ -4,6 +4,7 @@ import { getGmailClient, fetchUnreadMessages, fetchMessagesSinceHistory, getCurr
 import { parseEmailWithAI, fetchParsingContext } from "@/lib/ai/parser";
 import { processInBatches } from "@/lib/utils/batch";
 import { processEmailForSuggestedContact } from "@/lib/emails/suggested-contacts";
+import { markThreadQuestionsAnswered } from "@/lib/emails/answer-detection";
 import type { AuthAccount } from "@/lib/supabase/types";
 
 const AI_BATCH_SIZE = 5;
@@ -237,6 +238,18 @@ async function processAccount(
       }
     } catch (err: any) {
       stats.errors.push(`Message ${messageId}: ${err.message}`);
+    }
+  }
+
+  // Detect thread-based answers (GP replied via email client)
+  if (ingestedEmails.length > 0) {
+    try {
+      const answered = await markThreadQuestionsAnswered(supabase, ingestedEmails, organizationId);
+      if (answered > 0) {
+        console.log(`[Email Sync] Marked ${answered} questions as answered via thread detection`);
+      }
+    } catch (err: any) {
+      console.error(`[Email Sync] Answer detection error:`, err.message);
     }
   }
 

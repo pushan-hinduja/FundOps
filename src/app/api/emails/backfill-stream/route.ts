@@ -4,6 +4,7 @@ import { getGmailClient, fetchAllMessages, getMessageDetails, getCurrentHistoryI
 import { parseEmailWithAI, fetchParsingContext } from "@/lib/ai/parser";
 import { processInBatches } from "@/lib/utils/batch";
 import { processEmailForSuggestedContact } from "@/lib/emails/suggested-contacts";
+import { markThreadQuestionsAnswered } from "@/lib/emails/answer-detection";
 import type { AuthAccount } from "@/lib/supabase/types";
 
 const AI_BATCH_SIZE = 5; // Concurrent AI parsing calls
@@ -170,6 +171,25 @@ export async function GET(request: NextRequest) {
               total: messages.length,
               newEmailsIngested: stats.newEmailsIngested,
             });
+          }
+        }
+
+        // Detect thread-based answers (GP replied via email client)
+        if (stats.newEmailsIngested > 0) {
+          try {
+            const { data: recentEmails } = await supabase
+              .from("emails_raw")
+              .select("from_email, thread_id")
+              .eq("organization_id", organizationId);
+
+            if (recentEmails) {
+              const answered = await markThreadQuestionsAnswered(supabase, recentEmails, organizationId);
+              if (answered > 0) {
+                console.log(`[Backfill] Marked ${answered} questions as answered via thread detection`);
+              }
+            }
+          } catch (err: unknown) {
+            console.error(`[Backfill] Answer detection error:`, (err as Error).message);
           }
         }
 

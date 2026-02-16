@@ -155,6 +155,13 @@ export async function POST(request: NextRequest) {
       // Don't fail the request - email was already sent
     }
 
+    // Mark the question as answered in emails_parsed
+    await supabase
+      .from("emails_parsed")
+      .update({ is_answered: true })
+      .eq("email_id", emailId)
+      .eq("intent", "question");
+
     return NextResponse.json({
       success: true,
       messageId: sendResult.messageId,

@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
-import { ArrowUpRight, TrendingUp } from "lucide-react";
 import DashboardChart from "@/components/dashboard/DashboardChart";
+import { DashboardMetricCards } from "@/components/dashboard/DashboardMetricCards";
 import { Deal } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -34,45 +33,91 @@ export default async function DashboardPage() {
     }
   }
 
-  // Fetch deals for metrics
+  // Fetch all data for dashboard
   let deals: Deal[] = [];
-  let lpCount = 0;
+  let pendingWiresData: { dealId: string; lpName: string; dealName: string; wireStatus: string; amount: number | null }[] = [];
+  let unansweredQuestionsData: { dealId: string; fromEmail: string; question: string; dealName: string }[] = [];
+  let pendingKycData: { dealId: string; lpName: string; dealName: string; kycStatus: string }[] = [];
+  let allocatedByDeal: Record<string, number> = {};
 
   if (userData?.organization_id) {
-    const { data: dealsData } = await supabase
-      .from("deals")
-      .select("*")
-      .eq("organization_id", userData.organization_id);
-    deals = (dealsData || []) as Deal[];
+    const orgId = userData.organization_id;
 
-    const { count } = await supabase
-      .from("lp_contacts")
-      .select("*", { count: "exact", head: true })
-      .eq("organization_id", userData.organization_id);
-    lpCount = count || 0;
+    const [dealsResult, allocationsResult, pendingWiresResult, unansweredQuestionsResult, pendingKycResult] = await Promise.all([
+      supabase
+        .from("deals")
+        .select("*")
+        .eq("organization_id", orgId),
+      // Allocated amounts per deal (for Capital Allocated card)
+      supabase
+        .from("deal_lp_relationships")
+        .select("deal_id, allocated_amount, deals!inner(organization_id, status)")
+        .eq("deals.organization_id", orgId)
+        .eq("deals.status", "active")
+        .eq("status", "allocated"),
+      // Pending wires with LP and deal names
+      supabase
+        .from("deal_lp_relationships")
+        .select("deal_id, committed_amount, wire_status, lp_contacts!inner(name), deals!inner(name, organization_id)")
+        .eq("deals.organization_id", orgId)
+        .in("status", ["committed", "allocated"])
+        .in("wire_status", ["pending", "partial"]),
+      // Unanswered questions associated with active deals
+      supabase
+        .from("emails_parsed")
+        .select("detected_deal_id, extracted_questions, emails_raw!inner(from_email, organization_id), deals!inner(name, status)")
+        .eq("emails_raw.organization_id", orgId)
+        .eq("intent", "question")
+        .eq("is_answered", false)
+        .eq("deals.status", "active"),
+      // Pending KYC with LP and deal info
+      supabase
+        .from("deal_lp_relationships")
+        .select("deal_id, lp_contacts!inner(name, kyc_status), deals!inner(name, organization_id, status)")
+        .eq("deals.organization_id", orgId)
+        .eq("deals.status", "active")
+        .in("status", ["interested", "committed", "allocated"])
+        .neq("lp_contacts.kyc_status", "approved"),
+    ]);
+
+    deals = (dealsResult.data || []) as Deal[];
+
+    // Aggregate allocated amounts by deal
+    allocatedByDeal = (allocationsResult.data || []).reduce((acc: Record<string, number>, r: any) => {
+      const dealId = r.deal_id;
+      acc[dealId] = (acc[dealId] || 0) + (r.allocated_amount || 0);
+      return acc;
+    }, {});
+
+    pendingWiresData = (pendingWiresResult.data || []).map((r: any) => ({
+      dealId: r.deal_id,
+      lpName: r.lp_contacts?.name || "Unknown LP",
+      dealName: r.deals?.name || "Unknown Deal",
+      wireStatus: r.wire_status,
+      amount: r.committed_amount,
+    }));
+
+    unansweredQuestionsData = (unansweredQuestionsResult.data || []).map((r: any) => ({
+      dealId: r.detected_deal_id,
+      fromEmail: r.emails_raw?.from_email || "Unknown",
+      question: r.extracted_questions?.[0] || "Question",
+      dealName: r.deals?.name || "Unknown Deal",
+    }));
+
+    pendingKycData = (pendingKycResult.data || []).map((r: any) => ({
+      dealId: r.deal_id,
+      lpName: r.lp_contacts?.name || "Unknown LP",
+      dealName: r.deals?.name || "Unknown Deal",
+      kycStatus: r.lp_contacts?.kyc_status || "not_started",
+    }));
   }
 
   // Calculate metrics
-  const totalCommitted = deals.reduce((sum, deal) => sum + (deal.total_committed || 0), 0);
-  const totalInterested = deals.reduce((sum, deal) => sum + (deal.total_interested || 0), 0);
-  const totalTarget = deals.reduce((sum, deal) => sum + (deal.target_raise || 0), 0);
-  const activeDeals = deals.filter(deal => deal.status === "active").length;
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000000000) {
-      return `$${(amount / 1000000000).toFixed(1)}B`;
-    }
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}k`;
-    }
-    return `$${amount.toLocaleString()}`;
-  };
-
-  // Commitment progress percentage
-  const commitmentProgress = totalTarget > 0 ? Math.round((totalCommitted / totalTarget) * 100) : 0;
+  const activeDealsData = deals.filter(deal => deal.status === "active");
+  const totalAllocated = Object.values(allocatedByDeal).reduce((sum, amount) => sum + amount, 0);
+  const totalCommitted = activeDealsData.reduce((sum, deal) => sum + (deal.total_committed || 0), 0);
+  const totalInterested = activeDealsData.reduce((sum, deal) => sum + (deal.total_interested || 0), 0);
+  const totalTarget = activeDealsData.reduce((sum, deal) => sum + (deal.target_raise || 0), 0);
 
   return (
     <div className="px-8 py-6 pb-36">
@@ -85,125 +130,18 @@ export default async function DashboardPage() {
         totalTarget={totalTarget}
       />
 
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Active Deals */}
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <div className="flex items-center justify-between mb-4">
-            <p className="section-label">Active Deals</p>
-            <div className="flex items-center gap-1">
-              <button className="p-1 hover:bg-secondary rounded">
-                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button className="p-1 hover:bg-secondary rounded">
-                <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-
-          <h3 className="metric-number text-4xl mb-1">{activeDeals}</h3>
-          <p className="text-sm text-muted-foreground">Deals</p>
-
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-foreground"></span>
-                Active
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-muted-foreground/30"></span>
-                Total: {deals.length}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Total Interested */}
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <div className="flex items-center justify-between mb-4">
-            <p className="section-label">Pipeline Value</p>
-            <div className="flex items-center gap-1">
-              <button className="p-1 hover:bg-secondary rounded">
-                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button className="p-1 hover:bg-secondary rounded">
-                <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-
-          <h3 className="metric-number text-4xl mb-1">{formatCurrency(totalInterested)}</h3>
-          <p className="text-sm text-muted-foreground">Interested</p>
-
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1 text-xs">
-                <span className="w-2 h-2 rounded-full bg-[hsl(var(--success))]"></span>
-                Active pipeline
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* LP Contacts */}
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <div className="flex items-center justify-between mb-4">
-            <p className="section-label">LP Contacts</p>
-            <div className="flex items-center gap-1">
-              <button className="p-1 hover:bg-secondary rounded">
-                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button className="p-1 hover:bg-secondary rounded">
-                <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-
-          <h3 className="metric-number text-4xl mb-1">{lpCount}</h3>
-          <p className="text-sm text-muted-foreground">Total contacts</p>
-
-          <div className="mt-4 pt-4 border-t border-border">
-            <Link
-              href="/lps"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              View all contacts
-            </Link>
-          </div>
-        </div>
-
-        {/* Target Progress */}
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <div className="flex items-center justify-between mb-4">
-            <p className="section-label">Target Progress</p>
-            <div className="flex items-center gap-1">
-              <button className="p-1 hover:bg-secondary rounded">
-                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button className="p-1 hover:bg-secondary rounded">
-                <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-
-          <h3 className="metric-number text-4xl mb-1">{formatCurrency(totalTarget)}</h3>
-          <p className="text-sm text-muted-foreground">Total target</p>
-
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="text-muted-foreground">Progress</span>
-              <span className="font-medium">{commitmentProgress}%</span>
-            </div>
-            <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full bg-foreground rounded-full transition-all"
-                style={{ width: `${Math.min(commitmentProgress, 100)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* Metric Cards - Client Component */}
+      <DashboardMetricCards
+        deals={deals}
+        totalAllocated={totalAllocated}
+        totalCommitted={totalCommitted}
+        totalInterested={totalInterested}
+        totalTarget={totalTarget}
+        allocatedByDeal={allocatedByDeal}
+        pendingWires={pendingWiresData}
+        unansweredQuestions={unansweredQuestionsData}
+        pendingKyc={pendingKycData}
+      />
     </div>
   );
 }

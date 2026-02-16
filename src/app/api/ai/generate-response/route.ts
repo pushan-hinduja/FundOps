@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { getAnthropicClient, SONNET_MODEL_ID } from "@/lib/ai/anthropic";
 import { buildEmailResponsePrompt, ResponseTone } from "@/lib/ai/prompts";
 
 export async function POST(request: NextRequest) {
@@ -133,21 +133,10 @@ export async function POST(request: NextRequest) {
       tone,
     });
 
-    // Check for Anthropic API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "AI service not configured" },
-        { status: 500 }
-      );
-    }
-
-    // Initialize Anthropic client
-    const anthropic = new Anthropic({ apiKey });
-
     // Call Anthropic API
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const client = getAnthropicClient();
+    const response = await client.messages.create({
+      model: SONNET_MODEL_ID,
       max_tokens: 1024,
       messages: [
         {

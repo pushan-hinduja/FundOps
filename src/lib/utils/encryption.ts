@@ -5,17 +5,17 @@ const IV_LENGTH = 16;
 const TAG_LENGTH = 16;
 const SALT_LENGTH = 32;
 
-function getKey(): Buffer {
+function deriveKey(salt: Buffer): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
     throw new Error("ENCRYPTION_KEY environment variable is not set");
   }
-  // Derive a 32-byte key from the base64-encoded key
-  return scryptSync(key, "fundops-salt", 32);
+  return scryptSync(key, salt, 32);
 }
 
 export function encrypt(text: string): string {
-  const key = getKey();
+  const salt = randomBytes(SALT_LENGTH);
+  const key = deriveKey(salt);
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
 
@@ -24,18 +24,18 @@ export function encrypt(text: string): string {
 
   const tag = cipher.getAuthTag();
 
-  // Combine IV + Tag + Encrypted data
-  return iv.toString("hex") + tag.toString("hex") + encrypted;
+  // Format: Salt + IV + Tag + Encrypted data
+  return salt.toString("hex") + iv.toString("hex") + tag.toString("hex") + encrypted;
 }
 
 export function decrypt(encryptedText: string): string {
-  const key = getKey();
+  // Extract Salt, IV, Tag, and encrypted data
+  const salt = Buffer.from(encryptedText.slice(0, SALT_LENGTH * 2), "hex");
+  const iv = Buffer.from(encryptedText.slice(SALT_LENGTH * 2, (SALT_LENGTH + IV_LENGTH) * 2), "hex");
+  const tag = Buffer.from(encryptedText.slice((SALT_LENGTH + IV_LENGTH) * 2, (SALT_LENGTH + IV_LENGTH + TAG_LENGTH) * 2), "hex");
+  const encrypted = encryptedText.slice((SALT_LENGTH + IV_LENGTH + TAG_LENGTH) * 2);
 
-  // Extract IV, Tag, and encrypted data
-  const iv = Buffer.from(encryptedText.slice(0, IV_LENGTH * 2), "hex");
-  const tag = Buffer.from(encryptedText.slice(IV_LENGTH * 2, (IV_LENGTH + TAG_LENGTH) * 2), "hex");
-  const encrypted = encryptedText.slice((IV_LENGTH + TAG_LENGTH) * 2);
-
+  const key = deriveKey(salt);
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
 

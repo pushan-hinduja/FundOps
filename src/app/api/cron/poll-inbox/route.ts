@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getGmailClient, fetchUnreadMessages, fetchMessagesSinceHistory, getCurrentHistoryId, getMessageDetails } from "@/lib/gmail/client";
 import { parseEmailWithAI, fetchParsingContext } from "@/lib/ai/parser";
 import { processInBatches } from "@/lib/utils/batch";
+import { processEmailForSuggestedContact } from "@/lib/emails/suggested-contacts";
 import type { AuthAccount } from "@/lib/supabase/types";
 
 const AI_BATCH_SIZE = 5;
@@ -219,37 +220,16 @@ async function processAccount(
       stats.emailsIngested++;
       ingestedEmails.push(insertedEmail);
 
-      // Add to suggested contacts if not in LP database
+      // Add to suggested contacts if not already an LP or dismissed
       if (insertedEmail && details.from.email) {
         try {
-          const { data: existingLP } = await supabase
-            .from("lp_contacts")
-            .select("id")
-            .eq("organization_id", organizationId)
-            .ilike("email", details.from.email)
-            .single();
-
-          if (!existingLP) {
-            const { error: suggestError } = await supabase
-              .from("suggested_contacts")
-              .upsert(
-                {
-                  organization_id: organizationId,
-                  email: details.from.email,
-                  name: details.from.name || details.from.email.split("@")[0],
-                  firm: null,
-                  source_email_id: insertedEmail.id,
-                  is_dismissed: false,
-                },
-                {
-                  onConflict: "organization_id,email",
-                  ignoreDuplicates: false,
-                }
-              );
-
-            if (!suggestError) {
-              stats.suggestedContactsAdded++;
-            }
+          const { added } = await processEmailForSuggestedContact(supabase, organizationId, {
+            id: insertedEmail.id,
+            from_email: details.from.email,
+            from_name: details.from.name,
+          });
+          if (added) {
+            stats.suggestedContactsAdded++;
           }
         } catch (scErr: any) {
           console.error(`[Email Sync] Error checking suggested contact:`, scErr.message);

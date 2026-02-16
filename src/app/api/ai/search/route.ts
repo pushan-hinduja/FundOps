@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { getAnthropicClient, SONNET_MODEL_ID } from "@/lib/ai/anthropic";
 
 interface Message {
   role: "user" | "assistant";
@@ -63,21 +63,8 @@ export async function POST(request: NextRequest) {
     // Build context for the AI
     const context = buildContext(orgName, deals, lps);
 
-    // Check if Anthropic API key is available
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      // Fallback to mock response if no API key
-      return NextResponse.json({
-        response: generateMockResponse(query, deals, lps),
-      });
-    }
-
-    // Initialize Anthropic client
-    const anthropic = new Anthropic({
-      apiKey,
-    });
-
     // Build messages for the API
+    const client = getAnthropicClient();
     const messages: { role: "user" | "assistant"; content: string }[] = [];
 
     // Add conversation history
@@ -95,8 +82,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Call Anthropic API
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const response = await client.messages.create({
+      model: SONNET_MODEL_ID,
       max_tokens: 1024,
       system: `You are an AI assistant for FundOps, a fund operations platform. You help users understand their deals, LP (Limited Partner) contacts, and pipeline data.
 

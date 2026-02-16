@@ -55,6 +55,29 @@ export async function getGmailClient(authAccount: AuthAccount) {
 }
 
 /**
+ * Verify a Gmail connection is working by attempting to decrypt tokens
+ * and making a lightweight API call. Returns true if healthy, false otherwise.
+ * If unhealthy, sets is_active = false in the database.
+ */
+export async function verifyGmailConnection(
+  supabase: any,
+  account: AuthAccount
+): Promise<boolean> {
+  try {
+    const gmail = await getGmailClient(account);
+    await gmail.users.getProfile({ userId: "me" });
+    return true;
+  } catch (err) {
+    console.error(`[Gmail] Connection check failed for ${account.email}:`, (err as Error).message);
+    await supabase
+      .from("auth_accounts")
+      .update({ is_active: false })
+      .eq("id", account.id);
+    return false;
+  }
+}
+
+/**
  * Fetch only UNREAD messages from inbox
  * Use this for regular sync operations (more efficient than fetching all)
  */

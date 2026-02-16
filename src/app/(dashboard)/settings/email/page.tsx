@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { DisconnectGmailButton } from "@/components/shared/DisconnectGmailButton";
+import { verifyGmailConnection } from "@/lib/gmail/client";
+import type { AuthAccount } from "@/lib/supabase/types";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
@@ -8,8 +10,9 @@ export const dynamic = "force-dynamic";
 export default async function EmailSettingsPage({
   searchParams,
 }: {
-  searchParams: { success?: string; error?: string };
+  searchParams: Promise<{ success?: string; error?: string }>;
 }) {
+  const { success, error: errorParam } = await searchParams;
   const supabase = await createClient();
 
   // Get current user
@@ -23,8 +26,20 @@ export default async function EmailSettingsPage({
     .eq("user_id", user.id)
     .eq("provider", "gmail");
 
+  // Verify each active connection is actually working
+  if (accounts) {
+    for (const account of accounts) {
+      if (account.is_active) {
+        const healthy = await verifyGmailConnection(supabase, account as AuthAccount);
+        if (!healthy) {
+          account.is_active = false;
+        }
+      }
+    }
+  }
+
   const successMessage =
-    searchParams.success === "gmail_connected"
+    success === "gmail_connected"
       ? "Gmail account connected successfully!"
       : null;
 
@@ -41,8 +56,8 @@ export default async function EmailSettingsPage({
       "Token encryption is not configured. Set ENCRYPTION_KEY and restart the server.",
   };
 
-  const errorMessage = searchParams.error
-    ? errorMessages[searchParams.error] || "An error occurred."
+  const errorMessage = errorParam
+    ? errorMessages[errorParam] || "An error occurred."
     : null;
 
   return (
@@ -108,11 +123,19 @@ export default async function EmailSettingsPage({
                     className={`px-2 py-0.5 rounded-lg text-xs font-medium ${
                       account.is_active
                         ? "bg-secondary text-green-600"
-                        : "bg-secondary text-muted-foreground"
+                        : "bg-secondary text-destructive"
                     }`}
                   >
                     {account.is_active ? "Active" : "Inactive"}
                   </span>
+                  {!account.is_active && (
+                    <Link
+                      href="/api/auth/google"
+                      className="px-3 py-1.5 text-sm text-primary hover:bg-muted rounded transition"
+                    >
+                      Reconnect
+                    </Link>
+                  )}
                   <DisconnectGmailButton accountId={account.id} />
                 </div>
               </div>

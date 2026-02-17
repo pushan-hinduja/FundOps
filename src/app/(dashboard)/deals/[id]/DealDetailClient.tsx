@@ -77,18 +77,18 @@ export function DealDetailClient({
   return (
     <div className="flex gap-6 mb-6">
       {/* Close Readiness Dashboard */}
-      <div className="w-1/2">
+      <div className="w-1/2 h-[32rem]">
         <CloseReadinessDashboard metrics={metrics} />
       </div>
 
       {/* Committed LPs with allocation tracking */}
-      <div className="w-1/2 glass-card rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-border">
+      <div className="w-1/2 h-[32rem] glass-card rounded-2xl overflow-hidden flex flex-col">
+        <div className="px-6 py-4 border-b border-border shrink-0">
           <h2 className="text-lg font-medium">
             Committed & Allocated ({relationships.length})
           </h2>
         </div>
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-border overflow-y-auto flex-1">
           {relationships.map((rel) => (
             <LPAllocationCard
               key={rel.id}

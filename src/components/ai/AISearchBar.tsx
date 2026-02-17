@@ -1,8 +1,19 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, ReactNode } from "react";
 import { Sparkles, HelpCircle, Plus, Send, X } from "lucide-react";
 import { useAISearch } from "./AISearchContext";
+
+function renderMarkdown(text: string): ReactNode {
+  // Split on **bold** patterns
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
 
 const suggestedQueries = [
   "How many committed LPs do I have?",
@@ -143,7 +154,7 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
                         : "bg-[#5a5a5f] text-white/90"
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap">{renderMarkdown(message.content)}</p>
                   </div>
                 </div>
               ))}
@@ -292,7 +303,7 @@ function DashboardAISearch({
                         : "bg-[#5a5a5f] text-white/90"
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap">{renderMarkdown(message.content)}</p>
                   </div>
                 </div>
               ))}

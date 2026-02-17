@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch relevant data from Supabase to provide context
-    const [dealsResult, lpsResult, orgResult] = await Promise.all([
+    const [dealsResult, lpsResult, relationshipsResult, orgResult] = await Promise.all([
       supabase
         .from("deals")
         .select("*")
@@ -50,6 +50,10 @@ export async function POST(request: NextRequest) {
         .select("*")
         .eq("organization_id", userData.organization_id),
       supabase
+        .from("deal_lp_relationships")
+        .select("*, deals!inner(name, status, organization_id), lp_contacts!inner(name, firm)")
+        .eq("deals.organization_id", userData.organization_id),
+      supabase
         .from("organizations")
         .select("name")
         .eq("id", userData.organization_id)
@@ -58,10 +62,11 @@ export async function POST(request: NextRequest) {
 
     const deals = dealsResult.data || [];
     const lps = lpsResult.data || [];
+    const relationships = relationshipsResult.data || [];
     const orgName = orgResult.data?.name || "Unknown Organization";
 
     // Build context for the AI
-    const context = buildContext(orgName, deals, lps);
+    const context = buildContext(orgName, deals, lps, relationships);
 
     // Build messages for the API
     const client = getAnthropicClient();
@@ -114,7 +119,8 @@ Answer questions concisely and helpfully based on this data. If asked about spec
 function buildContext(
   orgName: string,
   deals: Record<string, unknown>[],
-  lps: Record<string, unknown>[]
+  lps: Record<string, unknown>[],
+  relationships: Record<string, unknown>[]
 ): string {
   const activeDeals = deals.filter(
     (d: Record<string, unknown>) => d.status === "active"
@@ -150,24 +156,75 @@ DEALS:
 `;
 
   for (const deal of deals) {
-    context += `- ${deal.name} (${deal.status}): Target $${formatNumber(deal.target_raise as number)}, Committed $${formatNumber(deal.total_committed as number)}, Interested $${formatNumber(deal.total_interested as number)}
-`;
+    context += `- ${deal.name} (${deal.status}): Target $${formatNumber(deal.target_raise as number)}, Committed $${formatNumber(deal.total_committed as number)}, Interested $${formatNumber(deal.total_interested as number)}`;
+    if (deal.close_date) context += `, Close: ${deal.close_date}`;
+    if (deal.investment_stage) context += `, Stage: ${deal.investment_stage}`;
+    context += `\n`;
   }
 
   context += `
 LP CONTACTS (${lps.length} total):
 `;
 
-  // Group LPs by status
-  const lpsByStatus: Record<string, Record<string, unknown>[]> = {};
   for (const lp of lps) {
-    const status = (lp.status as string) || "unknown";
-    if (!lpsByStatus[status]) lpsByStatus[status] = [];
-    lpsByStatus[status].push(lp);
+    context += `- ${lp.name}`;
+    if (lp.firm) context += ` (${lp.firm})`;
+    if (lp.kyc_status) context += ` [KYC: ${lp.kyc_status}]`;
+    context += `\n`;
   }
 
-  for (const [status, lpList] of Object.entries(lpsByStatus)) {
-    context += `- ${status}: ${lpList.length} LPs\n`;
+  // Group relationships by deal for active deals
+  const relsByDeal: Record<string, Record<string, unknown>[]> = {};
+  for (const rel of relationships) {
+    const dealId = rel.deal_id as string;
+    if (!relsByDeal[dealId]) relsByDeal[dealId] = [];
+    relsByDeal[dealId].push(rel);
+  }
+
+  // Only include detailed LP breakdown for active deals to keep context manageable
+  const activeRelDeals = activeDeals.map((d) => d.id as string);
+  if (activeRelDeals.length > 0) {
+    context += `\nACTIVE DEAL LP DETAILS:\n`;
+    for (const dealId of activeRelDeals) {
+      const deal = deals.find((d) => d.id === dealId);
+      const rels = relsByDeal[dealId] || [];
+      if (!deal || rels.length === 0) continue;
+
+      context += `\n${deal.name}:\n`;
+      for (const rel of rels) {
+        const lpInfo = rel.lp_contacts as Record<string, unknown> | null;
+        const lpName = lpInfo?.name || "Unknown LP";
+        const lpFirm = lpInfo?.firm ? ` (${lpInfo.firm})` : "";
+        context += `  - ${lpName}${lpFirm}: Status=${rel.status}, Committed=$${formatNumber(rel.committed_amount as number)}`;
+        if (rel.allocated_amount) context += `, Allocated=$${formatNumber(rel.allocated_amount as number)}`;
+        if (rel.wire_status) context += `, Wire=${rel.wire_status}`;
+        if (rel.wire_amount_received) context += `, Received=$${formatNumber(rel.wire_amount_received as number)}`;
+        context += `\n`;
+      }
+    }
+  }
+
+  // Add summary counts for wire status across active deals
+  const activeRels = relationships.filter((r) => {
+    const dealInfo = r.deals as Record<string, unknown> | null;
+    return dealInfo?.status === "active";
+  });
+  const pendingWires = activeRels.filter((r) => r.wire_status === "pending").length;
+  const partialWires = activeRels.filter((r) => r.wire_status === "partial").length;
+  const completeWires = activeRels.filter((r) => r.wire_status === "complete").length;
+  const interestedLPs = activeRels.filter((r) => r.status === "interested").length;
+  const committedLPs = activeRels.filter((r) => r.status === "committed").length;
+  const allocatedLPs = activeRels.filter((r) => r.status === "allocated").length;
+
+  if (activeRels.length > 0) {
+    context += `\nACTIVE DEALS SUMMARY:
+- LPs Interested: ${interestedLPs}
+- LPs Committed: ${committedLPs}
+- LPs Allocated: ${allocatedLPs}
+- Wires Pending: ${pendingWires}
+- Wires Partial: ${partialWires}
+- Wires Complete: ${completeWires}
+`;
   }
 
   return context;

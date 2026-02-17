@@ -31,9 +31,14 @@ export function TopNav() {
     const getUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("name, email")
+          .eq("id", authUser.id)
+          .single();
         setUser({
-          email: authUser.email,
-          name: authUser.user_metadata?.full_name || authUser.email?.split("@")[0],
+          email: userData?.email || authUser.email,
+          name: userData?.name || authUser.email?.split("@")[0],
         });
       }
     };
@@ -143,7 +148,7 @@ export function TopNav() {
             </div>
             <div className="text-left hidden sm:block">
               <div className="text-sm font-medium leading-tight">{user?.name || "User"}</div>
-              <div className="text-xs text-muted-foreground leading-tight">Manager</div>
+              <div className="text-xs text-muted-foreground leading-tight">{user?.email || ""}</div>
             </div>
           </button>
 

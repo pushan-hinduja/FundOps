@@ -88,10 +88,10 @@ export function CloseReadinessDashboard({ metrics }: CloseReadinessDashboardProp
   };
 
   return (
-    <div className="glass-card-readiness rounded-2xl p-6 h-full">
-      <h2 className="text-lg font-medium mb-6 text-white">Close Readiness</h2>
+    <div className="glass-card-readiness rounded-2xl p-6 h-full overflow-hidden flex flex-col">
+      <h2 className="text-lg font-medium mb-6 text-white shrink-0">Close Readiness</h2>
 
-      <div className="flex items-start justify-around mb-6">
+      <div className="flex items-start justify-around mb-6 shrink-0">
         <DonutChart
           percent={metrics.docsReceivedPercent}
           label="Docs Received"
@@ -111,12 +111,12 @@ export function CloseReadinessDashboard({ metrics }: CloseReadinessDashboardProp
 
       {/* Pending Items */}
       {metrics.pendingItems.length > 0 && (
-        <div className="border-t border-white/10 pt-4">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="border-t border-white/10 pt-4 flex flex-col min-h-0 flex-1">
+          <div className="flex items-center gap-2 mb-3 shrink-0">
             <AlertCircle className="w-4 h-4 text-yellow-400" />
             <p className="text-sm font-medium text-white">Pending Items ({metrics.pendingItems.length})</p>
           </div>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2 overflow-y-auto flex-1">
             {metrics.pendingItems.map((item) => (
               <div
                 key={item.lpId}

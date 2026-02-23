@@ -4,7 +4,7 @@ import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { EmailResponseOverlay } from "@/components/email/EmailResponseOverlay";
 
-type EmailFilter = "all" | "questions" | "interest" | "wires";
+type EmailFilter = "all" | "questions" | "interest" | "commitments" | "wires";
 
 interface EmailRawData {
   id: string;
@@ -101,7 +101,9 @@ export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFilter
       case "questions":
         return email.extracted_questions && email.extracted_questions.length > 0;
       case "interest":
-        return email.commitment_amount && email.commitment_amount > 0;
+        return email.intent === "interested";
+      case "commitments":
+        return email.intent === "committed" || (email.commitment_amount != null && email.commitment_amount > 0);
       case "wires":
         return email.has_wire_details === true;
       case "all":
@@ -114,6 +116,7 @@ export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFilter
     { key: "all", label: "All" },
     { key: "questions", label: "Questions" },
     { key: "interest", label: "Interest" },
+    { key: "commitments", label: "Commitments" },
     { key: "wires", label: "Wires" },
   ];
 

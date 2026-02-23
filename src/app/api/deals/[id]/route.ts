@@ -60,6 +60,8 @@ export async function PATCH(
         close_date: body.close_date,
         investment_stage: body.investment_stage,
         investment_type: body.investment_type,
+        founder_email: body.founder_email,
+        investor_update_frequency: body.investor_update_frequency,
         updated_at: new Date().toISOString(),
       })
       .eq("id", dealId)

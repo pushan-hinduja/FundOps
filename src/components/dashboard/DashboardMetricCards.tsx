@@ -20,13 +20,6 @@ interface UnansweredQuestion {
   dealName: string;
 }
 
-interface PendingKyc {
-  dealId: string;
-  lpName: string;
-  dealName: string;
-  kycStatus: string;
-}
-
 interface DashboardMetricCardsProps {
   deals: Deal[];
   totalAllocated: number;
@@ -36,7 +29,6 @@ interface DashboardMetricCardsProps {
   allocatedByDeal: Record<string, number>;
   pendingWires: PendingWire[];
   unansweredQuestions: UnansweredQuestion[];
-  pendingKyc: PendingKyc[];
 }
 
 type ModalType = "deals" | "capital" | "pending" | "progress" | null;
@@ -66,13 +58,12 @@ export function DashboardMetricCards({
   allocatedByDeal,
   pendingWires,
   unansweredQuestions,
-  pendingKyc,
 }: DashboardMetricCardsProps) {
   const [openModal, setOpenModal] = useState<ModalType>(null);
 
   const activeDeals = deals.filter((d) => d.status === "active");
   const otherDeals = deals.filter((d) => d.status !== "active");
-  const totalPendingActions = pendingWires.length + unansweredQuestions.length + pendingKyc.length;
+  const totalPendingActions = pendingWires.length + unansweredQuestions.length;
   const commitmentProgress = totalTarget > 0 ? Math.round((totalCommitted / totalTarget) * 100) : 0;
 
   return (
@@ -153,12 +144,6 @@ export function DashboardMetricCards({
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                   {unansweredQuestions.length} questions
-                </span>
-              )}
-              {pendingKyc.length > 0 && (
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                  {pendingKyc.length} KYC
                 </span>
               )}
               {totalPendingActions === 0 && (
@@ -411,29 +396,6 @@ export function DashboardMetricCards({
                   </div>
                 )}
 
-                {/* Pending KYC */}
-                {pendingKyc.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                      <p className="text-sm font-medium">Pending KYC ({pendingKyc.length})</p>
-                    </div>
-                    <div className="space-y-2">
-                      {pendingKyc.map((kyc, i) => (
-                        <Link
-                          key={i}
-                          href={`/deals/${kyc.dealId}`}
-                          className="flex items-center p-3 rounded-xl border border-border hover:bg-secondary/50 transition-colors"
-                        >
-                          <div>
-                            <p className="font-medium text-sm">{kyc.lpName}</p>
-                            <p className="text-xs text-muted-foreground">{kyc.dealName}</p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>

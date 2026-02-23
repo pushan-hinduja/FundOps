@@ -11,14 +11,18 @@ import { LPAllocationCard } from "@/components/deal/LPAllocationCard";
 
 interface DealDetailClientProps {
   dealId: string;
+  dealStatus: string;
   closeReadinessMetrics: CloseReadinessMetrics;
   committedRelationships: DealLPRelationshipWithLP[];
+  hideCloseReadiness?: boolean;
 }
 
 export function DealDetailClient({
   dealId,
+  dealStatus,
   closeReadinessMetrics,
   committedRelationships: initialRelationships,
+  hideCloseReadiness = false,
 }: DealDetailClientProps) {
   const router = useRouter();
   const [relationships, setRelationships] = useState(initialRelationships);
@@ -74,32 +78,40 @@ export function DealDetailClient({
     router.refresh();
   };
 
+  const allocatedCard = (
+    <div className="w-1/2 h-[32rem] glass-card rounded-2xl overflow-hidden flex flex-col">
+      <div className="px-6 py-4 border-b border-border shrink-0">
+        <h2 className="text-lg font-medium">
+          Allocated ({relationships.length})
+        </h2>
+      </div>
+      <div className="divide-y divide-border overflow-y-auto flex-1">
+        {relationships.map((rel) => (
+          <LPAllocationCard
+            key={rel.id}
+            relationship={rel}
+            onUpdateAllocation={(updates) =>
+              handleUpdateAllocation(rel.id, updates)
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
+
+  if (hideCloseReadiness) {
+    return allocatedCard;
+  }
+
   return (
     <div className="flex gap-6 mb-6">
       {/* Close Readiness Dashboard */}
       <div className="w-1/2 h-[32rem]">
-        <CloseReadinessDashboard metrics={metrics} />
+        <CloseReadinessDashboard metrics={metrics} dealId={dealId} dealStatus={dealStatus} />
       </div>
 
-      {/* Committed LPs with allocation tracking */}
-      <div className="w-1/2 h-[32rem] glass-card rounded-2xl overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-border shrink-0">
-          <h2 className="text-lg font-medium">
-            Committed & Allocated ({relationships.length})
-          </h2>
-        </div>
-        <div className="divide-y divide-border overflow-y-auto flex-1">
-          {relationships.map((rel) => (
-            <LPAllocationCard
-              key={rel.id}
-              relationship={rel}
-              onUpdateAllocation={(updates) =>
-                handleUpdateAllocation(rel.id, updates)
-              }
-            />
-          ))}
-        </div>
-      </div>
+      {/* Allocated LPs with allocation tracking */}
+      {allocatedCard}
     </div>
   );
 }

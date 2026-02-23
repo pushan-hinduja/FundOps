@@ -337,9 +337,10 @@ function hasMessageAttachments(payload: gmail_v1.Schema$MessagePart | undefined)
 }
 
 export interface SendEmailOptions {
-  to: string;
+  to: string | string[];
   subject: string;
   body: string;
+  cc?: string[];
   inReplyTo?: string;
   references?: string;
   threadId?: string;
@@ -355,17 +356,22 @@ export interface SendEmailResult {
  * Includes proper headers for email threading when replying
  */
 function createMimeMessage(options: SendEmailOptions & { from: string }): string {
-  const { to, subject, body, from, inReplyTo, references } = options;
+  const { to, subject, body, from, cc, inReplyTo, references } = options;
 
+  const toStr = Array.isArray(to) ? to.join(", ") : to;
   const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   let headers = [
     `From: ${from}`,
-    `To: ${to}`,
+    `To: ${toStr}`,
     `Subject: ${subject}`,
     `MIME-Version: 1.0`,
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ];
+
+  if (cc && cc.length > 0) {
+    headers.push(`Cc: ${cc.join(", ")}`);
+  }
 
   // Add threading headers if this is a reply
   if (inReplyTo) {
@@ -417,7 +423,8 @@ export async function sendEmailReply(
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 
-  console.log(`[Gmail API] Sending email reply to ${options.to}, subject: "${options.subject}"`);
+  const toLog = Array.isArray(options.to) ? options.to.join(", ") : options.to;
+  console.log(`[Gmail API] Sending email to ${toLog}, subject: "${options.subject}"`);
   if (options.threadId) {
     console.log(`[Gmail API] Threading with threadId: ${options.threadId}`);
   }
@@ -450,4 +457,16 @@ export async function sendEmailReply(
     }
     throw error;
   }
+}
+
+/**
+ * Send a new email (not a reply) via Gmail API.
+ * Supports multiple recipients in `to` and optional `cc`.
+ */
+export async function sendNewEmail(
+  gmail: gmail_v1.Gmail,
+  fromEmail: string,
+  options: Omit<SendEmailOptions, "inReplyTo" | "references" | "threadId">
+): Promise<SendEmailResult> {
+  return sendEmailReply(gmail, fromEmail, options);
 }

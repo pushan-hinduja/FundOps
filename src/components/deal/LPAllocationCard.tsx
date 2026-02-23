@@ -5,8 +5,6 @@ import {
   DealLPRelationshipWithLP,
   WireStatus,
   WIRE_STATUS_LABELS,
-  KYC_STATUS_LABELS,
-  KYCStatus,
 } from "@/lib/supabase/types";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -45,21 +43,6 @@ export function LPAllocationCard({
     }
   };
 
-  const getKYCStatusColor = (status: KYCStatus) => {
-    switch (status) {
-      case "approved":
-        return "bg-secondary text-green-600";
-      case "pending":
-      case "in_review":
-        return "bg-secondary text-yellow-600";
-      case "rejected":
-      case "expired":
-        return "bg-secondary text-red-600";
-      default:
-        return "bg-secondary text-muted-foreground";
-    }
-  };
-
   const lpContact = relationship.lp_contacts;
 
   const handleUpdate = async (updates: Partial<DealLPRelationshipWithLP>) => {
@@ -83,15 +66,6 @@ export function LPAllocationCard({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {lpContact?.kyc_status && (
-              <span
-                className={`px-2 py-0.5 text-xs font-medium rounded-lg ${getKYCStatusColor(
-                  lpContact.kyc_status
-                )}`}
-              >
-                KYC: {KYC_STATUS_LABELS[lpContact.kyc_status]}
-              </span>
-            )}
             <span
               className={`px-2 py-0.5 text-xs font-medium rounded-lg ${getWireStatusColor(
                 relationship.wire_status

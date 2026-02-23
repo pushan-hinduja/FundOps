@@ -6,11 +6,9 @@ import {
   InvestorType,
   AccreditationStatus,
   TaxStatus,
-  KYCStatus,
   INVESTOR_TYPE_LABELS,
   ACCREDITATION_STATUS_LABELS,
   TAX_STATUS_LABELS,
-  KYC_STATUS_LABELS,
 } from "@/lib/supabase/types";
 import { Check, Pencil, X, Loader2 } from "lucide-react";
 
@@ -26,7 +24,6 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
     investor_type: lp.investor_type,
     accreditation_status: lp.accreditation_status,
     tax_status: lp.tax_status,
-    kyc_status: lp.kyc_status,
     special_fee_percent: lp.special_fee_percent,
     special_carry_percent: lp.special_carry_percent,
   });
@@ -48,26 +45,10 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
       investor_type: lp.investor_type,
       accreditation_status: lp.accreditation_status,
       tax_status: lp.tax_status,
-      kyc_status: lp.kyc_status,
       special_fee_percent: lp.special_fee_percent,
       special_carry_percent: lp.special_carry_percent,
     });
     setIsEditing(false);
-  };
-
-  const getKYCStatusColor = (status: KYCStatus) => {
-    switch (status) {
-      case "approved":
-        return "bg-secondary text-green-600";
-      case "pending":
-      case "in_review":
-        return "bg-secondary text-yellow-600";
-      case "rejected":
-      case "expired":
-        return "bg-secondary text-red-600";
-      default:
-        return "bg-secondary text-muted-foreground";
-    }
   };
 
   const investorTypes: (InvestorType | "")[] = [
@@ -96,15 +77,6 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
     "foreign_individual",
     "foreign_entity",
     "tax_exempt",
-  ];
-
-  const kycStatuses: KYCStatus[] = [
-    "not_started",
-    "pending",
-    "in_review",
-    "approved",
-    "expired",
-    "rejected",
   ];
 
   if (!isEditing) {
@@ -147,17 +119,6 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
             <p className="font-medium">
               {lp.tax_status ? TAX_STATUS_LABELS[lp.tax_status] : "Not set"}
             </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">KYC Status</p>
-            <span
-              className={`inline-block px-2.5 py-1 rounded-lg text-sm font-medium ${getKYCStatusColor(
-                lp.kyc_status
-              )}`}
-            >
-              {KYC_STATUS_LABELS[lp.kyc_status]}
-            </span>
           </div>
 
           <div>
@@ -265,28 +226,6 @@ export function LPProfileEditor({ lp, onUpdate }: LPProfileEditorProps) {
             {taxStatuses.map((status) => (
               <option key={status || "empty"} value={status}>
                 {status ? TAX_STATUS_LABELS[status] : "Select..."}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm text-muted-foreground mb-1">
-            KYC Status
-          </label>
-          <select
-            value={formData.kyc_status}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                kyc_status: e.target.value as KYCStatus,
-              })
-            }
-            className="w-full px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-          >
-            {kycStatuses.map((status) => (
-              <option key={status} value={status}>
-                {KYC_STATUS_LABELS[status]}
               </option>
             ))}
           </select>

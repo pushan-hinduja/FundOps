@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
-type LPFilter = "all" | "interested" | "committed" | "allocated";
+type LPFilter = "all" | "interested" | "committed";
 
 interface LPRelationship {
   id: string;
@@ -62,11 +62,9 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  // Filter LPs: must have interested/committed/allocated status AND a dollar amount
+  // Filter LPs: must have interested/committed status AND a dollar amount (allocated LPs shown in top card)
   const eligibleLPs = lpRelationships.filter((lp) => {
-    // Must be interested, committed, or allocated
-    const hasValidStatus = ["interested", "committed", "allocated"].includes(lp.status);
-    // Must have a dollar amount
+    const hasValidStatus = ["interested", "committed"].includes(lp.status);
     const hasAmount = (lp.committed_amount && lp.committed_amount > 0) ||
                       (lp.allocated_amount && lp.allocated_amount > 0);
     return hasValidStatus && hasAmount;
@@ -77,7 +75,6 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
     if (activeFilter === "all") return true;
     if (activeFilter === "interested") return lp.status === "interested";
     if (activeFilter === "committed") return lp.status === "committed";
-    if (activeFilter === "allocated") return lp.status === "allocated";
     return true;
   });
 
@@ -85,7 +82,6 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
     { key: "all", label: "All" },
     { key: "interested", label: "Interested" },
     { key: "committed", label: "Committed" },
-    { key: "allocated", label: "Allocated" },
   ];
 
   const handleAllocate = async (lpRelationshipId: string) => {
@@ -124,7 +120,7 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
     <div className="glass-card rounded-2xl overflow-hidden">
       {/* Header with filters */}
       <div className="px-6 py-4 border-b border-border">
-        <h2 className="text-lg font-medium mb-3">LP Involvement ({filteredLPs.length})</h2>
+        <h2 className="text-lg font-medium mb-3">LP Interest ({filteredLPs.length})</h2>
 
         {/* Filter Pills */}
         <div className="flex items-center gap-2 flex-wrap">

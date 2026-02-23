@@ -20,6 +20,8 @@ interface Deal {
   close_date: string | null;
   investment_stage: string | null;
   investment_type: string | null;
+  founder_email: string | null;
+  investor_update_frequency: string | null;
 }
 
 interface EditDealButtonProps {

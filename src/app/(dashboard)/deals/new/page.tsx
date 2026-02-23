@@ -21,6 +21,8 @@ export default function NewDealPage() {
   const [closeDate, setCloseDate] = useState("");
   const [investmentStage, setInvestmentStage] = useState("");
   const [investmentType, setInvestmentType] = useState("");
+  const [founderEmail, setFounderEmail] = useState("");
+  const [investorUpdateFrequency, setInvestorUpdateFrequency] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +65,8 @@ export default function NewDealPage() {
         close_date: closeDate || null,
         investment_stage: investmentStage || null,
         investment_type: investmentType || null,
+        founder_email: founderEmail || null,
+        investor_update_frequency: investorUpdateFrequency || null,
         status: "draft",
       });
 
@@ -272,6 +276,43 @@ export default function NewDealPage() {
                 className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 placeholder="e.g., 20"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Investor Updates */}
+        <div className="border-t border-border pt-6 mt-6">
+          <h3 className="text-sm font-medium mb-4">Investor Updates</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="founderEmail" className="block text-sm font-medium mb-2">
+                Founder/Company Email
+              </label>
+              <input
+                id="founderEmail"
+                type="email"
+                value={founderEmail}
+                onChange={(e) => setFounderEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                placeholder="founder@company.com"
+              />
+            </div>
+            <div>
+              <label htmlFor="investorUpdateFrequency" className="block text-sm font-medium mb-2">
+                Update Frequency
+              </label>
+              <select
+                id="investorUpdateFrequency"
+                value={investorUpdateFrequency}
+                onChange={(e) => setInvestorUpdateFrequency(e.target.value)}
+                className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              >
+                <option value="">Not set</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="semi_annual">Semi-Annual</option>
+                <option value="annual">Annual</option>
+              </select>
             </div>
           </div>
         </div>

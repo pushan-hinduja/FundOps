@@ -169,7 +169,6 @@ LP CONTACTS (${lps.length} total):
   for (const lp of lps) {
     context += `- ${lp.name}`;
     if (lp.firm) context += ` (${lp.firm})`;
-    if (lp.kyc_status) context += ` [KYC: ${lp.kyc_status}]`;
     context += `\n`;
   }
 

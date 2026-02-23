@@ -37,13 +37,12 @@ export default async function DashboardPage() {
   let deals: Deal[] = [];
   let pendingWiresData: { dealId: string; lpName: string; dealName: string; wireStatus: string; amount: number | null }[] = [];
   let unansweredQuestionsData: { dealId: string; fromEmail: string; question: string; dealName: string }[] = [];
-  let pendingKycData: { dealId: string; lpName: string; dealName: string; kycStatus: string }[] = [];
   let allocatedByDeal: Record<string, number> = {};
 
   if (userData?.organization_id) {
     const orgId = userData.organization_id;
 
-    const [dealsResult, allocationsResult, pendingWiresResult, unansweredQuestionsResult, pendingKycResult] = await Promise.all([
+    const [dealsResult, allocationsResult, pendingWiresResult, unansweredQuestionsResult] = await Promise.all([
       supabase
         .from("deals")
         .select("*")
@@ -70,14 +69,6 @@ export default async function DashboardPage() {
         .eq("intent", "question")
         .eq("is_answered", false)
         .eq("deals.status", "active"),
-      // Pending KYC with LP and deal info
-      supabase
-        .from("deal_lp_relationships")
-        .select("deal_id, lp_contacts!inner(name, kyc_status), deals!inner(name, organization_id, status)")
-        .eq("deals.organization_id", orgId)
-        .eq("deals.status", "active")
-        .in("status", ["interested", "committed", "allocated"])
-        .neq("lp_contacts.kyc_status", "approved"),
     ]);
 
     deals = (dealsResult.data || []) as Deal[];
@@ -102,13 +93,6 @@ export default async function DashboardPage() {
       fromEmail: r.emails_raw?.from_email || "Unknown",
       question: r.extracted_questions?.[0] || "Question",
       dealName: r.deals?.name || "Unknown Deal",
-    }));
-
-    pendingKycData = (pendingKycResult.data || []).map((r: any) => ({
-      dealId: r.deal_id,
-      lpName: r.lp_contacts?.name || "Unknown LP",
-      dealName: r.deals?.name || "Unknown Deal",
-      kycStatus: r.lp_contacts?.kyc_status || "not_started",
     }));
   }
 
@@ -140,7 +124,6 @@ export default async function DashboardPage() {
         allocatedByDeal={allocatedByDeal}
         pendingWires={pendingWiresData}
         unansweredQuestions={unansweredQuestionsData}
-        pendingKyc={pendingKycData}
       />
     </div>
   );

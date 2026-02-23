@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { WireStatus, CloseReadinessMetrics } from "@/lib/supabase/types";
+import { WireStatus } from "@/lib/supabase/types";
 
 // GET /api/deals/[id]/allocations - Get allocations and close readiness metrics
 export async function GET(
@@ -43,7 +43,7 @@ export async function GET(
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
     }
 
-    // Fetch all LP relationships with LP info and documents
+    // Fetch all LP relationships with LP info
     const { data: relationships, error: relError } = await supabase
       .from("deal_lp_relationships")
       .select(`
@@ -52,9 +52,7 @@ export async function GET(
           id,
           name,
           email,
-          firm,
-          kyc_status,
-          accreditation_status
+          firm
         )
       `)
       .eq("deal_id", id)
@@ -68,35 +66,8 @@ export async function GET(
       );
     }
 
-    // Get LP IDs that are committed/allocated
-    const lpIds = relationships?.map((r) => r.lp_contact_id) || [];
-
-    // Fetch documents for all committed LPs
-    let docsPerLP: Record<string, { hasApprovedDocs: boolean }> = {};
-    if (lpIds.length > 0) {
-      const { data: docs } = await supabase
-        .from("lp_documents")
-        .select("lp_contact_id, status")
-        .in("lp_contact_id", lpIds);
-
-      // Group docs by LP and check for approved status
-      if (docs) {
-        for (const doc of docs) {
-          if (!docsPerLP[doc.lp_contact_id]) {
-            docsPerLP[doc.lp_contact_id] = { hasApprovedDocs: false };
-          }
-          if (doc.status === "approved") {
-            docsPerLP[doc.lp_contact_id].hasApprovedDocs = true;
-          }
-        }
-      }
-    }
-
     // Calculate metrics
     const totalLPs = relationships?.length || 0;
-    const lpsWithDocs = Object.values(docsPerLP).filter(
-      (d) => d.hasApprovedDocs
-    ).length;
     const totalAllocated =
       relationships?.reduce((sum, r) => sum + (r.allocated_amount || 0), 0) || 0;
     const totalWired =
@@ -107,26 +78,22 @@ export async function GET(
     const pendingItems =
       relationships
         ?.filter((r) => {
-          const hasDocs = docsPerLP[r.lp_contact_id]?.hasApprovedDocs || false;
           const pendingWire =
             r.wire_status !== "complete" && (r.allocated_amount || 0) > 0;
-          return !hasDocs || pendingWire;
+          return pendingWire;
         })
         .map((r) => ({
           lpId: r.lp_contact_id,
           lpName: r.lp_contacts?.name || "Unknown",
-          missingDocs: !docsPerLP[r.lp_contact_id]?.hasApprovedDocs,
           pendingWire:
             r.wire_status !== "complete" && (r.allocated_amount || 0) > 0,
           amount: r.allocated_amount || r.committed_amount || 0,
         })) || [];
 
-    const metrics: CloseReadinessMetrics = {
-      docsReceivedPercent: totalLPs > 0 ? (lpsWithDocs / totalLPs) * 100 : 0,
+    const metrics = {
       wiredPercent: totalAllocated > 0 ? (totalWired / totalAllocated) * 100 : 0,
       allocatedPercent: targetRaise > 0 ? (totalAllocated / targetRaise) * 100 : 0,
       totalLPs,
-      lpsWithDocs,
       totalAllocated,
       totalWired,
       targetRaise,
@@ -249,9 +216,7 @@ export async function PATCH(
           id,
           name,
           email,
-          firm,
-          kyc_status,
-          accreditation_status
+          firm
         )
       `)
       .single();

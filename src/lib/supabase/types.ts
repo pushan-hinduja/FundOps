@@ -40,34 +40,13 @@ export type TaxStatus =
   | "foreign_entity"
   | "tax_exempt";
 
-export type KYCStatus =
-  | "not_started"
-  | "pending"
-  | "in_review"
-  | "approved"
-  | "expired"
-  | "rejected";
-
-export type DocumentType =
-  | "subscription_agreement"
-  | "accreditation_letter"
-  | "tax_form_w9"
-  | "tax_form_w8"
-  | "id_passport"
-  | "kyc_documents"
-  | "other";
-
-export type DocumentStatus =
-  | "pending"
-  | "uploaded"
-  | "under_review"
-  | "approved"
-  | "rejected"
-  | "expired";
-
 export type WireStatus = "pending" | "partial" | "complete";
 
 export type ReportingFrequency = "monthly" | "quarterly" | "annual";
+
+export type InvestorUpdateFrequency = "monthly" | "quarterly" | "semi_annual" | "annual";
+
+export type InvestorUpdateStatus = "pending_request" | "request_sent" | "response_received" | "sent_to_lps";
 
 // ============================================
 // Label Mappings for Dropdowns
@@ -98,34 +77,6 @@ export const TAX_STATUS_LABELS: Record<TaxStatus, string> = {
   tax_exempt: "Tax Exempt",
 };
 
-export const KYC_STATUS_LABELS: Record<KYCStatus, string> = {
-  not_started: "Not Started",
-  pending: "Pending",
-  in_review: "In Review",
-  approved: "Approved",
-  expired: "Expired",
-  rejected: "Rejected",
-};
-
-export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
-  subscription_agreement: "Subscription Agreement",
-  accreditation_letter: "Accreditation Letter",
-  tax_form_w9: "Tax Form W-9",
-  tax_form_w8: "Tax Form W-8",
-  id_passport: "ID / Passport",
-  kyc_documents: "KYC Documents",
-  other: "Other",
-};
-
-export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
-  pending: "Pending",
-  uploaded: "Uploaded",
-  under_review: "Under Review",
-  approved: "Approved",
-  rejected: "Rejected",
-  expired: "Expired",
-};
-
 export const WIRE_STATUS_LABELS: Record<WireStatus, string> = {
   pending: "Pending",
   partial: "Partial",
@@ -135,6 +86,13 @@ export const WIRE_STATUS_LABELS: Record<WireStatus, string> = {
 export const REPORTING_FREQUENCY_LABELS: Record<ReportingFrequency, string> = {
   monthly: "Monthly",
   quarterly: "Quarterly",
+  annual: "Annual",
+};
+
+export const INVESTOR_UPDATE_FREQUENCY_LABELS: Record<InvestorUpdateFrequency, string> = {
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  semi_annual: "Semi-Annual",
   annual: "Annual",
 };
 
@@ -195,46 +153,9 @@ export interface LPContact {
   investor_type: InvestorType | null;
   accreditation_status: AccreditationStatus | null;
   tax_status: TaxStatus | null;
-  kyc_status: KYCStatus;
   // Special Deal Terms
   special_fee_percent: number | null;
   special_carry_percent: number | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LPDocument {
-  id: string;
-  lp_contact_id: string;
-  document_type: DocumentType;
-  document_name: string;
-  file_path: string | null;
-  status: DocumentStatus;
-  expiration_date: string | null;
-  verified_by: string | null;
-  verified_at: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LPWiringInstructions {
-  id: string;
-  lp_contact_id: string;
-  account_label: string;
-  bank_name: string;
-  account_name: string;
-  account_number: string;
-  routing_number: string | null;
-  swift_code: string | null;
-  iban: string | null;
-  bank_address: string | null;
-  intermediary_bank: string | null;
-  special_instructions: string | null;
-  is_primary: boolean;
-  is_verified: boolean;
-  verified_at: string | null;
-  verified_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -257,6 +178,28 @@ export interface Deal {
   close_date: string | null;
   investment_stage: string | null;
   investment_type: string | null;
+  founder_email: string | null;
+  investor_update_frequency: InvestorUpdateFrequency | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvestorUpdate {
+  id: string;
+  organization_id: string;
+  deal_id: string;
+  update_number: number;
+  status: InvestorUpdateStatus;
+  due_date: string;
+  request_email_thread_id: string | null;
+  request_email_message_id: string | null;
+  request_sent_at: string | null;
+  response_received_at: string | null;
+  response_email_id: string | null;
+  response_body: string | null;
+  lp_email_sent_at: string | null;
+  lp_gmail_message_id: string | null;
+  sent_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -334,7 +277,7 @@ export interface DealLPRelationship {
 
 // Extended type with LP contact info for joined queries
 export interface DealLPRelationshipWithLP extends DealLPRelationship {
-  lp_contacts: Pick<LPContact, "id" | "name" | "email" | "firm" | "kyc_status" | "accreditation_status"> | null;
+  lp_contacts: Pick<LPContact, "id" | "name" | "email" | "firm"> | null;
 }
 
 // Extended type with deal info for joined queries
@@ -344,18 +287,15 @@ export interface DealLPRelationshipWithDeal extends DealLPRelationship {
 
 // Close readiness metrics type
 export interface CloseReadinessMetrics {
-  docsReceivedPercent: number;
   wiredPercent: number;
   allocatedPercent: number;
   totalLPs: number;
-  lpsWithDocs: number;
   totalAllocated: number;
   totalWired: number;
   targetRaise: number;
   pendingItems: {
     lpId: string;
     lpName: string;
-    missingDocs: boolean;
     pendingWire: boolean;
     amount: number;
   }[];

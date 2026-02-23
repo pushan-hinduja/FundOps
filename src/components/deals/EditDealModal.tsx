@@ -21,6 +21,8 @@ interface Deal {
   close_date: string | null;
   investment_stage: string | null;
   investment_type: string | null;
+  founder_email: string | null;
+  investor_update_frequency: string | null;
 }
 
 interface EditDealModalProps {
@@ -47,6 +49,8 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
     close_date: deal.close_date || "",
     investment_stage: deal.investment_stage || "",
     investment_type: deal.investment_type || "",
+    founder_email: deal.founder_email || "",
+    investor_update_frequency: deal.investor_update_frequency || "",
   });
 
   if (!isOpen) return null;
@@ -74,6 +78,8 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
           close_date: formData.close_date || null,
           investment_stage: formData.investment_stage || null,
           investment_type: formData.investment_type || null,
+          founder_email: formData.founder_email || null,
+          investor_update_frequency: formData.investor_update_frequency || null,
         }),
       });
 
@@ -269,6 +275,37 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
               <option value="closed">Closed</option>
               <option value="cancelled">Cancelled</option>
             </select>
+          </div>
+
+          {/* Investor Updates */}
+          <div className="border-t border-border pt-4 mt-4">
+            <h3 className="text-sm font-medium mb-3">Investor Updates</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Founder/Company Email</label>
+                <input
+                  type="email"
+                  value={formData.founder_email}
+                  onChange={(e) => setFormData({ ...formData, founder_email: e.target.value })}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                  placeholder="founder@company.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Update Frequency</label>
+                <select
+                  value={formData.investor_update_frequency}
+                  onChange={(e) => setFormData({ ...formData, investor_update_frequency: e.target.value })}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                >
+                  <option value="">Not set</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="semi_annual">Semi-Annual</option>
+                  <option value="annual">Annual</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Memo URL */}

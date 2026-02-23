@@ -4,7 +4,6 @@ import {
   InvestorType,
   AccreditationStatus,
   TaxStatus,
-  KYCStatus,
 } from "@/lib/supabase/types";
 
 // GET /api/lps/[id] - Get LP profile
@@ -111,15 +110,6 @@ export async function PATCH(
       "foreign_entity",
       "tax_exempt",
     ];
-    const validKYCStatuses: KYCStatus[] = [
-      "not_started",
-      "pending",
-      "in_review",
-      "approved",
-      "expired",
-      "rejected",
-    ];
-
     if (
       body.investor_type &&
       !validInvestorTypes.includes(body.investor_type)
@@ -147,13 +137,6 @@ export async function PATCH(
       );
     }
 
-    if (body.kyc_status && !validKYCStatuses.includes(body.kyc_status)) {
-      return NextResponse.json(
-        { error: "Invalid KYC status" },
-        { status: 400 }
-      );
-    }
-
     // Build update object with allowed fields
     const allowedFields = [
       "name",
@@ -166,7 +149,6 @@ export async function PATCH(
       "investor_type",
       "accreditation_status",
       "tax_status",
-      "kyc_status",
       "special_fee_percent",
       "special_carry_percent",
     ];

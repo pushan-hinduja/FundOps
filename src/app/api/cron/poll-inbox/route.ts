@@ -5,6 +5,7 @@ import { parseEmailWithAI, fetchParsingContext } from "@/lib/ai/parser";
 import { processInBatches } from "@/lib/utils/batch";
 import { processEmailForSuggestedContact } from "@/lib/emails/suggested-contacts";
 import { markThreadQuestionsAnswered } from "@/lib/emails/answer-detection";
+import { detectUpdateResponses, checkAndCreateDueUpdates, sendPendingUpdateRequests } from "@/lib/emails/investor-updates";
 import type { AuthAccount } from "@/lib/supabase/types";
 
 const AI_BATCH_SIZE = 5;
@@ -80,6 +81,41 @@ async function processInboxSync(userId?: string) {
         stats.accountsProcessed++;
       } catch (err: any) {
         stats.errors.push(`Account ${account.email}: ${err.message}`);
+      }
+    }
+
+    // After processing all accounts, handle investor updates per organization
+    const processedOrgIds = new Set<string>();
+    for (const account of authAccounts) {
+      const orgId = userOrgMap.get(account.user_id);
+      if (!orgId || processedOrgIds.has(orgId)) continue;
+      processedOrgIds.add(orgId);
+
+      try {
+        // Check for and create due investor updates
+        const created = await checkAndCreateDueUpdates(supabase, orgId);
+        if (created > 0) {
+          console.log(`[Investor Updates] Created ${created} due updates for org ${orgId}`);
+        }
+
+        // Send pending update requests (find an active account for this org)
+        const orgAccount = authAccounts.find(
+          (a) => userOrgMap.get(a.user_id) === orgId
+        );
+        if (orgAccount) {
+          const gmail = await getGmailClient(orgAccount);
+          const sent = await sendPendingUpdateRequests(
+            supabase,
+            orgId,
+            gmail,
+            orgAccount.email
+          );
+          if (sent > 0) {
+            console.log(`[Investor Updates] Sent ${sent} update requests for org ${orgId}`);
+          }
+        }
+      } catch (err: any) {
+        console.error(`[Investor Updates] Error for org ${orgId}:`, err.message);
       }
     }
 
@@ -250,6 +286,16 @@ async function processAccount(
       }
     } catch (err: any) {
       console.error(`[Email Sync] Answer detection error:`, err.message);
+    }
+
+    // Detect investor update responses
+    try {
+      const detected = await detectUpdateResponses(supabase, organizationId, ingestedEmails);
+      if (detected > 0) {
+        console.log(`[Email Sync] Detected ${detected} investor update responses`);
+      }
+    } catch (err: any) {
+      console.error(`[Email Sync] Investor update response detection error:`, err.message);
     }
   }
 

@@ -8,6 +8,7 @@ import { DealLPRelationshipWithLP } from "@/lib/supabase/types";
 import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
 import { LPInvolvementSection } from "@/components/deals/LPInvolvementSection";
 import { EditDealButton } from "@/components/deals/EditDealButton";
+import { InvestorUpdatesCard } from "@/components/deal/InvestorUpdatesCard";
 
 export const dynamic = "force-dynamic";
 
@@ -56,8 +57,6 @@ export default async function DealDetailPage({
         name,
         email,
         firm,
-        kyc_status,
-        accreditation_status,
         special_fee_percent,
         special_carry_percent
       )
@@ -65,38 +64,12 @@ export default async function DealDetailPage({
     .eq("deal_id", id)
     .order("updated_at", { ascending: false });
 
-  // Get LP IDs that are committed/allocated to check for docs
-  const committedLpIds = lpRelationships
-    ?.filter((r) => r.status === "committed" || r.status === "allocated")
-    .map((r) => r.lp_contact_id) || [];
-
-  // Fetch documents for committed LPs to calculate close readiness
-  let docsPerLP: Record<string, { hasApprovedDocs: boolean }> = {};
-  if (committedLpIds.length > 0) {
-    const { data: docs } = await supabase
-      .from("lp_documents")
-      .select("lp_contact_id, status")
-      .in("lp_contact_id", committedLpIds);
-
-    if (docs) {
-      for (const doc of docs) {
-        if (!docsPerLP[doc.lp_contact_id]) {
-          docsPerLP[doc.lp_contact_id] = { hasApprovedDocs: false };
-        }
-        if (doc.status === "approved") {
-          docsPerLP[doc.lp_contact_id].hasApprovedDocs = true;
-        }
-      }
-    }
-  }
-
-  // Calculate close readiness metrics
+  // Calculate close readiness metrics (allocated LPs only)
   const committedRelationships = lpRelationships?.filter(
-    (r) => r.status === "committed" || r.status === "allocated"
+    (r) => r.status === "allocated"
   ) || [];
 
   const totalLPs = committedRelationships.length;
-  const lpsWithDocs = Object.values(docsPerLP).filter((d) => d.hasApprovedDocs).length;
   const totalAllocated = committedRelationships.reduce(
     (sum, r) => sum + (r.allocated_amount || 0),
     0
@@ -109,24 +82,20 @@ export default async function DealDetailPage({
 
   const pendingItems = committedRelationships
     .filter((r) => {
-      const hasDocs = docsPerLP[r.lp_contact_id]?.hasApprovedDocs || false;
       const pendingWire = r.wire_status !== "complete" && (r.allocated_amount || 0) > 0;
-      return !hasDocs || pendingWire;
+      return pendingWire;
     })
     .map((r) => ({
       lpId: r.lp_contact_id,
       lpName: r.lp_contacts?.name || "Unknown",
-      missingDocs: !docsPerLP[r.lp_contact_id]?.hasApprovedDocs,
       pendingWire: r.wire_status !== "complete" && (r.allocated_amount || 0) > 0,
       amount: r.allocated_amount || r.committed_amount || 0,
     }));
 
   const closeReadinessMetrics = {
-    docsReceivedPercent: totalLPs > 0 ? (lpsWithDocs / totalLPs) * 100 : 0,
     wiredPercent: totalAllocated > 0 ? (totalWired / totalAllocated) * 100 : 0,
     allocatedPercent: targetRaise > 0 ? (totalAllocated / targetRaise) * 100 : 0,
     totalLPs,
-    lpsWithDocs,
     totalAllocated,
     totalWired,
     targetRaise,
@@ -287,6 +256,8 @@ export default async function DealDetailPage({
                 close_date: deal.close_date,
                 investment_stage: deal.investment_stage,
                 investment_type: deal.investment_type,
+                founder_email: deal.founder_email,
+                investor_update_frequency: deal.investor_update_frequency,
               }}
             />
             <span className={`px-4 py-2 rounded-xl text-sm font-medium capitalize ${getDealStatusColor(deal.status)}`}>
@@ -321,13 +292,39 @@ export default async function DealDetailPage({
         </div>
       </div>
 
-      {/* Close Readiness Dashboard - Only show if there are committed LPs */}
-      {committedRelationships.length > 0 && (
+      {/* Close Readiness / Investor Updates + Allocated LPs row */}
+      {committedRelationships.length > 0 && deal.status !== "closed" && (
         <DealDetailClient
           dealId={deal.id}
+          dealStatus={deal.status}
           closeReadinessMetrics={closeReadinessMetrics}
           committedRelationships={committedRelationships as DealLPRelationshipWithLP[]}
         />
+      )}
+
+      {deal.status === "closed" && (
+        <div className="flex gap-6 mb-6">
+          <div className="w-1/2 h-[32rem]">
+            <InvestorUpdatesCard
+              dealId={deal.id}
+              dealName={deal.name}
+              companyName={deal.company_name}
+              closeDate={deal.close_date}
+              founderEmail={deal.founder_email}
+              investorUpdateFrequency={deal.investor_update_frequency}
+            />
+          </div>
+
+          {committedRelationships.length > 0 && (
+            <DealDetailClient
+              dealId={deal.id}
+              dealStatus={deal.status}
+              closeReadinessMetrics={closeReadinessMetrics}
+              committedRelationships={committedRelationships as DealLPRelationshipWithLP[]}
+              hideCloseReadiness
+            />
+          )}
+        </div>
       )}
 
       <div className="grid grid-cols-3 gap-6">

@@ -10,11 +10,9 @@ import {
   InvestorType,
   AccreditationStatus,
   TaxStatus,
-  KYCStatus,
   INVESTOR_TYPE_LABELS,
   ACCREDITATION_STATUS_LABELS,
   TAX_STATUS_LABELS,
-  KYC_STATUS_LABELS,
 } from "@/lib/supabase/types";
 
 export default function NewLPPage() {
@@ -32,7 +30,6 @@ export default function NewLPPage() {
     AccreditationStatus | ""
   >("");
   const [taxStatus, setTaxStatus] = useState<TaxStatus | "">("");
-  const [kycStatus, setKycStatus] = useState<KYCStatus>("not_started");
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,15 +60,6 @@ export default function NewLPPage() {
     "foreign_individual",
     "foreign_entity",
     "tax_exempt",
-  ];
-
-  const kycStatuses: KYCStatus[] = [
-    "not_started",
-    "pending",
-    "in_review",
-    "approved",
-    "expired",
-    "rejected",
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,7 +99,6 @@ export default function NewLPPage() {
         investor_type: investorType || null,
         accreditation_status: accreditationStatus || null,
         tax_status: taxStatus || null,
-        kyc_status: kycStatus,
       });
 
       if (insertError) throw insertError;
@@ -333,26 +320,6 @@ export default function NewLPPage() {
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="kycStatus"
-                className="block text-sm font-medium mb-2"
-              >
-                KYC Status
-              </label>
-              <select
-                id="kycStatus"
-                value={kycStatus}
-                onChange={(e) => setKycStatus(e.target.value as KYCStatus)}
-                className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              >
-                {kycStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {KYC_STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 

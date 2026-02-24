@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
@@ -29,11 +29,25 @@ interface EditDealModalProps {
   deal: Deal;
   isOpen: boolean;
   onClose: () => void;
+  scrollToSection?: string;
 }
 
-export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
+export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDealModalProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to section when modal opens
+  useEffect(() => {
+    if (isOpen && scrollToSection && modalRef.current) {
+      setTimeout(() => {
+        const el = modalRef.current?.querySelector(`#section-${scrollToSection}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+    }
+  }, [isOpen, scrollToSection]);
   const [formData, setFormData] = useState({
     name: deal.name,
     company_name: deal.company_name || "",
@@ -105,7 +119,7 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative glass-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div ref={modalRef} className="relative glass-card text-foreground rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-medium">Edit Deal</h2>
           <button
@@ -260,6 +274,18 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
                 />
               </div>
             </div>
+
+            {/* Memo URL */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium mb-1">Memo URL</label>
+              <input
+                type="url"
+                value={formData.memo_url}
+                onChange={(e) => setFormData({ ...formData, memo_url: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                placeholder="https://..."
+              />
+            </div>
           </div>
 
           {/* Status */}
@@ -278,7 +304,7 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
           </div>
 
           {/* Investor Updates */}
-          <div className="border-t border-border pt-4 mt-4">
+          <div id="section-investor-updates" className="border-t border-border pt-4 mt-4">
             <h3 className="text-sm font-medium mb-3">Investor Updates</h3>
             <div className="space-y-4">
               <div>
@@ -306,18 +332,6 @@ export function EditDealModal({ deal, isOpen, onClose }: EditDealModalProps) {
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* Memo URL */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Memo URL</label>
-            <input
-              type="url"
-              value={formData.memo_url}
-              onChange={(e) => setFormData({ ...formData, memo_url: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background"
-              placeholder="https://..."
-            />
           </div>
 
           {/* Actions */}

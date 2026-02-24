@@ -317,6 +317,25 @@ export default async function DealDetailPage({
               closeDate={deal.close_date}
               founderEmail={deal.founder_email}
               investorUpdateFrequency={deal.investor_update_frequency}
+              deal={{
+                id: deal.id,
+                name: deal.name,
+                company_name: deal.company_name,
+                description: deal.description,
+                target_raise: deal.target_raise,
+                min_check_size: deal.min_check_size,
+                max_check_size: deal.max_check_size,
+                fee_percent: deal.fee_percent,
+                carry_percent: deal.carry_percent,
+                status: deal.status,
+                memo_url: deal.memo_url,
+                created_date: deal.created_date,
+                close_date: deal.close_date,
+                investment_stage: deal.investment_stage,
+                investment_type: deal.investment_type,
+                founder_email: deal.founder_email,
+                investor_update_frequency: deal.investor_update_frequency,
+              }}
             />
           </div>
 

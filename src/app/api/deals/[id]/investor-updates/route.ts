@@ -61,6 +61,15 @@ export async function POST(
   const supabase = await createClient();
   const { id: dealId } = await params;
 
+  // Parse optional body from request
+  let customBody: string | undefined;
+  try {
+    const json = await request.json();
+    customBody = json.body;
+  } catch {
+    // No body provided (empty request), that's fine
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -140,7 +149,7 @@ export async function POST(
   const gmail = await getGmailClient(authAccount);
   const companyName = deal.company_name || deal.name;
   const subject = `Investor Update Request - ${companyName}`;
-  const body = `Hi,
+  const body = customBody || `Hi,
 
 We're reaching out to request an investor update for ${companyName}.
 

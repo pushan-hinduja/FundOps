@@ -9,6 +9,15 @@ export async function POST(
   const supabase = await createClient();
   const { id: dealId, updateId } = await params;
 
+  // Parse optional body from request
+  let customBody: string | undefined;
+  try {
+    const json = await request.json();
+    customBody = json.body;
+  } catch {
+    // No body provided, that's fine
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -117,7 +126,7 @@ export async function POST(
   const gmail = await getGmailClient(authAccount);
   const companyName = deal.company_name || deal.name;
   const subject = `Investor Update - ${companyName}`;
-  const body = `Investor Update - ${companyName}
+  const body = customBody || `Investor Update - ${companyName}
 
 ${investorUpdate.response_body}`;
 

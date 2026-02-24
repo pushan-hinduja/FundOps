@@ -336,6 +336,33 @@ function hasMessageAttachments(payload: gmail_v1.Schema$MessagePart | undefined)
   return false;
 }
 
+/**
+ * Fetch the RFC 2822 Message-ID header for a Gmail message.
+ * This is needed for proper In-Reply-To / References headers when replying.
+ * The Gmail API message ID (e.g. "18e5a2b3") is NOT the same as the RFC Message-ID.
+ */
+export async function getMessageRfcId(
+  gmail: gmail_v1.Gmail,
+  messageId: string
+): Promise<string | null> {
+  try {
+    const response = await gmail.users.messages.get({
+      userId: "me",
+      id: messageId,
+      format: "metadata",
+      metadataHeaders: ["Message-Id"],
+    });
+
+    const headers = response.data.payload?.headers || [];
+    const messageIdHeader = headers.find(
+      (h) => h.name?.toLowerCase() === "message-id"
+    );
+    return messageIdHeader?.value || null;
+  } catch {
+    return null;
+  }
+}
+
 export interface SendEmailOptions {
   to: string | string[];
   subject: string;

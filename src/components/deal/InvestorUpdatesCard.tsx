@@ -52,25 +52,25 @@ function getStatusBadge(status: string) {
   switch (status) {
     case "pending_request":
       return (
-        <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-500/10 text-yellow-500">
+        <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-500/20 text-yellow-400">
           Pending
         </span>
       );
     case "request_sent":
       return (
-        <span className="px-2 py-0.5 text-xs rounded-full bg-blue-500/10 text-blue-500">
+        <span className="px-2 py-0.5 text-xs rounded-full bg-blue-500/20 text-blue-400">
           Awaiting Response
         </span>
       );
     case "response_received":
       return (
-        <span className="px-2 py-0.5 text-xs rounded-full bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]">
+        <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400">
           Ready to Send
         </span>
       );
     case "sent_to_lps":
       return (
-        <span className="px-2 py-0.5 text-xs rounded-full bg-foreground/10 text-foreground">
+        <span className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70">
           Sent to LPs
         </span>
       );
@@ -191,49 +191,49 @@ export function InvestorUpdatesCard({
       : null;
 
   return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden h-full flex flex-col">
+    <div className="glass-card-updates rounded-2xl overflow-hidden h-full flex flex-col">
       {/* Header */}
-      <div className="p-5 border-b border-border">
+      <div className="p-5 border-b border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-muted-foreground" />
-            <h3 className="text-sm font-medium">Investor Updates</h3>
+            <Mail className="w-4 h-4 text-white/60" />
+            <h3 className="text-lg font-medium text-white">Investor Updates</h3>
           </div>
           <button
             type="button"
             onClick={() => setShowSettings(!showSettings)}
-            className="p-1.5 hover:bg-secondary rounded-lg transition-colors"
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
             title="Settings"
           >
-            <Settings className="w-4 h-4 text-muted-foreground" />
+            <Settings className="w-4 h-4 text-white/60" />
           </button>
         </div>
       </div>
 
       {/* Settings (collapsible) */}
       {showSettings && (
-        <div className="p-5 border-b border-border bg-secondary/30">
+        <div className="p-5 border-b border-white/10 bg-white/5">
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
+              <label className="block text-xs font-medium text-white/60 mb-1">
                 Founder/Company Email
               </label>
               <input
                 type="email"
                 value={founderEmail}
                 onChange={(e) => setFounderEmail(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2 text-sm border border-white/10 rounded-lg bg-white/5 text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
                 placeholder="founder@company.com"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
+              <label className="block text-xs font-medium text-white/60 mb-1">
                 Update Frequency
               </label>
               <select
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background"
+                className="w-full px-3 py-2 text-sm border border-white/10 rounded-lg bg-white/5 text-white focus:outline-none focus:ring-1 focus:ring-white/20"
               >
                 <option value="">Not set</option>
                 <option value="monthly">Monthly</option>
@@ -246,7 +246,7 @@ export function InvestorUpdatesCard({
               type="button"
               onClick={handleSaveSettings}
               disabled={isSavingSettings}
-              className="w-full px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="w-full px-3 py-2 text-sm font-medium bg-white/15 hover:bg-white/20 text-white rounded-lg transition-colors disabled:opacity-50"
             >
               {isSavingSettings ? "Saving..." : "Save Settings"}
             </button>
@@ -255,17 +255,17 @@ export function InvestorUpdatesCard({
       )}
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-5 flex-1 overflow-y-auto">
         {/* Configuration prompt */}
         {!isConfigured && !showSettings && (
           <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="text-sm text-white/50 mb-3">
               Set up investor update frequency and founder email to get started.
             </p>
             <button
               type="button"
               onClick={() => setShowSettings(true)}
-              className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+              className="px-4 py-2 text-sm font-medium bg-white/15 hover:bg-white/20 text-white rounded-lg transition-colors"
             >
               Configure Updates
             </button>
@@ -276,18 +276,18 @@ export function InvestorUpdatesCard({
           <>
             {/* Next Update */}
             {nextUpdateDate && (
-              <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-secondary/50">
-                <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-white/5">
+                <CalendarDays className="w-4 h-4 text-white/50 flex-shrink-0" />
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Next update: </span>
-                  <span className="font-medium">
+                  <span className="text-white/60">Next update: </span>
+                  <span className="font-medium text-white">
                     {nextUpdateDate.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                     })}
                   </span>
-                  <span className="text-muted-foreground ml-1">
+                  <span className="text-white/50 ml-1">
                     ({INVESTOR_UPDATE_FREQUENCY_LABELS[frequency as InvestorUpdateFrequency]})
                   </span>
                 </div>
@@ -295,7 +295,7 @@ export function InvestorUpdatesCard({
             )}
 
             {/* Current config summary */}
-            <div className="flex items-center gap-3 mb-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 mb-4 text-xs text-white/50">
               <span>To: {founderEmail}</span>
             </div>
 
@@ -304,7 +304,7 @@ export function InvestorUpdatesCard({
               type="button"
               onClick={handleRequestUpdate}
               disabled={isRequesting}
-              className="w-full mb-4 px-3 py-2 text-sm font-medium border border-border rounded-lg hover:bg-secondary transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mb-4 px-3 py-2 text-sm font-medium border border-white/10 rounded-lg hover:bg-white/10 text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isRequesting ? (
                 <>
@@ -321,23 +321,23 @@ export function InvestorUpdatesCard({
 
             {/* Update History */}
             {isLoading ? (
-              <div className="text-sm text-muted-foreground text-center py-4">
+              <div className="text-sm text-white/50 text-center py-4">
                 Loading updates...
               </div>
             ) : updates.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center py-4">
+              <div className="text-sm text-white/50 text-center py-4">
                 No investor updates yet. Updates will be automatically requested
                 based on your configured frequency.
               </div>
             ) : (
               <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                <h4 className="text-xs font-medium text-white/50 uppercase tracking-wider mb-2">
                   Update History
                 </h4>
                 {updates.map((update) => (
                   <div
                     key={update.id}
-                    className="border border-border rounded-xl overflow-hidden"
+                    className="border border-white/10 rounded-xl overflow-hidden"
                   >
                     {/* Update header */}
                     <button
@@ -347,21 +347,21 @@ export function InvestorUpdatesCard({
                           expandedUpdateId === update.id ? null : update.id
                         )
                       }
-                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors"
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         {update.status === "sent_to_lps" ? (
-                          <CheckCircle2 className="w-4 h-4 text-[hsl(var(--success))]" />
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
                         ) : update.status === "response_received" ? (
-                          <Mail className="w-4 h-4 text-[hsl(var(--success))]" />
+                          <Mail className="w-4 h-4 text-green-400" />
                         ) : (
-                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <Clock className="w-4 h-4 text-white/50" />
                         )}
                         <div className="text-left">
-                          <div className="text-sm font-medium">
+                          <div className="text-sm font-medium text-white">
                             Update #{update.update_number}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-white/50">
                             Due:{" "}
                             {new Date(update.due_date).toLocaleDateString(
                               "en-US",
@@ -373,24 +373,24 @@ export function InvestorUpdatesCard({
                       <div className="flex items-center gap-2">
                         {getStatusBadge(update.status)}
                         {expandedUpdateId === update.id ? (
-                          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                          <ChevronUp className="w-4 h-4 text-white/50" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          <ChevronDown className="w-4 h-4 text-white/50" />
                         )}
                       </div>
                     </button>
 
                     {/* Expanded content */}
                     {expandedUpdateId === update.id && (
-                      <div className="px-4 pb-4 border-t border-border pt-3">
+                      <div className="px-4 pb-4 border-t border-white/10 pt-3">
                         {update.status === "pending_request" && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-white/50">
                             Update request will be sent automatically.
                           </p>
                         )}
 
                         {update.status === "request_sent" && (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-white/50">
                             <p>
                               Request sent{" "}
                               {update.request_sent_at &&
@@ -411,10 +411,10 @@ export function InvestorUpdatesCard({
                         {update.status === "response_received" && (
                           <div>
                             <div className="mb-3">
-                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                              <p className="text-xs font-medium text-white/60 mb-1">
                                 Founder Response:
                               </p>
-                              <div className="text-sm bg-secondary/50 rounded-lg p-3 max-h-48 overflow-y-auto whitespace-pre-wrap">
+                              <div className="text-sm bg-white/5 rounded-lg p-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-white/80">
                                 {update.response_body}
                               </div>
                             </div>
@@ -422,7 +422,7 @@ export function InvestorUpdatesCard({
                               type="button"
                               onClick={() => handleSendToLPs(update.id)}
                               disabled={isSending === update.id}
-                              className="w-full px-3 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                              className="w-full px-3 py-2 text-sm font-medium bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                               {isSending === update.id ? (
                                 <>
@@ -440,7 +440,7 @@ export function InvestorUpdatesCard({
                         )}
 
                         {update.status === "sent_to_lps" && (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-white/50">
                             <p>
                               Sent to LPs on{" "}
                               {update.lp_email_sent_at &&
@@ -453,7 +453,7 @@ export function InvestorUpdatesCard({
                                 })}
                             </p>
                             {update.response_body && (
-                              <div className="mt-2 bg-secondary/50 rounded-lg p-3 max-h-32 overflow-y-auto whitespace-pre-wrap text-xs">
+                              <div className="mt-2 bg-white/5 rounded-lg p-3 max-h-32 overflow-y-auto whitespace-pre-wrap text-xs text-white/60">
                                 {update.response_body}
                               </div>
                             )}

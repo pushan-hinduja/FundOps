@@ -258,7 +258,8 @@ async function processAccount(
       ingestedEmails.push(insertedEmail);
 
       // Add to suggested contacts if not already an LP or dismissed
-      if (insertedEmail && details.from.email) {
+      // Skip emails from the sender account — don't suggest the GP as a contact
+      if (insertedEmail && details.from.email && details.from.email.toLowerCase() !== account.email.toLowerCase()) {
         try {
           const { added } = await processEmailForSuggestedContact(supabase, organizationId, {
             id: insertedEmail.id,
@@ -302,26 +303,36 @@ async function processAccount(
   console.log(`[Email Sync] Ingested ${ingestedEmails.length} emails, now parsing with AI in batches of ${AI_BATCH_SIZE}...`);
 
   // Phase 2: Parse all newly ingested emails with AI in parallel batches
+  // Skip emails sent by the account owner — only parse incoming emails
   if (ingestedEmails.length > 0) {
-    const parsingContext = await fetchParsingContext(supabase, organizationId);
-
-    const { errors: batchErrors } = await processInBatches(
-      ingestedEmails,
-      async (email) => {
-        const result = await parseEmailWithAI(supabase, email, organizationId, parsingContext);
-        stats.emailsParsed++;
-        if (result.detectedDealId) {
-          console.log(`[Email Sync] Matched deal for email from ${email.from_email}`);
-        }
-        return result;
-      },
-      AI_BATCH_SIZE
+    const accountEmail = account.email.toLowerCase();
+    const incomingEmails = ingestedEmails.filter(
+      (email) => email.from_email.toLowerCase() !== accountEmail
     );
 
-    for (const err of batchErrors) {
-      const email = ingestedEmails[err.index];
-      stats.errors.push(`Parse error for ${email.message_id}: ${err.error.message}`);
-      console.error(`[Email Sync] Parse error for ${email.message_id}:`, err.error.message);
+    console.log(`[Email Sync] Skipping ${ingestedEmails.length - incomingEmails.length} emails from sender account, parsing ${incomingEmails.length} incoming emails`);
+
+    if (incomingEmails.length > 0) {
+      const parsingContext = await fetchParsingContext(supabase, organizationId);
+
+      const { errors: batchErrors } = await processInBatches(
+        incomingEmails,
+        async (email) => {
+          const result = await parseEmailWithAI(supabase, email, organizationId, parsingContext);
+          stats.emailsParsed++;
+          if (result.detectedDealId) {
+            console.log(`[Email Sync] Matched deal for email from ${email.from_email}`);
+          }
+          return result;
+        },
+        AI_BATCH_SIZE
+      );
+
+      for (const err of batchErrors) {
+        const email = incomingEmails[err.index];
+        stats.errors.push(`Parse error for ${email.message_id}: ${err.error.message}`);
+        console.error(`[Email Sync] Parse error for ${email.message_id}:`, err.error.message);
+      }
     }
   }
 

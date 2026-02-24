@@ -115,7 +115,12 @@ export default async function DealDetailPage({
         received_at,
         body_text,
         thread_id,
-        message_id
+        message_id,
+        email_responses (
+          final_response,
+          sent_at,
+          question_text
+        )
       ),
       lp_contacts (
         id,

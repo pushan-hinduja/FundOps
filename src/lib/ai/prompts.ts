@@ -105,7 +105,7 @@ export interface EmailResponseContext {
     fromName: string | null;
     subject: string | null;
     bodyText: string | null;
-    question: string;
+    questions: string;
   };
   // Deal context
   deal: {
@@ -215,20 +215,19 @@ ${originalEmail.bodyText || "(empty body)"}
 """
 ---
 
-SPECIFIC QUESTION TO ADDRESS:
-"${originalEmail.question}"
+QUESTIONS TO ADDRESS:
+${originalEmail.questions}
 
 RESPONSE TONE:
 ${TONE_INSTRUCTIONS[tone]}
 
 INSTRUCTIONS:
-1. Write a response that directly addresses the investor's question
-2. Use the deal terms and LP-specific terms (if available) to provide accurate information
-3. If the question asks about something not covered in the provided context, acknowledge this and offer to follow up
-4. Be helpful and informative without over-promising or making commitments the fund manager hasn't authorized
-5. Do NOT include a subject line - just write the email body
+1. Answer ONLY the specific questions asked — do not volunteer additional information, deal details, or context that wasn't requested
+2. Use the deal/LP terms above as your source of truth, but only reference the specific data points needed to answer the questions
+3. If a question asks about something not in the provided context, say you'll follow up — do not speculate or pad the response
+4. Do NOT include a subject line — just write the email body
+5. Keep the response short and direct — address all questions naturally in one cohesive reply
 6. End with an appropriate sign-off using the name: ${senderName}
-7. Keep the response focused and relevant to the question asked
 
 Write the email response now:`;
 }

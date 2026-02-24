@@ -116,7 +116,7 @@ export function CloseReadinessDashboard({ metrics, dealId, dealStatus }: CloseRe
   };
 
   return (
-    <div className="glass-card-readiness rounded-2xl p-6 h-full overflow-hidden flex flex-col">
+    <div className="glass-card-updates rounded-2xl p-6 h-full overflow-hidden flex flex-col">
       <div className="flex items-center justify-between mb-6 shrink-0">
         <h2 className="text-lg font-medium text-white">Close Readiness</h2>
         {dealStatus === "active" && (

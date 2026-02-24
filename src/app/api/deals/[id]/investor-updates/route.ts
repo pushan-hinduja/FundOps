@@ -79,12 +79,17 @@ export async function POST(
   }
 
   // Fetch deal with required fields
-  const { data: deal } = await supabase
+  const { data: deal, error: dealError } = await supabase
     .from("deals")
     .select("id, name, company_name, founder_email, investor_update_frequency, close_date, status, organization_id")
     .eq("id", dealId)
     .eq("organization_id", userData.organization_id)
     .single();
+
+  if (dealError) {
+    console.error("[Investor Updates API] Deal query error:", dealError);
+    return NextResponse.json({ error: `Deal query failed: ${dealError.message}` }, { status: 500 });
+  }
 
   if (!deal) {
     return NextResponse.json({ error: "Deal not found" }, { status: 404 });

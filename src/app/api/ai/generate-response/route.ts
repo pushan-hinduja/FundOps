@@ -5,11 +5,14 @@ import { buildEmailResponsePrompt, ResponseTone } from "@/lib/ai/prompts";
 
 export async function POST(request: NextRequest) {
   try {
-    const { emailId, question, dealId } = await request.json();
+    const { emailId, question, questions: questionsArray, dealId } = await request.json();
 
-    if (!emailId || !question || !dealId) {
+    // Support both single question (legacy) and questions array
+    const questions: string[] = questionsArray || (question ? [question] : []);
+
+    if (!emailId || questions.length === 0 || !dealId) {
       return NextResponse.json(
-        { error: "emailId, question, and dealId are required" },
+        { error: "emailId, questions (or question), and dealId are required" },
         { status: 400 }
       );
     }
@@ -108,14 +111,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build the prompt
+    // Build the prompt — format questions as numbered list if multiple
+    const questionsText = questions.length === 1
+      ? `"${questions[0]}"`
+      : questions.map((q: string, i: number) => `${i + 1}. "${q}"`).join("\n");
+
     const prompt = buildEmailResponsePrompt({
       originalEmail: {
         fromEmail: email.from_email,
         fromName: email.from_name,
         subject: email.subject,
         bodyText: email.body_text,
-        question,
+        questions: questionsText,
       },
       deal: {
         name: deal.name,

@@ -156,6 +156,31 @@ export async function fetchAllMessages(
 }
 
 /**
+ * Fetch a single page of message IDs from inbox.
+ * Used for chunked backfill operations.
+ */
+export async function fetchMessagePage(
+  gmail: gmail_v1.Gmail,
+  pageToken?: string | null
+): Promise<{ messageIds: string[]; nextPageToken: string | null }> {
+  const listResponse = await gmail.users.messages.list({
+    userId: "me",
+    q: "in:inbox",
+    maxResults: 500,
+    pageToken: pageToken || undefined,
+  });
+
+  const messageIds = (listResponse.data.messages || [])
+    .map((m) => m.id!)
+    .filter(Boolean);
+
+  return {
+    messageIds,
+    nextPageToken: listResponse.data.nextPageToken || null,
+  };
+}
+
+/**
  * Get the current historyId from Gmail profile.
  * Used to seed sync_cursor on first sync.
  */

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { User, Building2, Mail, ArrowRight } from "lucide-react";
+import { User, Building2, Link2, ArrowRight } from "lucide-react";
 import { AIResponseSettings } from "@/components/settings/AIResponseSettings";
 
 export const dynamic = "force-dynamic";
@@ -95,25 +95,25 @@ export default async function SettingsPage() {
           )}
         </div>
 
-        {/* Email Integration Section */}
+        {/* Integrations Section */}
         <div className="glass-card rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
-              <Mail className="w-5 h-5 text-muted-foreground" />
+              <Link2 className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
-              <h2 className="text-lg font-medium">Email Integration</h2>
-              <p className="text-sm text-muted-foreground">Connect your email accounts</p>
+              <h2 className="text-lg font-medium">Integrations</h2>
+              <p className="text-sm text-muted-foreground">Connect email and messaging accounts</p>
             </div>
           </div>
           <p className="text-muted-foreground mb-4">
-            Connect your Gmail account to automatically ingest LP emails and sync your communications.
+            Connect Gmail and WhatsApp to automatically ingest communications and sync with your LP and deal data.
           </p>
           <Link
             href="/settings/email"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors"
           >
-            Manage Email Accounts
+            Manage Integrations
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

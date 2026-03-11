@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { DisconnectGmailButton } from "@/components/shared/DisconnectGmailButton";
+import { WhatsAppConnection } from "@/components/settings/WhatsAppConnection";
 import { verifyGmailConnection } from "@/lib/gmail/client";
 import type { AuthAccount } from "@/lib/supabase/types";
 import Link from "next/link";
@@ -66,7 +67,7 @@ export default async function EmailSettingsPage({
         <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground">
           ← Back to Settings
         </Link>
-        <h1 className="text-2xl font-medium mt-2">Email Accounts</h1>
+        <h1 className="text-2xl font-medium mt-2">Integrations</h1>
       </div>
 
       {successMessage && (
@@ -144,14 +145,30 @@ export default async function EmailSettingsPage({
         )}
       </div>
 
+      <div className="glass-card rounded-2xl p-6 mt-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-medium">WhatsApp</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Connect WhatsApp to capture group messages and route them through AI parsing.
+          </p>
+        </div>
+        <WhatsAppConnection />
+      </div>
+
       <div className="mt-6 bg-muted/50 p-4 rounded-lg">
         <h3 className="font-medium mb-2">How it works</h3>
-        <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+        <p className="text-sm font-medium text-muted-foreground mb-1">Gmail</p>
+        <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside mb-3">
           <li>Connect your Gmail account by clicking &quot;Connect Gmail&quot;</li>
           <li>Authorize FundOps to read and send emails on your behalf</li>
           <li>Click &quot;Sync Emails&quot; on the LPs or Deals page to pull emails</li>
           <li>Our AI parses each email to identify LPs, deals, and intent</li>
-          <li>Suggested contacts appear automatically from your emails</li>
+        </ol>
+        <p className="text-sm font-medium text-muted-foreground mb-1">WhatsApp</p>
+        <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+          <li>Click &quot;Connect WhatsApp&quot; and scan the QR code with your phone</li>
+          <li>Group messages are automatically captured and parsed by AI</li>
+          <li>LP interactions and deal signals are extracted just like emails</li>
         </ol>
       </div>
     </div>

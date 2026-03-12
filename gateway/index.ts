@@ -234,13 +234,24 @@ app.get("/groups", async (_req, res) => {
   }
 
   try {
+    const myNumber = sock.user.id.split(":")[0];
     const groups = await sock.groupFetchAllParticipating();
-    const groupList = Object.values(groups).map((g) => ({
-      jid: g.id,
-      name: g.subject,
-      participants: g.participants?.length || 0,
-      selected: selectedGroups.includes(g.id),
-    }));
+    const groupList = Object.values(groups).map((g) => {
+      // For groups without a name, build one from participant phone numbers
+      let name = g.subject;
+      if (!name && g.participants) {
+        const otherMembers = g.participants
+          .map((p) => p.id.split("@")[0])
+          .filter((num) => num !== myNumber);
+        name = otherMembers.map((n) => `+${n}`).join(", ");
+      }
+      return {
+        jid: g.id,
+        name: name || "Unknown group",
+        participants: g.participants?.length || 0,
+        selected: selectedGroups.includes(g.id),
+      };
+    });
 
     // Sort alphabetically by name
     groupList.sort((a, b) => a.name.localeCompare(b.name));

@@ -1,47 +1,67 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { GridPage } from "@/components/shared/GridBackground";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [orgName, setOrgName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
+  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "signin";
+
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
+  const [step, setStep] = useState(1);
+  const [barStyle, setBarStyle] = useState<React.CSSProperties>({});
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const supabase = createClient();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Position progress bar 10px from bottom of the content area
+  useEffect(() => {
+    if (mode !== "signup") return;
+    function calc() {
+      const contentArea = wrapperRef.current?.closest(".z-10") as HTMLElement | null;
+      if (!contentArea) return;
+      const rect = contentArea.getBoundingClientRect();
+      setBarStyle({
+        position: "fixed",
+        left: rect.left + 40,
+        right: window.innerWidth - rect.right + 40,
+        top: rect.bottom - 20,
+      });
+    }
+    // Defer to ensure the content area is laid out after client-side navigation
+    const raf = requestAnimationFrame(() => {
+      // Double-raf to ensure layout is complete
+      requestAnimationFrame(calc);
+    });
+    window.addEventListener("resize", calc);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", calc);
+    };
+  }, [mode]);
+
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        if (error) throw error;
-        setError("Check your email to confirm your account.");
-        setIsLoading(false);
-        return;
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
 
       router.push(redirect);
       router.refresh();
@@ -52,57 +72,113 @@ function LoginForm() {
     }
   };
 
-  return (
-    <div className="w-full max-w-md">
-      {/* Logo */}
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="w-5 h-5 text-primary-foreground"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <path d="M20 6L9 17L4 12" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span className="text-2xl font-medium tracking-tight">FundOps</span>
-        </div>
-        <p className="text-muted-foreground">
-          {mode === "signin" ? "Welcome back" : "Create your account"}
-        </p>
-      </div>
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
-      {/* Form Card */}
-      <div className="glass-card rounded-2xl p-8">
-        <form onSubmit={handleSubmit} className="space-y-5">
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: { full_name: name },
+        },
+      });
+      if (signUpError) throw signUpError;
+
+      if (orgName.trim() && data.user) {
+        const { data: org, error: orgError } = await supabase
+          .from("organizations")
+          .insert({ name: orgName.trim() })
+          .select()
+          .single();
+
+        if (!orgError && org) {
+          await supabase
+            .from("users")
+            .update({ organization_id: org.id, role: "admin" })
+            .eq("id", data.user.id);
+        }
+      }
+
+      setError("Check your email to confirm your account.");
+      setIsLoading(false);
+      return;
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNextStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setStep(2);
+  };
+
+  const handleBackStep = () => {
+    setError(null);
+    setStep(1);
+  };
+
+  const switchToSignUp = () => {
+    setMode("signup");
+    setStep(1);
+    setError(null);
+  };
+
+  const switchToSignIn = () => {
+    setMode("signin");
+    setStep(1);
+    setError(null);
+  };
+
+  const logo = (
+    <div className="text-center mb-6">
+      <Link href="/" className="inline-flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-primary-foreground" stroke="currentColor" strokeWidth="2.5">
+            <path d="M20 6L9 17L4 12" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <span className="text-2xl font-medium tracking-tight">FundOps</span>
+      </Link>
+    </div>
+  );
+
+  const inputClass = "w-full px-4 py-2.5 border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-neutral-200 transition-all text-sm";
+
+  // Sign In form
+  if (mode === "signin") {
+    return (
+      <div className="w-full max-w-sm mx-auto">
+        {logo}
+
+        <form onSubmit={handleSignIn} className="space-y-4">
           {error && (
-            <div className={`p-4 rounded-xl text-sm ${error.includes("Check your email") ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" : "bg-destructive/10 text-destructive"}`}>
+            <div className="p-3 rounded-xl text-sm bg-red-50 text-red-600">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
-              Email
-            </label>
+            <label htmlFor="email" className="block text-sm font-medium mb-1.5">Email</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              className={inputClass}
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
-              Password
-            </label>
+            <label htmlFor="password" className="block text-sm font-medium mb-1.5">Password</label>
             <input
               id="password"
               type="password"
@@ -110,7 +186,7 @@ function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              className={inputClass}
               placeholder="••••••••"
             />
           </div>
@@ -118,46 +194,154 @@ function LoginForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {isLoading ? "Loading..." : mode === "signin" ? "Sign In" : "Sign Up"}
+            {isLoading ? "Loading..." : "Sign In"}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
-          {mode === "signin" ? (
-            <p className="text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <button
-                onClick={() => setMode("signup")}
-                className="text-foreground font-medium hover:text-muted-foreground transition-colors"
-              >
-                Sign up
-              </button>
-            </p>
-          ) : (
-            <p className="text-muted-foreground">
-              Already have an account?{" "}
-              <button
-                onClick={() => setMode("signin")}
-                className="text-foreground font-medium hover:text-muted-foreground transition-colors"
-              >
-                Sign in
-              </button>
-            </p>
-          )}
+        <div className="mt-5 text-center text-sm">
+          <p className="text-neutral-500">
+            Don&apos;t have an account?{" "}
+            <button onClick={switchToSignUp} className="text-black font-medium hover:text-neutral-600 transition-colors">
+              Sign up
+            </button>
+          </p>
         </div>
       </div>
+    );
+  }
+
+  // Sign Up flow
+  return (
+    <div ref={wrapperRef} className="w-full max-w-sm mx-auto">
+      {logo}
+
+      {step === 1 ? (
+        <form onSubmit={handleNextStep} className="space-y-3.5">
+          {error && (
+            <div className="p-3 rounded-xl text-sm bg-red-50 text-red-600">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium mb-1.5">Name</label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className={inputClass}
+              placeholder="John Doe"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="signup-email" className="block text-sm font-medium mb-1.5">Email</label>
+            <input
+              id="signup-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={inputClass}
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="signup-password" className="block text-sm font-medium mb-1.5">Password</label>
+            <input
+              id="signup-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className={inputClass}
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Next
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleSignUp} className="space-y-3.5">
+          {error && (
+            <div className={`p-3 rounded-xl text-sm ${error.includes("Check your email") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="org-name" className="block text-sm font-medium mb-1.5">
+              Organization Name
+            </label>
+            <input
+              id="org-name"
+              type="text"
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              className={inputClass}
+              placeholder="My VC Firm"
+            />
+            <p className="text-xs text-neutral-400 mt-1.5">
+              Optional — you can set this up later in settings.
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleBackStep}
+              className="flex-1 py-2.5 px-4 border border-neutral-200 text-black rounded-xl text-sm font-medium hover:bg-neutral-50 transition-colors"
+            >
+              Back
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {isLoading ? "Creating..." : "Create Account"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="mt-4 text-center text-sm">
+        <p className="text-neutral-500">
+          Already have an account?{" "}
+          <button onClick={switchToSignIn} className="text-black font-medium hover:text-neutral-600 transition-colors">
+            Sign in
+          </button>
+        </p>
+      </div>
+
+      {/* Progress bar - pinned to bottom of content area */}
+      {barStyle.position && (
+        <div className="flex gap-2 z-20" style={barStyle}>
+          <div className="h-1 flex-1 rounded-full bg-black" />
+          <div className={`h-1 flex-1 rounded-full ${step === 2 ? "bg-black" : "bg-neutral-200"}`} />
+        </div>
+      )}
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-background">
-      <Suspense fallback={<div className="text-center text-muted-foreground">Loading...</div>}>
+    <GridPage>
+      <Suspense fallback={<div className="text-center text-neutral-400">Loading...</div>}>
         <LoginForm />
       </Suspense>
-    </main>
+    </GridPage>
   );
 }

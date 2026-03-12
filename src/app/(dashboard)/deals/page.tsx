@@ -3,6 +3,7 @@ import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
 import { BackfillSyncButton } from "@/components/shared/BackfillSyncButton";
 import Link from "next/link";
 import { Briefcase, Plus, ArrowUpRight } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,21 @@ export default async function DealsPage() {
       </div>
     );
   }
+
+  // Fetch last sync time
+  const { data: lastSyncAccount } = await supabase
+    .from("auth_accounts")
+    .select("last_sync_at")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .not("last_sync_at", "is", null)
+    .order("last_sync_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  const lastSyncAt = lastSyncAccount?.last_sync_at
+    ? formatDistanceToNow(new Date(lastSyncAccount.last_sync_at), { addSuffix: true })
+    : null;
 
   // Fetch deals
   const { data: deals, error } = await supabase
@@ -82,16 +98,23 @@ export default async function DealsPage() {
           <h1 className="text-3xl font-medium tracking-tight">Deals</h1>
           <p className="text-muted-foreground mt-1">Manage your fundraising deals</p>
         </div>
-        <div className="flex items-center gap-3">
-          <BackfillSyncButton />
-          <EmailSyncButton />
-          <Link
-            href="/deals/new"
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            New Deal
-          </Link>
+        <div className="flex flex-col items-end gap-1.5">
+          {lastSyncAt && (
+            <p className="text-xs text-muted-foreground">
+              Last updated {lastSyncAt}
+            </p>
+          )}
+          <div className="flex items-center gap-3">
+            <BackfillSyncButton />
+            <EmailSyncButton />
+            <Link
+              href="/deals/new"
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" />
+              New Deal
+            </Link>
+          </div>
         </div>
       </div>
 

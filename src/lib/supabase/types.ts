@@ -114,9 +114,16 @@ export interface User {
   email: string;
   name: string | null;
   organization_id: string | null;
-  role: "admin" | "partner" | "ops" | "member";
   created_at: string;
   updated_at: string;
+}
+
+export interface UserOrganization {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  role: "admin" | "partner" | "ops" | "member";
+  created_at: string;
 }
 
 export interface AuthAccount {

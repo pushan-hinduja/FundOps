@@ -9,10 +9,21 @@ import {
   Users,
   Settings,
   LogOut,
+  Building2,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+
+interface OrgItem {
+  id: string;
+  name: string;
+  domain: string | null;
+  role: string;
+  isActive: boolean;
+}
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -26,6 +37,9 @@ export function TopNav() {
   const supabase = createClient();
   const [user, setUser] = useState<{ email?: string; name?: string } | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [organizations, setOrganizations] = useState<OrgItem[]>([]);
+  const [showOrgMenu, setShowOrgMenu] = useState(false);
+  const [switchingOrg, setSwitchingOrg] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -45,10 +59,48 @@ export function TopNav() {
     getUser();
   }, [supabase]);
 
+  const fetchOrgs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/organizations");
+      const data = await res.json();
+      if (res.ok && data.organizations) {
+        setOrganizations(data.organizations);
+      }
+    } catch {
+      // Silently fail - org switcher just won't show
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrgs();
+  }, [fetchOrgs]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
+  };
+
+  const handleSwitchOrg = async (orgId: string) => {
+    if (switchingOrg) return;
+    setSwitchingOrg(true);
+    try {
+      const res = await fetch("/api/user/organizations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: orgId }),
+      });
+      if (res.ok) {
+        setShowOrgMenu(false);
+        router.refresh();
+        // Re-fetch orgs to update active state
+        await fetchOrgs();
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setSwitchingOrg(false);
+    }
   };
 
   // Get initials for avatar
@@ -62,10 +114,13 @@ export function TopNav() {
       .slice(0, 2);
   };
 
+  const activeOrg = organizations.find((o) => o.isActive);
+  const hasMultipleOrgs = organizations.length > 1;
+
   return (
     <header className="h-20 bg-white px-8 flex items-center">
-      {/* Left: Logo */}
-      <div className="flex items-center">
+      {/* Left: Logo + Org Switcher */}
+      <div className="flex items-center gap-3">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="w-7 h-7 bg-primary rounded flex items-center justify-center">
             <svg
@@ -80,6 +135,57 @@ export function TopNav() {
           </div>
           <span className="text-lg font-medium tracking-tight">FundOps</span>
         </Link>
+
+        {activeOrg && (
+          <>
+            <span className="text-muted-foreground/40 text-lg">/</span>
+            <div className="relative">
+              <button
+                onClick={() => hasMultipleOrgs && setShowOrgMenu(!showOrgMenu)}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                  hasMultipleOrgs
+                    ? "hover:bg-secondary/50 cursor-pointer"
+                    : "cursor-default"
+                )}
+              >
+                <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>{activeOrg.name}</span>
+                {hasMultipleOrgs && (
+                  <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", showOrgMenu && "rotate-180")} />
+                )}
+              </button>
+
+              {showOrgMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowOrgMenu(false)}
+                  />
+                  <div className="absolute left-0 top-full mt-2 w-56 glass-menu rounded-xl py-1 z-50">
+                    {organizations.map((org) => (
+                      <button
+                        key={org.id}
+                        onClick={() => !org.isActive && handleSwitchOrg(org.id)}
+                        disabled={switchingOrg}
+                        className={cn(
+                          "flex items-center gap-2.5 px-4 py-2.5 text-sm w-full transition-colors",
+                          org.isActive
+                            ? "text-foreground font-medium"
+                            : "text-foreground hover:bg-white/30 dark:hover:bg-white/10"
+                        )}
+                      >
+                        <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate flex-1 text-left">{org.name}</span>
+                        {org.isActive && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Center: Navigation */}

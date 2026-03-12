@@ -98,8 +98,13 @@ function LoginForm() {
         if (!orgError && org) {
           await supabase
             .from("users")
-            .update({ organization_id: org.id, role: "admin" })
+            .update({ organization_id: org.id })
             .eq("id", data.user.id);
+
+          // Role lives in user_organizations only
+          await supabase
+            .from("user_organizations")
+            .insert({ user_id: data.user.id, organization_id: org.id, role: "admin" });
         }
       }
 

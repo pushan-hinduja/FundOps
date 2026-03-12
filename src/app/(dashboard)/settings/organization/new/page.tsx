@@ -36,16 +36,18 @@ export default function NewOrganizationPage() {
 
       if (orgError) throw orgError;
 
-      // Update user with organization_id
+      // Update user with organization_id (role lives in user_organizations only)
       const { error: userError } = await supabase
         .from("users")
-        .update({
-          organization_id: org.id,
-          role: "admin", // Creator becomes admin
-        })
+        .update({ organization_id: org.id })
         .eq("id", user.id);
 
       if (userError) throw userError;
+
+      // Also insert into junction table for multi-org support
+      await supabase
+        .from("user_organizations")
+        .insert({ user_id: user.id, organization_id: org.id, role: "admin" });
 
       router.push("/settings");
       router.refresh();

@@ -19,6 +19,18 @@ export default async function SettingsPage() {
     .eq("id", user.id)
     .single();
 
+  // Get role from user_organizations (source of truth)
+  let userRole = "member";
+  if (userData?.organization_id) {
+    const { data: membership } = await supabase
+      .from("user_organizations")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("organization_id", userData.organization_id)
+      .single();
+    userRole = membership?.role || "member";
+  }
+
   return (
     <div className="px-8 py-6">
       {/* Header */}
@@ -50,7 +62,7 @@ export default async function SettingsPage() {
             </div>
             <div className="flex items-center justify-between py-3">
               <span className="text-sm text-muted-foreground">Role</span>
-              <span className="font-medium capitalize">{userData?.role || "Member"}</span>
+              <span className="font-medium capitalize">{userRole}</span>
             </div>
           </div>
         </div>
@@ -73,9 +85,20 @@ export default async function SettingsPage() {
                 <span className="font-medium">{userData.organizations.name}</span>
               </div>
               {userData.organizations.domain && (
-                <div className="flex items-center justify-between py-3">
+                <div className="flex items-center justify-between py-3 border-b border-border">
                   <span className="text-sm text-muted-foreground">Domain</span>
                   <span className="font-medium">{userData.organizations.domain}</span>
+                </div>
+              )}
+              {userRole === "admin" && (
+                <div className="pt-2">
+                  <Link
+                    href="/settings/organization"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    Manage Organization
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
               )}
             </div>

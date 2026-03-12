@@ -42,13 +42,13 @@ export function GridPage({ children }: { children: ReactNode }) {
         pointerEvents: "none" as const,
       });
 
-      // Inset by 1px on all sides so every surrounding border stays visible
       setContentStyle({
         position: "absolute",
         left: SIDE_CELLS * cellW + 1,
         top: topOffset + VERT_CELLS * cellW + 1,
         width: (cols - SIDE_CELLS * 2) * cellW - 2,
         height: (finalRows - VERT_CELLS * 2) * cellW - 2,
+        overflow: "visible" as const,
       });
     }
 

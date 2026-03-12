@@ -21,11 +21,14 @@ export default function Home() {
           <span className="text-3xl font-medium tracking-tight">FundOps</span>
         </div>
 
-        <h1 className="metric-number text-4xl md:text-5xl tracking-tight mb-4">
-          Automated LP Management
+        <h1
+          className="metric-number text-4xl md:text-5xl tracking-tight mb-4 pb-2 bg-clip-text text-transparent"
+          style={{ backgroundImage: "linear-gradient(135deg, hsl(240 10% 4%), hsl(217 91% 60%))" }}
+        >
+          Relationship Intelligence
         </h1>
         <p className="text-lg text-neutral-500 mb-10 max-w-lg mx-auto">
-          Automated relationship intelligence to help manage your fundraising pipeline.
+          AI to automate your deal flow and help manage your fundraising pipeline.
         </p>
 
         <div className="flex gap-4 justify-center">

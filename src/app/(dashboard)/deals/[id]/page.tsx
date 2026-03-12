@@ -8,6 +8,7 @@ import { DealLPRelationshipWithLP } from "@/lib/supabase/types";
 import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
 import { LPInvolvementSection } from "@/components/deals/LPInvolvementSection";
 import { EditDealButton } from "@/components/deals/EditDealButton";
+import { DeleteDealButton } from "@/components/deals/DeleteDealButton";
 import { InvestorUpdatesCard } from "@/components/deal/InvestorUpdatesCard";
 
 export const dynamic = "force-dynamic";
@@ -243,7 +244,7 @@ export default async function DealDetailPage({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
             <EditDealButton
               deal={{
                 id: deal.id,
@@ -265,6 +266,7 @@ export default async function DealDetailPage({
                 investor_update_frequency: deal.investor_update_frequency,
               }}
             />
+            <DeleteDealButton dealId={deal.id} dealName={deal.name} />
             <span className={`px-4 py-2 rounded-xl text-sm font-medium capitalize ${getDealStatusColor(deal.status)}`}>
               {deal.status}
             </span>

@@ -37,36 +37,6 @@ const getSelectedRange = (timeframe: Timeframe): { start: number; end: number } 
   }
 };
 
-const generateSampleData = (): WeekData[] => {
-  const now = new Date();
-  const weeks: WeekData[] = [];
-
-  for (let i = 51; i >= 0; i--) {
-    const weekStart = new Date(now);
-    weekStart.setDate(weekStart.getDate() - i * 7);
-    weekStart.setHours(0, 0, 0, 0);
-
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
-
-    // Generate varied sample data
-    const baseCommitted = 50000 + Math.random() * 150000;
-    const baseInterested = baseCommitted * (1 + Math.random() * 0.5);
-    const baseTarget = 100000 + Math.sin((51 - i) / 8) * 30000 + Math.random() * 20000;
-
-    weeks.push({
-      weekStart,
-      weekEnd,
-      label: getWeekLabel(weekStart),
-      committed: Math.round(baseCommitted),
-      interested: Math.round(baseInterested),
-      target: Math.round(baseTarget),
-    });
-  }
-
-  return weeks;
-};
-
 const getWeekLabel = (date: Date): string => {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${months[date.getMonth()]} ${date.getDate()}`;
@@ -178,15 +148,11 @@ export default function DashboardChart({
   totalTarget,
 }: DashboardChartProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>("month");
-  const [showSampleData, setShowSampleData] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const weekData = useMemo(() => {
-    if (showSampleData) {
-      return generateSampleData();
-    }
     return groupDealsByWeek(deals);
-  }, [deals, showSampleData]);
+  }, [deals]);
 
   const selectedRange = useMemo(() => getSelectedRange(timeframe), [timeframe]);
 
@@ -221,9 +187,8 @@ export default function DashboardChart({
 
   // Check if there's any real data to display
   const hasData = useMemo(() => {
-    if (showSampleData) return true;
     return weekData.some(w => w.committed > 0 || w.interested > 0 || w.target > 0);
-  }, [weekData, showSampleData]);
+  }, [weekData]);
 
   // Generate target line path
   const generateTargetLinePath = (): string => {
@@ -283,16 +248,6 @@ export default function DashboardChart({
               </button>
             ))}
           </div>
-          <button
-            onClick={() => setShowSampleData(!showSampleData)}
-            className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-              showSampleData
-                ? "bg-foreground text-background border-foreground"
-                : "bg-transparent text-muted-foreground border-border hover:border-foreground hover:text-foreground"
-            }`}
-          >
-            {showSampleData ? "Hide Sample Data" : "Show Sample Data"}
-          </button>
         </div>
       </div>
 

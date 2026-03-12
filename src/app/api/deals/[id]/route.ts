@@ -1,6 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const supabase = await createClient();
+  const { id: dealId } = await params;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("organization_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!userData?.organization_id) {
+    return NextResponse.json({ error: "No organization" }, { status: 400 });
+  }
+
+  try {
+    // Verify deal belongs to user's organization
+    const { data: existingDeal } = await supabase
+      .from("deals")
+      .select("id, organization_id")
+      .eq("id", dealId)
+      .single();
+
+    if (!existingDeal || existingDeal.organization_id !== userData.organization_id) {
+      return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+    }
+
+    const { error } = await supabase
+      .from("deals")
+      .delete()
+      .eq("id", dealId);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("[Deal DELETE] Error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to delete deal" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

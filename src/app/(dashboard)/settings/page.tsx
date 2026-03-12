@@ -60,9 +60,14 @@ export default async function SettingsPage() {
               <span className="text-sm text-muted-foreground">Name</span>
               <span className="font-medium">{userData?.name || "Not set"}</span>
             </div>
-            <div className="flex items-center justify-between py-3">
-              <span className="text-sm text-muted-foreground">Role</span>
-              <span className="font-medium capitalize">{userRole}</span>
+            <div className="pt-2">
+              <Link
+                href="/settings/profile"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary text-foreground rounded-xl text-sm font-medium hover:bg-secondary/80 transition-colors"
+              >
+                Manage Profile
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </div>

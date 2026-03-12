@@ -351,6 +351,7 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>
           </div>
+
         </form>
       </div>
     </div>

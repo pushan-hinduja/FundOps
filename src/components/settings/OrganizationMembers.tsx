@@ -175,7 +175,7 @@ export function OrganizationMembers() {
                 <button
                   onClick={() => handleRemove(member.id)}
                   disabled={removingId === member.id}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive disabled:opacity-50"
+                  className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive disabled:opacity-50 transition-colors"
                 >
                   {removingId === member.id ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

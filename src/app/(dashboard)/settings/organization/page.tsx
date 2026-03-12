@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, Users } from "lucide-react";
+import { Building2, Users, AlertTriangle } from "lucide-react";
 import { OrganizationMembers } from "@/components/settings/OrganizationMembers";
 import { OrganizationDetails } from "@/components/settings/OrganizationDetails";
+import { DeleteOrganizationButton } from "@/components/settings/DeleteOrganizationButton";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,25 @@ export default async function OrganizationPage() {
             </div>
           </div>
           <OrganizationMembers />
+        </div>
+
+        {/* Danger Zone */}
+        <div className="glass-card rounded-2xl p-6 border border-destructive/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-destructive/10 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <h2 className="text-lg font-medium">Delete My Organization</h2>
+              <p className="text-sm text-muted-foreground">
+                Irreversible actions for your organization
+              </p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Deleting this organization will remove all members and cannot be undone.
+          </p>
+          <DeleteOrganizationButton orgName={org.name} />
         </div>
       </div>
     </div>

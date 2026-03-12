@@ -8,6 +8,7 @@ import {
   Phone,
 } from "lucide-react";
 import { LPDetailClient } from "./LPDetailClient";
+import { DeleteLPButton } from "@/components/lp/DeleteLPButton";
 import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
 import {
   LPContact,
@@ -157,6 +158,7 @@ export default async function LPDetailPage({
         </div>
 
         <div className="flex items-center gap-2">
+          <DeleteLPButton lpId={lp.id} lpName={lp.name} />
         </div>
       </div>
 

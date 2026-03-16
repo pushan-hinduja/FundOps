@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getAnthropicClient, SONNET_MODEL_ID } from "@/lib/ai/anthropic";
+import { getAnthropicClient, AGENT_MODEL_ID } from "@/lib/ai/anthropic";
+import { TOOL_DEFINITIONS, executeTool } from "@/lib/ai/tools";
+import type { ToolContext } from "@/lib/ai/tools/types";
+
+const MAX_TOOL_ITERATIONS = 10;
 
 interface Message {
   role: "user" | "assistant";
@@ -39,38 +43,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch relevant data from Supabase to provide context
-    const [dealsResult, lpsResult, relationshipsResult, orgResult] = await Promise.all([
-      supabase
-        .from("deals")
-        .select("*")
-        .eq("organization_id", userData.organization_id),
-      supabase
-        .from("lp_contacts")
-        .select("*")
-        .eq("organization_id", userData.organization_id),
-      supabase
-        .from("deal_lp_relationships")
-        .select("*, deals!inner(name, status, organization_id), lp_contacts!inner(name, firm)")
-        .eq("deals.organization_id", userData.organization_id),
-      supabase
-        .from("organizations")
-        .select("name")
-        .eq("id", userData.organization_id)
-        .single(),
-    ]);
+    // Get org name for system prompt
+    const { data: orgData } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", userData.organization_id)
+      .single();
 
-    const deals = dealsResult.data || [];
-    const lps = lpsResult.data || [];
-    const relationships = relationshipsResult.data || [];
-    const orgName = orgResult.data?.name || "Unknown Organization";
+    const orgName = orgData?.name || "your organization";
 
-    // Build context for the AI
-    const context = buildContext(orgName, deals, lps, relationships);
+    // Build tool context
+    const toolContext: ToolContext = {
+      supabase,
+      organizationId: userData.organization_id,
+      userId: user.id,
+    };
 
-    // Build messages for the API
+    // Build messages
     const client = getAnthropicClient();
-    const messages: { role: "user" | "assistant"; content: string }[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const messages: any[] = [];
 
     // Add conversation history
     for (const msg of conversationHistory as Message[]) {
@@ -86,27 +78,108 @@ export async function POST(request: NextRequest) {
       content: query,
     });
 
-    // Call Anthropic API
-    const response = await client.messages.create({
-      model: SONNET_MODEL_ID,
-      max_tokens: 1024,
-      system: `You are an AI assistant for FundOps, a fund operations platform. You help users understand their deals, LP (Limited Partner) contacts, and pipeline data.
+    const systemPrompt = `You are an AI assistant for FundOps, a fund operations platform for ${orgName}. You help fund managers understand their deals, LP (Limited Partner) contacts, pipeline data, email communications, and investor relationships.
 
-Here is the current data context for ${orgName}:
+You have access to tools that query the database. ALWAYS use tools to get current data — do not guess or make up numbers. If a question requires data you don't have, use the appropriate tool to fetch it.
 
-${context}
+Tool usage guidelines:
+- Use search_across_all for vague or broad questions where the entity type is unclear
+- Use query_lps to find and filter LP contacts
+- Use get_deal_pipeline for deal details and LP breakdowns
+- Use get_commitment_status for detailed commitment/wire/terms information
+- Use get_email_history for recent email interactions
+- Use get_engagement_scores to identify engagement patterns and silent/at-risk LPs
+- Use get_deal_analytics for aggregate metrics, funnels, and close readiness
+- Use get_wire_status for wire transfer tracking
+- Use get_investor_updates for investor update history
+- Use draft_email to compose outbound emails (always confirm with the user before drafting)
+- Chain multiple tools when needed for comprehensive answers
 
-Answer questions concisely and helpfully based on this data. If asked about specific deals or LPs, provide relevant details. Format numbers nicely (e.g., $1.5M instead of 1500000). Be conversational but professional.`,
-      messages,
+Formatting guidelines:
+- Format currency nicely (e.g., $1.5M instead of 1500000)
+- Use markdown bold for emphasis
+- Be conversational but professional
+- Keep responses concise — lead with the answer, then provide supporting details
+- When listing multiple items, use bullet points or tables`;
+
+    // Agent loop: call Claude with tools, execute tool calls, repeat
+    let iterations = 0;
+    const toolCallLog: { name: string; duration_ms: number }[] = [];
+
+    while (iterations < MAX_TOOL_ITERATIONS) {
+      iterations++;
+
+      const response = await client.messages.create({
+        model: AGENT_MODEL_ID,
+        max_tokens: 4096,
+        system: systemPrompt,
+        tools: TOOL_DEFINITIONS,
+        messages,
+      });
+
+      // Check if the response has tool_use blocks
+      const toolUseBlocks = response.content.filter(
+        (block) => block.type === "tool_use"
+      );
+
+      if (toolUseBlocks.length === 0 || response.stop_reason !== "tool_use") {
+        // Final response — extract text
+        const textContent = response.content.find(
+          (block) => block.type === "text"
+        );
+        const aiResponse = textContent
+          ? (textContent as { type: "text"; text: string }).text
+          : "I couldn't generate a response. Please try rephrasing your question.";
+
+        return NextResponse.json({
+          response: aiResponse,
+          toolCalls: toolCallLog,
+        });
+      }
+
+      // Append assistant message with tool_use blocks
+      messages.push({
+        role: "assistant",
+        content: response.content,
+      });
+
+      // Execute each tool call and build tool_result messages
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toolResults: any[] = [];
+
+      for (const block of toolUseBlocks) {
+        if (block.type !== "tool_use") continue;
+
+        const startTime = Date.now();
+        const result = await executeTool(
+          block.name,
+          block.input as Record<string, unknown>,
+          toolContext
+        );
+        const duration = Date.now() - startTime;
+
+        toolCallLog.push({ name: block.name, duration_ms: duration });
+
+        toolResults.push({
+          type: "tool_result",
+          tool_use_id: block.id,
+          content: result,
+        });
+      }
+
+      // Append tool results as a user message
+      messages.push({
+        role: "user",
+        content: toolResults,
+      });
+    }
+
+    // If we hit max iterations, extract whatever text we have
+    return NextResponse.json({
+      response:
+        "I performed multiple queries but couldn't fully resolve your question. Could you try being more specific?",
+      toolCalls: toolCallLog,
     });
-
-    // Extract text response
-    const textContent = response.content.find((block) => block.type === "text");
-    const aiResponse = textContent
-      ? (textContent as { type: "text"; text: string }).text
-      : "I apologize, but I couldn't generate a response.";
-
-    return NextResponse.json({ response: aiResponse });
   } catch (error) {
     console.error("AI Search error:", error);
     return NextResponse.json(
@@ -114,160 +187,4 @@ Answer questions concisely and helpfully based on this data. If asked about spec
       { status: 500 }
     );
   }
-}
-
-function buildContext(
-  orgName: string,
-  deals: Record<string, unknown>[],
-  lps: Record<string, unknown>[],
-  relationships: Record<string, unknown>[]
-): string {
-  const activeDeals = deals.filter(
-    (d: Record<string, unknown>) => d.status === "active"
-  );
-  const totalCommitted = deals.reduce(
-    (sum: number, d: Record<string, unknown>) =>
-      sum + ((d.total_committed as number) || 0),
-    0
-  );
-  const totalInterested = deals.reduce(
-    (sum: number, d: Record<string, unknown>) =>
-      sum + ((d.total_interested as number) || 0),
-    0
-  );
-  const totalTarget = deals.reduce(
-    (sum: number, d: Record<string, unknown>) =>
-      sum + ((d.target_raise as number) || 0),
-    0
-  );
-
-  let context = `Organization: ${orgName}
-
-SUMMARY:
-- Total Deals: ${deals.length}
-- Active Deals: ${activeDeals.length}
-- Total LP Contacts: ${lps.length}
-- Total Committed: $${formatNumber(totalCommitted)}
-- Total Interested: $${formatNumber(totalInterested)}
-- Total Target Raise: $${formatNumber(totalTarget)}
-- Overall Progress: ${totalTarget > 0 ? Math.round((totalCommitted / totalTarget) * 100) : 0}%
-
-DEALS:
-`;
-
-  for (const deal of deals) {
-    context += `- ${deal.name} (${deal.status}): Target $${formatNumber(deal.target_raise as number)}, Committed $${formatNumber(deal.total_committed as number)}, Interested $${formatNumber(deal.total_interested as number)}`;
-    if (deal.close_date) context += `, Close: ${deal.close_date}`;
-    if (deal.investment_stage) context += `, Stage: ${deal.investment_stage}`;
-    context += `\n`;
-  }
-
-  context += `
-LP CONTACTS (${lps.length} total):
-`;
-
-  for (const lp of lps) {
-    context += `- ${lp.name}`;
-    if (lp.firm) context += ` (${lp.firm})`;
-    context += `\n`;
-  }
-
-  // Group relationships by deal for active deals
-  const relsByDeal: Record<string, Record<string, unknown>[]> = {};
-  for (const rel of relationships) {
-    const dealId = rel.deal_id as string;
-    if (!relsByDeal[dealId]) relsByDeal[dealId] = [];
-    relsByDeal[dealId].push(rel);
-  }
-
-  // Only include detailed LP breakdown for active deals to keep context manageable
-  const activeRelDeals = activeDeals.map((d) => d.id as string);
-  if (activeRelDeals.length > 0) {
-    context += `\nACTIVE DEAL LP DETAILS:\n`;
-    for (const dealId of activeRelDeals) {
-      const deal = deals.find((d) => d.id === dealId);
-      const rels = relsByDeal[dealId] || [];
-      if (!deal || rels.length === 0) continue;
-
-      context += `\n${deal.name}:\n`;
-      for (const rel of rels) {
-        const lpInfo = rel.lp_contacts as Record<string, unknown> | null;
-        const lpName = lpInfo?.name || "Unknown LP";
-        const lpFirm = lpInfo?.firm ? ` (${lpInfo.firm})` : "";
-        context += `  - ${lpName}${lpFirm}: Status=${rel.status}, Committed=$${formatNumber(rel.committed_amount as number)}`;
-        if (rel.allocated_amount) context += `, Allocated=$${formatNumber(rel.allocated_amount as number)}`;
-        if (rel.wire_status) context += `, Wire=${rel.wire_status}`;
-        if (rel.wire_amount_received) context += `, Received=$${formatNumber(rel.wire_amount_received as number)}`;
-        context += `\n`;
-      }
-    }
-  }
-
-  // Add summary counts for wire status across active deals
-  const activeRels = relationships.filter((r) => {
-    const dealInfo = r.deals as Record<string, unknown> | null;
-    return dealInfo?.status === "active";
-  });
-  const pendingWires = activeRels.filter((r) => r.wire_status === "pending").length;
-  const partialWires = activeRels.filter((r) => r.wire_status === "partial").length;
-  const completeWires = activeRels.filter((r) => r.wire_status === "complete").length;
-  const interestedLPs = activeRels.filter((r) => r.status === "interested").length;
-  const committedLPs = activeRels.filter((r) => r.status === "committed").length;
-  const allocatedLPs = activeRels.filter((r) => r.status === "allocated").length;
-
-  if (activeRels.length > 0) {
-    context += `\nACTIVE DEALS SUMMARY:
-- LPs Interested: ${interestedLPs}
-- LPs Committed: ${committedLPs}
-- LPs Allocated: ${allocatedLPs}
-- Wires Pending: ${pendingWires}
-- Wires Partial: ${partialWires}
-- Wires Complete: ${completeWires}
-`;
-  }
-
-  return context;
-}
-
-function formatNumber(num: number): string {
-  if (!num) return "0";
-  if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return num.toString();
-}
-
-function generateMockResponse(
-  query: string,
-  deals: Record<string, unknown>[],
-  lps: Record<string, unknown>[]
-): string {
-  const lowerQuery = query.toLowerCase();
-
-  if (lowerQuery.includes("committed") || lowerQuery.includes("lp")) {
-    const totalCommitted = deals.reduce(
-      (sum: number, d: Record<string, unknown>) =>
-        sum + ((d.total_committed as number) || 0),
-      0
-    );
-    return `You have ${lps.length} LP contacts in your database. Your total committed amount across all deals is $${formatNumber(totalCommitted)}.`;
-  }
-
-  if (lowerQuery.includes("pipeline") || lowerQuery.includes("interested")) {
-    const totalInterested = deals.reduce(
-      (sum: number, d: Record<string, unknown>) =>
-        sum + ((d.total_interested as number) || 0),
-      0
-    );
-    return `Your current pipeline value (interested LPs) is $${formatNumber(totalInterested)} across ${deals.length} deals.`;
-  }
-
-  if (lowerQuery.includes("active") || lowerQuery.includes("deal")) {
-    const activeDeals = deals.filter(
-      (d: Record<string, unknown>) => d.status === "active"
-    );
-    return `You have ${activeDeals.length} active deals out of ${deals.length} total deals.`;
-  }
-
-  return `Based on your data: You have ${deals.length} deals and ${lps.length} LP contacts. What specific information would you like to know?`;
 }

@@ -67,7 +67,10 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
       const response = await fetch("/api/ai/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery }),
+        body: JSON.stringify({
+          query: searchQuery,
+          conversationHistory: messages,
+        }),
       });
 
       const data = await response.json();

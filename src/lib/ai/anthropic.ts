@@ -19,3 +19,6 @@ export const MODEL_VERSION = "claude-haiku-4.5-v1";
 
 // Sonnet 4 — higher quality for user-facing responses
 export const SONNET_MODEL_ID = "claude-sonnet-4-20250514";
+
+// Sonnet 4.6 — latest model for the agent loop
+export const AGENT_MODEL_ID = "claude-sonnet-4-6";

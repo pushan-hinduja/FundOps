@@ -1,10 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
-interface Message {
+export interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+export interface ThinkingStatus {
+  toolName: string;
+  iteration: number;
+  results: { toolName: string; summary: string }[];
 }
 
 interface AISearchContextType {
@@ -17,6 +23,13 @@ interface AISearchContextType {
   clearMessages: () => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  // Streaming support
+  streamingContent: string;
+  setStreamingContent: React.Dispatch<React.SetStateAction<string>>;
+  thinkingStatus: ThinkingStatus | null;
+  setThinkingStatus: React.Dispatch<React.SetStateAction<ThinkingStatus | null>>;
+  // Abort support
+  abortControllerRef: React.RefObject<AbortController | null>;
 }
 
 const AISearchContext = createContext<AISearchContextType | undefined>(undefined);
@@ -26,14 +39,17 @@ export function AISearchProvider({ children }: { children: ReactNode }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [thinkingStatus, setThinkingStatus] = useState<ThinkingStatus | null>(null);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
-  const addMessage = (message: Message) => {
+  const addMessage = useCallback((message: Message) => {
     setMessages((prev) => [...prev, message]);
-  };
+  }, []);
 
-  const clearMessages = () => {
+  const clearMessages = useCallback(() => {
     setMessages([]);
-  };
+  }, []);
 
   return (
     <AISearchContext.Provider
@@ -47,6 +63,11 @@ export function AISearchProvider({ children }: { children: ReactNode }) {
         clearMessages,
         isLoading,
         setIsLoading,
+        streamingContent,
+        setStreamingContent,
+        thinkingStatus,
+        setThinkingStatus,
+        abortControllerRef,
       }}
     >
       {children}

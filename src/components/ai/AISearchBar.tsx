@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect, ReactNode } from "react";
-import { Sparkles, HelpCircle, Plus, Send, X } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
+import { Sparkles, HelpCircle, Plus, Send, X, Search, Database, Mail, BarChart3, Loader2 } from "lucide-react";
 import { useAISearch } from "./AISearchContext";
+import type { ThinkingStatus } from "./AISearchContext";
 
 function renderMarkdown(text: string): ReactNode {
   // Split on **bold** patterns
@@ -15,10 +16,71 @@ function renderMarkdown(text: string): ReactNode {
   });
 }
 
+const TOOL_DISPLAY_NAMES: Record<string, { label: string; icon: string }> = {
+  query_lps: { label: "Searching LPs", icon: "search" },
+  get_deal_pipeline: { label: "Loading pipeline", icon: "database" },
+  get_commitment_status: { label: "Checking commitments", icon: "database" },
+  get_email_history: { label: "Searching emails", icon: "mail" },
+  get_engagement_scores: { label: "Analyzing engagement", icon: "chart" },
+  get_deal_analytics: { label: "Analyzing deal", icon: "chart" },
+  get_wire_status: { label: "Checking wires", icon: "database" },
+  get_investor_updates: { label: "Loading updates", icon: "database" },
+  search_across_all: { label: "Searching everything", icon: "search" },
+  draft_email: { label: "Drafting email", icon: "mail" },
+};
+
+function ToolIcon({ icon }: { icon: string }) {
+  const cls = "w-3 h-3";
+  switch (icon) {
+    case "search": return <Search className={cls} />;
+    case "database": return <Database className={cls} />;
+    case "mail": return <Mail className={cls} />;
+    case "chart": return <BarChart3 className={cls} />;
+    default: return <Loader2 className={`${cls} animate-spin`} />;
+  }
+}
+
 const suggestedQueries = [
   "How many committed LPs do I have?",
   "What's the total pipeline value?",
 ];
+
+// Parse SSE events from a text chunk (may contain multiple events or partial ones)
+function parseSSEEvents(buffer: string): { events: { type: string; data: string }[]; remaining: string } {
+  const events: { type: string; data: string }[] = [];
+  const lines = buffer.split("\n");
+  let currentType = "";
+  let currentData = "";
+  let remaining = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (line.startsWith("event: ")) {
+      currentType = line.slice(7);
+    } else if (line.startsWith("data: ")) {
+      currentData = line.slice(6);
+    } else if (line === "" && currentType && currentData) {
+      events.push({ type: currentType, data: currentData });
+      currentType = "";
+      currentData = "";
+    } else if (line === "") {
+      // Empty line without complete event, reset
+      currentType = "";
+      currentData = "";
+    }
+  }
+
+  // If we have a partial event at the end, keep it in the buffer
+  if (currentType || currentData) {
+    const partialLines: string[] = [];
+    if (currentType) partialLines.push(`event: ${currentType}`);
+    if (currentData) partialLines.push(`data: ${currentData}`);
+    remaining = partialLines.join("\n");
+  }
+
+  return { events, remaining };
+}
 
 interface AISearchBarProps {
   isDashboard?: boolean;
@@ -34,6 +96,11 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
     addMessage,
     isLoading,
     setIsLoading,
+    streamingContent,
+    setStreamingContent,
+    thinkingStatus,
+    setThinkingStatus,
+    abortControllerRef,
   } = useAISearch();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,9 +117,9 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, streamingContent, thinkingStatus]);
 
-  const handleSubmit = async (e?: React.FormEvent, customQuery?: string) => {
+  const handleSubmit = useCallback(async (e?: React.FormEvent, customQuery?: string) => {
     e?.preventDefault();
     const searchQuery = customQuery || query;
     if (!searchQuery.trim() || isLoading) return;
@@ -62,33 +129,123 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
     setQuery("");
     setIsLoading(true);
     setIsExpanded(true);
+    setStreamingContent("");
+    setThinkingStatus(null);
+
+    // Create abort controller for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
-      const response = await fetch("/api/ai/search", {
+      const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: searchQuery,
+          message: searchQuery,
           conversationHistory: messages,
         }),
+        signal: abortController.signal,
       });
 
-      const data = await response.json();
-
-      if (data.error) {
-        addMessage({ role: "assistant", content: `Error: ${data.error}` });
-      } else {
-        addMessage({ role: "assistant", content: data.response });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Request failed" }));
+        addMessage({ role: "assistant", content: `Error: ${errorData.error || "Request failed"}` });
+        return;
       }
-    } catch {
-      addMessage({
-        role: "assistant",
-        content: "Sorry, I encountered an error processing your request.",
-      });
+
+      if (!response.body) {
+        addMessage({ role: "assistant", content: "Error: No response stream" });
+        return;
+      }
+
+      // Read SSE stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulatedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const { events, remaining } = parseSSEEvents(buffer);
+        buffer = remaining;
+
+        for (const event of events) {
+          try {
+            const data = JSON.parse(event.data);
+
+            switch (event.type) {
+              case "thinking":
+                setThinkingStatus((prev: ThinkingStatus | null) => ({
+                  toolName: data.toolName,
+                  iteration: data.iteration,
+                  results: prev?.results || [],
+                }));
+                break;
+
+              case "tool_result":
+                setThinkingStatus((prev: ThinkingStatus | null) => ({
+                  toolName: prev?.toolName || data.toolName,
+                  iteration: prev?.iteration || 1,
+                  results: [
+                    ...(prev?.results || []),
+                    { toolName: data.toolName, summary: data.summary },
+                  ],
+                }));
+                break;
+
+              case "text_delta":
+                accumulatedText += data.delta;
+                setStreamingContent(accumulatedText);
+                // Clear thinking when text starts streaming
+                setThinkingStatus(null);
+                break;
+
+              case "done":
+                // Finalize: add the complete message and reset streaming state
+                if (accumulatedText) {
+                  addMessage({ role: "assistant", content: accumulatedText });
+                  setStreamingContent("");
+                }
+                break;
+
+              case "error":
+                addMessage({ role: "assistant", content: `Error: ${data.message}` });
+                break;
+            }
+          } catch {
+            // Skip malformed events
+          }
+        }
+      }
+
+      // Handle case where stream ended without a done event
+      if (accumulatedText && streamingContent) {
+        addMessage({ role: "assistant", content: accumulatedText });
+        setStreamingContent("");
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // User cancelled — add partial content if any
+        if (streamingContent) {
+          addMessage({ role: "assistant", content: streamingContent + "\n\n*(cancelled)*" });
+          setStreamingContent("");
+        }
+      } else {
+        addMessage({
+          role: "assistant",
+          content: "Sorry, I encountered an error processing your request.",
+        });
+      }
     } finally {
       setIsLoading(false);
+      setThinkingStatus(null);
+      setStreamingContent("");
+      abortControllerRef.current = null;
     }
-  };
+  }, [query, isLoading, messages, addMessage, setIsLoading, setIsExpanded, setStreamingContent, setThinkingStatus, abortControllerRef, streamingContent]);
 
   const handleSuggestionClick = (suggestion: string) => {
     handleSubmit(undefined, suggestion);
@@ -115,6 +272,8 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
         setIsExpanded={setIsExpanded}
         messages={messages}
         isLoading={isLoading}
+        streamingContent={streamingContent}
+        thinkingStatus={thinkingStatus}
         query={query}
         setQuery={setQuery}
         inputRef={inputRef}
@@ -139,39 +298,15 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
       {/* Search Bar Container */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[745px] z-50 flex flex-col" style={{ maxHeight: 'calc(100vh - 48px)' }}>
         {/* Chat Messages - shown when expanded */}
-        {isExpanded && messages.length > 0 && (
+        {isExpanded && (messages.length > 0 || streamingContent || thinkingStatus) && (
           <div className="mb-4 flex-1 flex flex-col min-h-0">
-            {/* Messages - scrollable, takes full available height */}
             <div className="flex-1 overflow-y-auto space-y-3 px-1 scrollbar-thin">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-lg ${
-                      message.role === "user"
-                        ? "bg-[#8a8a8f] text-white"
-                        : "bg-[#5a5a5f] text-white/90"
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{renderMarkdown(message.content)}</p>
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-[#5a5a5f] rounded-2xl px-4 py-2.5 shadow-lg">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce [animation-delay:-0.3s]" />
-                      <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce [animation-delay:-0.15s]" />
-                      <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce" />
-                    </div>
-                  </div>
-                </div>
-              )}
+              <MessageList
+                messages={messages}
+                streamingContent={streamingContent}
+                thinkingStatus={thinkingStatus}
+                isLoading={isLoading}
+              />
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -196,12 +331,9 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
         {/* Main Search Bar */}
         <div className="relative">
           <div className="flex items-center gap-2 bg-primary rounded-2xl p-2 shadow-lg">
-            {/* Icon Button */}
             <div className="w-12 h-12 rounded-xl bg-[#1e3a5f] flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-
-            {/* Input */}
             <form onSubmit={handleSubmit} className="flex-1">
               <input
                 ref={inputRef}
@@ -212,8 +344,6 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
                 className="w-full bg-transparent text-primary-foreground placeholder:text-primary-foreground/50 text-sm outline-none py-3 px-2"
               />
             </form>
-
-            {/* Send Button */}
             <button
               onClick={() => handleSubmit()}
               disabled={isLoading || !query.trim()}
@@ -222,8 +352,6 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
               <Send className="w-4 h-4 text-primary-foreground" />
             </button>
           </div>
-
-          {/* Close button */}
           <button
             onClick={() => {
               setIsOpen(false);
@@ -239,11 +367,91 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
   );
 }
 
+// ===== Shared Message List Component =====
+
+interface MessageListProps {
+  messages: { role: "user" | "assistant"; content: string }[];
+  streamingContent: string;
+  thinkingStatus: ThinkingStatus | null;
+  isLoading: boolean;
+}
+
+function MessageList({ messages, streamingContent, thinkingStatus, isLoading }: MessageListProps) {
+  return (
+    <>
+      {messages.map((message, index) => (
+        <div
+          key={index}
+          className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+        >
+          <div
+            className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+              message.role === "user"
+                ? "bg-[#8a8a8f] text-white shadow-lg"
+                : "bg-[#5a5a5f] text-white/90 shadow-lg"
+            }`}
+          >
+            <p className="text-sm whitespace-pre-wrap">{renderMarkdown(message.content)}</p>
+          </div>
+        </div>
+      ))}
+
+      {/* Thinking indicator */}
+      {thinkingStatus && (
+        <div className="flex justify-start">
+          <div className="bg-[#5a5a5f] rounded-2xl px-4 py-2.5 shadow-lg max-w-[85%]">
+            <div className="space-y-1.5">
+              {/* Completed tool results */}
+              {thinkingStatus.results.map((result, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs text-white/60">
+                  <ToolIcon icon={TOOL_DISPLAY_NAMES[result.toolName]?.icon || "default"} />
+                  <span>{result.summary}</span>
+                </div>
+              ))}
+              {/* Current tool being called */}
+              <div className="flex items-center gap-2 text-xs text-white/80">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>{TOOL_DISPLAY_NAMES[thinkingStatus.toolName]?.label || thinkingStatus.toolName}...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Streaming content */}
+      {streamingContent && (
+        <div className="flex justify-start">
+          <div className="max-w-[85%] rounded-2xl px-4 py-2.5 bg-[#5a5a5f] text-white/90 shadow-lg">
+            <p className="text-sm whitespace-pre-wrap">{renderMarkdown(streamingContent)}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Basic loading indicator (fallback when no thinking status and no streaming) */}
+      {isLoading && !thinkingStatus && !streamingContent && (
+        <div className="flex justify-start">
+          <div className="bg-[#5a5a5f] rounded-2xl px-4 py-2.5 shadow-lg">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce [animation-delay:-0.3s]" />
+              <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce [animation-delay:-0.15s]" />
+              <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce" />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ===== Dashboard Version =====
+
 interface DashboardAISearchProps {
   isExpanded: boolean;
   setIsExpanded: (expanded: boolean) => void;
   messages: { role: "user" | "assistant"; content: string }[];
   isLoading: boolean;
+  streamingContent: string;
+  thinkingStatus: ThinkingStatus | null;
   query: string;
   setQuery: (query: string) => void;
   inputRef: React.RefObject<HTMLInputElement | null>;
@@ -256,6 +464,8 @@ function DashboardAISearch({
   setIsExpanded,
   messages,
   isLoading,
+  streamingContent,
+  thinkingStatus,
   query,
   setQuery,
   inputRef,
@@ -266,13 +476,13 @@ function DashboardAISearch({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, streamingContent, thinkingStatus]);
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[745px]">
       <div className="ai-search-wrapper bg-[#6b6b70] rounded-3xl p-4 pb-3 shadow-xl w-full">
         {/* Chat Messages - shown when expanded */}
-        {isExpanded && messages.length > 0 && (
+        {isExpanded && (messages.length > 0 || streamingContent || thinkingStatus) && (
           <>
             {/* Header */}
             <div className="flex items-center justify-between px-2 pb-3 mb-3 border-b border-white/10">
@@ -292,35 +502,12 @@ function DashboardAISearch({
 
             {/* Messages - scrollable */}
             <div className="max-h-72 overflow-y-auto mb-3 space-y-3 px-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-                      message.role === "user"
-                        ? "bg-[#8a8a8f] text-white"
-                        : "bg-[#5a5a5f] text-white/90"
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{renderMarkdown(message.content)}</p>
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-[#5a5a5f] rounded-2xl px-4 py-2.5">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce [animation-delay:-0.3s]" />
-                      <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce [animation-delay:-0.15s]" />
-                      <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce" />
-                    </div>
-                  </div>
-                </div>
-              )}
+              <MessageList
+                messages={messages}
+                streamingContent={streamingContent}
+                thinkingStatus={thinkingStatus}
+                isLoading={isLoading}
+              />
               <div ref={messagesEndRef} />
             </div>
           </>
@@ -342,14 +529,11 @@ function DashboardAISearch({
           </div>
         )}
 
-        {/* Main Search Bar - used for all messages */}
+        {/* Main Search Bar */}
         <div className="flex items-center gap-2 bg-primary rounded-2xl p-2">
-          {/* Icon Button */}
           <div className="w-12 h-12 rounded-xl bg-[#1e3a5f] flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
-
-          {/* Input */}
           <form onSubmit={handleSubmit} className="flex-1">
             <input
               ref={inputRef}
@@ -360,8 +544,6 @@ function DashboardAISearch({
               className="w-full bg-transparent text-primary-foreground placeholder:text-primary-foreground/50 text-sm outline-none py-3 px-2"
             />
           </form>
-
-          {/* Send Button */}
           <button
             onClick={() => handleSubmit()}
             disabled={isLoading || !query.trim()}
@@ -374,4 +556,3 @@ function DashboardAISearch({
     </div>
   );
 }
-

@@ -107,6 +107,8 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
     loadSessions,
     loadSession,
     startNewSession,
+    insights,
+    dismissInsight,
   } = useAISearch();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -295,6 +297,8 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
         sessions={sessions}
         onNewChat={startNewSession}
         onLoadSession={loadSession}
+        insights={insights}
+        onDismissInsight={dismissInsight}
       />
     );
   }
@@ -476,6 +480,8 @@ interface DashboardAISearchProps {
   sessions: { id: string; title: string | null; lastMessageAt: string | null; messageCount: number }[];
   onNewChat: () => void;
   onLoadSession: (sessionId: string) => Promise<void>;
+  insights: { id: string; type: string; title: string; description: string; priority: string }[];
+  onDismissInsight: (id: string) => void;
 }
 
 function DashboardAISearch({
@@ -493,6 +499,8 @@ function DashboardAISearch({
   sessions,
   onNewChat,
   onLoadSession,
+  insights,
+  onDismissInsight,
 }: DashboardAISearchProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -578,6 +586,40 @@ function DashboardAISearch({
               <div ref={messagesEndRef} />
             </div>
           </>
+        )}
+
+        {/* Insights - shown when not expanded and insights exist */}
+        {!isExpanded && insights.length > 0 && (
+          <div className="mb-3 px-2 space-y-1.5">
+            {insights.slice(0, 3).map((insight) => (
+              <button
+                key={insight.id}
+                onClick={() => {
+                  handleSuggestionClick("Tell me more about this: " + insight.title);
+                  onDismissInsight(insight.id);
+                }}
+                className="w-full flex items-start gap-2 px-3 py-2 rounded-xl bg-[#7a7a7f]/50 hover:bg-[#8a8a8f]/50 text-left transition-all duration-200 group"
+              >
+                <span className={
+                  "mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 " +
+                  (insight.priority === "urgent" || insight.priority === "high"
+                    ? "bg-orange-400"
+                    : "bg-blue-400")
+                } />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-white/90 truncate">{insight.title}</p>
+                  <p className="text-[10px] text-white/50 truncate">{insight.description}</p>
+                </div>
+                <X
+                  className="w-3 h-3 text-white/30 hover:text-white/70 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDismissInsight(insight.id);
+                  }}
+                />
+              </button>
+            ))}
+          </div>
         )}
 
         {/* Suggested Queries - shown when not expanded */}

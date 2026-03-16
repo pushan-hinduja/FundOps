@@ -11,6 +11,7 @@ import { getWireStatusDefinition, executeGetWireStatus } from "./get-wire-status
 import { getInvestorUpdatesDefinition, executeGetInvestorUpdates } from "./get-investor-updates";
 import { searchAcrossAllDefinition, executeSearchAcrossAll } from "./search-across-all";
 import { draftEmailDefinition, executeDraftEmail } from "./draft-email";
+import { rememberDefinition, executeRemember } from "./remember";
 
 const TOOL_MAP: Record<string, ToolRegistryEntry> = {
   query_lps: { definition: queryLpsDefinition, execute: executeQueryLps },
@@ -23,6 +24,7 @@ const TOOL_MAP: Record<string, ToolRegistryEntry> = {
   get_investor_updates: { definition: getInvestorUpdatesDefinition, execute: executeGetInvestorUpdates },
   search_across_all: { definition: searchAcrossAllDefinition, execute: executeSearchAcrossAll },
   draft_email: { definition: draftEmailDefinition, execute: executeDraftEmail },
+  remember: { definition: rememberDefinition, execute: executeRemember },
 };
 
 export const TOOL_DEFINITIONS: Tool[] = Object.values(TOOL_MAP).map(

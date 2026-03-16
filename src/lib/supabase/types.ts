@@ -383,3 +383,61 @@ export interface ChatMessage {
   sequence_number: number;
   created_at: string;
 }
+
+// ============================================
+// Agent Memory Types
+// ============================================
+
+export type MemoryCategory =
+  | "lp_preference"
+  | "lp_relationship"
+  | "deal_insight"
+  | "user_preference"
+  | "process_note"
+  | "market_context"
+  | "follow_up";
+
+export type InsightType =
+  | "silent_lps"
+  | "deadline_approaching"
+  | "commitment_milestone"
+  | "engagement_drop"
+  | "wire_stalled"
+  | "follow_up_due";
+
+export type InsightPriority = "low" | "medium" | "high" | "urgent";
+
+export interface AgentMemory {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  category: MemoryCategory;
+  content: string;
+  lp_contact_id: string | null;
+  deal_id: string | null;
+  source_session_id: string | null;
+  source_message_id: string | null;
+  confidence: number;
+  access_count: number;
+  last_accessed_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentInsight {
+  id: string;
+  organization_id: string;
+  insight_type: InsightType;
+  title: string;
+  description: string;
+  deal_id: string | null;
+  lp_contact_ids: string[] | null;
+  priority: InsightPriority;
+  is_dismissed: boolean;
+  dismissed_by: string | null;
+  dismissed_at: string | null;
+  insight_hash: string;
+  created_at: string;
+}

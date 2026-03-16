@@ -20,6 +20,14 @@ export interface SessionInfo {
   messageCount: number;
 }
 
+export interface InsightInfo {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  priority: string;
+}
+
 interface AISearchContextType {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -45,6 +53,9 @@ interface AISearchContextType {
   loadSessions: () => Promise<void>;
   loadSession: (sessionId: string) => Promise<void>;
   startNewSession: () => void;
+  // Insights
+  insights: InsightInfo[];
+  dismissInsight: (id: string) => void;
 }
 
 const AISearchContext = createContext<AISearchContextType | undefined>(undefined);
@@ -59,6 +70,7 @@ export function AISearchProvider({ children }: { children: ReactNode }) {
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [insights, setInsights] = useState<InsightInfo[]>([]);
 
   const addMessage = useCallback((message: Message) => {
     setMessages((prev) => [...prev, message]);
@@ -118,10 +130,45 @@ export function AISearchProvider({ children }: { children: ReactNode }) {
     setThinkingStatus(null);
   }, []);
 
-  // Load sessions on mount
+  const loadInsights = useCallback(async () => {
+    try {
+      const response = await fetch("/api/ai/insights");
+      if (response.ok) {
+        const data = await response.json();
+        setInsights(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (data.insights || []).map((i: any) => ({
+            id: i.id,
+            type: i.insight_type,
+            title: i.title,
+            description: i.description,
+            priority: i.priority,
+          }))
+        );
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
+  const dismissInsight = useCallback(async (id: string) => {
+    setInsights((prev) => prev.filter((i) => i.id !== id));
+    try {
+      await fetch("/api/ai/insights", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ insightId: id }),
+      });
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
+  // Load sessions and insights on mount
   useEffect(() => {
     loadSessions();
-  }, [loadSessions]);
+    loadInsights();
+  }, [loadSessions, loadInsights]);
 
   return (
     <AISearchContext.Provider
@@ -147,6 +194,8 @@ export function AISearchProvider({ children }: { children: ReactNode }) {
         loadSessions,
         loadSession,
         startNewSession,
+        insights,
+        dismissInsight,
       }}
     >
       {children}

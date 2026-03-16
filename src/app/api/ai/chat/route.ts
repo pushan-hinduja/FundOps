@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
       conversationHistory,
       toolContext,
       orgName,
+      sessionId: sessionId!,
     });
 
     // Wrap the agent stream to intercept done/text events for DB persistence

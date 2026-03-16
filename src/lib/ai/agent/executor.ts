@@ -4,6 +4,8 @@ import type { ToolContext } from "../tools/types";
 import { buildAgentSystemPrompt } from "./system-prompt";
 import type { AgentConfig, AgentEvent, ToolCallLogEntry } from "./types";
 import { DEFAULT_AGENT_CONFIG } from "./types";
+import { loadRelevantMemories } from "../memory/loader";
+import { extractFacts } from "../memory/extractor";
 
 interface RunAgentParams {
   userMessage: string;
@@ -11,6 +13,7 @@ interface RunAgentParams {
   conversationHistory: any[];
   toolContext: ToolContext;
   orgName: string;
+  sessionId?: string;
   config?: AgentConfig;
 }
 
@@ -28,6 +31,7 @@ export function runAgent(params: RunAgentParams): ReadableStream<Uint8Array> {
     conversationHistory,
     toolContext,
     orgName,
+    sessionId,
     config = DEFAULT_AGENT_CONFIG,
   } = params;
 
@@ -42,7 +46,23 @@ export function runAgent(params: RunAgentParams): ReadableStream<Uint8Array> {
 
       try {
         const client = getAnthropicClient();
-        const systemPrompt = buildAgentSystemPrompt(orgName);
+
+        // Load relevant memories for this conversation
+        let memoriesSection = "";
+        try {
+          memoriesSection = await loadRelevantMemories(
+            {
+              supabase: toolContext.supabase,
+              userId: toolContext.userId,
+              organizationId: toolContext.organizationId,
+            },
+            userMessage
+          );
+        } catch (err) {
+          console.error("[Agent] Memory loading error:", err);
+        }
+
+        const systemPrompt = buildAgentSystemPrompt(orgName, memoriesSection);
 
         // Build messages array
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,13 +95,12 @@ export function runAgent(params: RunAgentParams): ReadableStream<Uint8Array> {
 
           // No tool calls or stop_reason is not tool_use → final response
           if (toolUseBlocks.length === 0 || response.stop_reason !== "tool_use") {
-            // Extract text from this non-streaming response and send as deltas
             const textContent = response.content.find(
               (block) => block.type === "text"
             );
-            if (textContent && textContent.type === "text") {
-              // Send the complete text as a single delta (already have the full response)
-              send({ type: "text_delta", delta: textContent.text });
+            const finalText = textContent && textContent.type === "text" ? textContent.text : "";
+            if (finalText) {
+              send({ type: "text_delta", delta: finalText });
             }
 
             send({
@@ -90,6 +109,21 @@ export function runAgent(params: RunAgentParams): ReadableStream<Uint8Array> {
               inputTokens: totalInputTokens,
               outputTokens: totalOutputTokens,
             });
+
+            // Async fact extraction (fire and forget)
+            if (finalText) {
+              extractFacts(
+                {
+                  supabase: toolContext.supabase,
+                  userId: toolContext.userId,
+                  organizationId: toolContext.organizationId,
+                  sessionId,
+                },
+                userMessage,
+                finalText
+              ).catch((err) => console.error("[Agent] Fact extraction error:", err));
+            }
+
             controller.close();
             return;
           }
@@ -151,7 +185,9 @@ export function runAgent(params: RunAgentParams): ReadableStream<Uint8Array> {
           messages,
         });
 
+        let streamedText = "";
         stream.on("text", (delta) => {
+          streamedText += delta;
           send({ type: "text_delta", delta });
         });
 
@@ -165,6 +201,21 @@ export function runAgent(params: RunAgentParams): ReadableStream<Uint8Array> {
           inputTokens: totalInputTokens,
           outputTokens: totalOutputTokens,
         });
+
+        // Async fact extraction (fire and forget)
+        if (streamedText) {
+          extractFacts(
+            {
+              supabase: toolContext.supabase,
+              userId: toolContext.userId,
+              organizationId: toolContext.organizationId,
+              sessionId,
+            },
+            userMessage,
+            streamedText
+          ).catch((err) => console.error("[Agent] Fact extraction error:", err));
+        }
+
         controller.close();
       } catch (err) {
         const message =
@@ -214,6 +265,8 @@ function summarizeToolResult(toolName: string, result: string): string {
       }
       case "draft_email":
         return `Drafted email to ${parsed.metadata?.lp_name ?? "LP"}`;
+      case "remember":
+        return parsed.status === "saved" ? "Saved to memory" : "Updated memory";
       default:
         return `Completed`;
     }

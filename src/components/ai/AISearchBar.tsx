@@ -6,11 +6,107 @@ import { useAISearch } from "./AISearchContext";
 import type { ThinkingStatus } from "./AISearchContext";
 
 function renderMarkdown(text: string): ReactNode {
-  // Split on **bold** patterns
+  const lines = text.split("\n");
+  const elements: ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Detect markdown table: line starts with | and next line is a separator like |---|
+    if (line.trim().startsWith("|") && i + 1 < lines.length && /^\|[\s\-:|]+\|/.test(lines[i + 1].trim())) {
+      const headerCells = line.split("|").filter((c) => c.trim() !== "").map((c) => c.trim());
+      i += 2; // skip header + separator
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) {
+        rows.push(lines[i].split("|").filter((c) => c.trim() !== "").map((c) => c.trim()));
+        i++;
+      }
+      elements.push(
+        <div key={elements.length} className="overflow-x-auto my-2">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-white/20">
+                {headerCells.map((cell, ci) => (
+                  <th key={ci} className="text-left py-1.5 px-2 font-semibold text-white/90">
+                    {renderInlineMarkdown(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, ri) => (
+                <tr key={ri} className="border-b border-white/10 last:border-0">
+                  {row.map((cell, ci) => (
+                    <td key={ci} className="py-1.5 px-2 text-white/80">
+                      {renderInlineMarkdown(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+
+    // Bullet list items
+    if (/^[\-\*]\s/.test(line.trim())) {
+      const listItems: string[] = [];
+      while (i < lines.length && /^[\-\*]\s/.test(lines[i].trim())) {
+        listItems.push(lines[i].trim().replace(/^[\-\*]\s/, ""));
+        i++;
+      }
+      elements.push(
+        <ul key={elements.length} className="list-disc list-inside space-y-0.5 my-1">
+          {listItems.map((item, li) => (
+            <li key={li}>{renderInlineMarkdown(item)}</li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    // Headers: #, ##, ###
+    const headerMatch = line.match(/^(#{1,3})\s+(.+)$/);
+    if (headerMatch) {
+      const level = headerMatch[1].length;
+      const headerText = headerMatch[2];
+      const cls = level === 1
+        ? "text-base font-bold text-white mt-3 mb-1"
+        : level === 2
+        ? "text-sm font-bold text-white mt-2.5 mb-1"
+        : "text-sm font-semibold text-white mt-2 mb-0.5";
+      elements.push(
+        <p key={elements.length} className={cls}>{renderInlineMarkdown(headerText)}</p>
+      );
+      i++;
+      continue;
+    }
+
+    // Empty line = paragraph break
+    if (line.trim() === "") {
+      elements.push(<div key={elements.length} className="h-2" />);
+      i++;
+      continue;
+    }
+
+    // Regular text line
+    elements.push(
+      <p key={elements.length}>{renderInlineMarkdown(line)}</p>
+    );
+    i++;
+  }
+
+  return <>{elements}</>;
+}
+
+function renderInlineMarkdown(text: string): ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
+      return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
     }
     return part;
   });
@@ -399,64 +495,48 @@ interface MessageListProps {
 function MessageList({ messages, streamingContent, thinkingStatus, isLoading }: MessageListProps) {
   return (
     <>
-      {messages.map((message, index) => (
-        <div
-          key={index}
-          className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-        >
-          <div
-            className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-              message.role === "user"
-                ? "bg-[#8a8a8f] text-white shadow-lg"
-                : "bg-[#5a5a5f] text-white/90 shadow-lg"
-            }`}
-          >
-            <p className="text-sm whitespace-pre-wrap">{renderMarkdown(message.content)}</p>
+      {messages.map((message, index) =>
+        message.role === "user" ? (
+          <div key={index} className="flex justify-end">
+            <div className="max-w-[85%] rounded-2xl px-4 py-2.5 bg-[#8a8a8f] text-white shadow-lg">
+              <p className="text-sm whitespace-pre-wrap">{renderInlineMarkdown(message.content)}</p>
+            </div>
           </div>
-        </div>
-      ))}
+        ) : (
+          <div key={index} className="text-sm text-white/90 px-1">
+            {renderMarkdown(message.content)}
+          </div>
+        )
+      )}
 
       {/* Thinking indicator */}
       {thinkingStatus && (
-        <div className="flex justify-start">
-          <div className="bg-[#5a5a5f] rounded-2xl px-4 py-2.5 shadow-lg max-w-[85%]">
-            <div className="space-y-1.5">
-              {/* Completed tool results */}
-              {thinkingStatus.results.map((result, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs text-white/60">
-                  <ToolIcon icon={TOOL_DISPLAY_NAMES[result.toolName]?.icon || "default"} />
-                  <span>{result.summary}</span>
-                </div>
-              ))}
-              {/* Current tool being called */}
-              <div className="flex items-center gap-2 text-xs text-white/80">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                <span>{TOOL_DISPLAY_NAMES[thinkingStatus.toolName]?.label || thinkingStatus.toolName}...</span>
-              </div>
+        <div className="px-1 space-y-1.5">
+          {thinkingStatus.results.map((result, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs text-white/50">
+              <ToolIcon icon={TOOL_DISPLAY_NAMES[result.toolName]?.icon || "default"} />
+              <span>{result.summary}</span>
             </div>
+          ))}
+          <div className="flex items-center gap-2 text-xs text-white/70">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>{TOOL_DISPLAY_NAMES[thinkingStatus.toolName]?.label || thinkingStatus.toolName}...</span>
           </div>
         </div>
       )}
 
       {/* Streaming content */}
       {streamingContent && (
-        <div className="flex justify-start">
-          <div className="max-w-[85%] rounded-2xl px-4 py-2.5 bg-[#5a5a5f] text-white/90 shadow-lg">
-            <p className="text-sm whitespace-pre-wrap">{renderMarkdown(streamingContent)}</p>
-          </div>
+        <div className="text-sm text-white/90 px-1">
+          {renderMarkdown(streamingContent)}
         </div>
       )}
 
-      {/* Basic loading indicator (fallback when no thinking status and no streaming) */}
+      {/* Basic loading indicator */}
       {isLoading && !thinkingStatus && !streamingContent && (
-        <div className="flex justify-start">
-          <div className="bg-[#5a5a5f] rounded-2xl px-4 py-2.5 shadow-lg">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce [animation-delay:-0.3s]" />
-              <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce [animation-delay:-0.15s]" />
-              <div className="w-2 h-2 rounded-full bg-white/50 animate-bounce" />
-            </div>
-          </div>
+        <div className="flex items-center gap-2 text-xs text-white/50 px-1">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          <span>Thinking...</span>
         </div>
       )}
     </>
@@ -517,12 +597,9 @@ function DashboardAISearch({
           <>
             {/* Header */}
             <div className="flex items-center justify-between px-2 pb-3 mb-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[hsl(var(--accent))]" />
-                <span className="text-sm font-medium text-white/90">
-                  AI Assistant
-                </span>
-              </div>
+              <span className="text-sm font-medium text-white/90">
+                FundOps Agent
+              </span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => { onNewChat(); }}

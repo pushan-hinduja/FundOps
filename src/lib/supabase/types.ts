@@ -354,3 +354,32 @@ export const RESPONSE_TONE_LABELS: Record<ResponseTone, string> = {
   formal: "Formal",
   concise: "Concise",
 };
+
+// ============================================
+// Chat Session Types
+// ============================================
+
+export interface ChatSession {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  title: string | null;
+  is_active: boolean;
+  message_count: number;
+  total_tokens_used: number;
+  last_message_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  session_id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  tool_calls: Json | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  sequence_number: number;
+  created_at: string;
+}

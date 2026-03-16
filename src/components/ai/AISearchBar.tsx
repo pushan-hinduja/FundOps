@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
-import { Sparkles, HelpCircle, Plus, Send, X, Search, Database, Mail, BarChart3, Loader2 } from "lucide-react";
+import { Sparkles, HelpCircle, Plus, Send, X, Search, Database, Mail, BarChart3, Loader2, MessageSquarePlus, History } from "lucide-react";
 import { useAISearch } from "./AISearchContext";
 import type { ThinkingStatus } from "./AISearchContext";
 
@@ -101,6 +101,12 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
     thinkingStatus,
     setThinkingStatus,
     abortControllerRef,
+    currentSessionId,
+    setCurrentSessionId,
+    sessions,
+    loadSessions,
+    loadSession,
+    startNewSession,
   } = useAISearch();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -142,7 +148,7 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: searchQuery,
-          conversationHistory: messages,
+          sessionId: currentSessionId,
         }),
         signal: abortController.signal,
       });
@@ -214,6 +220,13 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
               case "error":
                 addMessage({ role: "assistant", content: `Error: ${data.message}` });
                 break;
+
+              case "session":
+                if (data.sessionId) {
+                  setCurrentSessionId(data.sessionId);
+                  loadSessions();
+                }
+                break;
             }
           } catch {
             // Skip malformed events
@@ -245,7 +258,7 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
       setStreamingContent("");
       abortControllerRef.current = null;
     }
-  }, [query, isLoading, messages, addMessage, setIsLoading, setIsExpanded, setStreamingContent, setThinkingStatus, abortControllerRef, streamingContent]);
+  }, [query, isLoading, messages, addMessage, setIsLoading, setIsExpanded, setStreamingContent, setThinkingStatus, abortControllerRef, streamingContent, currentSessionId, setCurrentSessionId, loadSessions]);
 
   const handleSuggestionClick = (suggestion: string) => {
     handleSubmit(undefined, suggestion);
@@ -279,6 +292,9 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
         inputRef={inputRef}
         handleSubmit={handleSubmit}
         handleSuggestionClick={handleSuggestionClick}
+        sessions={sessions}
+        onNewChat={startNewSession}
+        onLoadSession={loadSession}
       />
     );
   }
@@ -457,6 +473,9 @@ interface DashboardAISearchProps {
   inputRef: React.RefObject<HTMLInputElement | null>;
   handleSubmit: (e?: React.FormEvent, customQuery?: string) => void;
   handleSuggestionClick: (suggestion: string) => void;
+  sessions: { id: string; title: string | null; lastMessageAt: string | null; messageCount: number }[];
+  onNewChat: () => void;
+  onLoadSession: (sessionId: string) => Promise<void>;
 }
 
 function DashboardAISearch({
@@ -471,8 +490,12 @@ function DashboardAISearch({
   inputRef,
   handleSubmit,
   handleSuggestionClick,
+  sessions,
+  onNewChat,
+  onLoadSession,
 }: DashboardAISearchProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -492,12 +515,56 @@ function DashboardAISearch({
                   AI Assistant
                 </span>
               </div>
-              <button
-                onClick={() => setIsExpanded(false)}
-                className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4 text-white/70" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => { onNewChat(); }}
+                  className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                  title="New chat"
+                >
+                  <MessageSquarePlus className="w-3.5 h-3.5 text-white/70" />
+                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                    title="Chat history"
+                  >
+                    <History className="w-3.5 h-3.5 text-white/70" />
+                  </button>
+                  {showHistory && sessions.length > 0 && (
+                    <div className="absolute bottom-8 right-0 w-64 bg-[#4a4a4f] rounded-xl shadow-xl border border-white/10 overflow-hidden z-10">
+                      <div className="max-h-48 overflow-y-auto">
+                        {sessions.map((session) => (
+                          <button
+                            key={session.id}
+                            onClick={() => {
+                              onLoadSession(session.id);
+                              setShowHistory(false);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-white/10 transition-colors border-b border-white/5 last:border-0"
+                          >
+                            <p className="text-xs text-white/90 truncate">
+                              {session.title || "Untitled chat"}
+                            </p>
+                            <p className="text-[10px] text-white/40">
+                              {session.messageCount} messages
+                              {session.lastMessageAt && (
+                                <> &middot; {new Date(session.lastMessageAt).toLocaleDateString()}</>
+                              )}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => setIsExpanded(false)}
+                  className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-4 h-4 text-white/70" />
+                </button>
+              </div>
             </div>
 
             {/* Messages - scrollable */}

@@ -21,6 +21,7 @@ export function buildAgentSystemPrompt(
   prompt += "- **get_wire_status** — Wire transfer tracking and collection progress\n";
   prompt += "- **get_investor_updates** — Investor update history and status for deals\n";
   prompt += "- **draft_email** — Compose an outbound email draft (never sends automatically; always present the draft for user review)\n";
+  prompt += "- **get_lp_matches** — Get LP match scores for any deal. Scores LPs out of 100 based on check size, sector, stage, geography, and recency. If scores haven't been computed yet, this tool computes them automatically. Works for any deal (public or private).\n";
   prompt += '- **remember** — Store important facts about LPs, deals, or user preferences for future conversations. Use when the user says "remember this" or shares a durable preference/fact\n\n';
 
   prompt += "Chain multiple tools when needed for comprehensive answers. For example, to answer \"which silent LPs should I follow up with on Fund III\", you might call get_deal_pipeline to find the deal, then get_engagement_scores scoped to that deal to find silent LPs.\n\n";

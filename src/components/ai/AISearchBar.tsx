@@ -79,8 +79,7 @@ function renderMarkdown(text: string): ReactNode {
     const headerMatch = line.match(/^(#{1,3})\s+(.+)$/);
     if (headerMatch) {
       const level = headerMatch[1].length;
-      // Strip leading emoji/symbols
-      const headerText = headerMatch[2].replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d]+\s*/u, "");
+      const headerText = headerMatch[2];
       const cls = level === 1
         ? "text-base font-bold text-white mt-3 mb-1"
         : level === 2
@@ -130,8 +129,16 @@ function renderMarkdown(text: string): ReactNode {
   return <>{elements}</>;
 }
 
+function stripEmoji(text: string): string {
+  return text
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\ufe0f]/gu, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function renderInlineMarkdown(text: string): ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const clean = stripEmoji(text);
+  const parts = clean.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
@@ -443,7 +450,7 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[745px] z-50 flex flex-col" style={{ maxHeight: 'calc(100vh - 48px)' }}>
         {/* Chat Messages - shown when expanded */}
         {isExpanded && (messages.length > 0 || streamingContent || thinkingStatus) && (
-          <div className="mb-4 flex-1 flex flex-col min-h-0">
+          <div className="mb-4 flex-1 flex flex-col min-h-0 bg-[#3a3a3f] rounded-2xl p-4 shadow-xl">
             <div className="flex-1 overflow-y-auto space-y-3 px-1 scrollbar-thin">
               <MessageList
                 messages={messages}
@@ -463,7 +470,7 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
               <button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#7a7a7f] hover:bg-[#8a8a8f] text-xs text-white/70 hover:text-white transition-all duration-200 shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4a4a4f] hover:bg-[#5a5a5f] text-xs text-white/70 hover:text-white transition-all duration-200 shadow-md"
               >
                 <span>{suggestion}</span>
                 <Plus className="w-3 h-3" />
@@ -619,7 +626,7 @@ function DashboardAISearch({
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[745px]">
-      <div className="ai-search-wrapper bg-[#6b6b70] rounded-3xl p-4 pb-3 shadow-xl w-full">
+      <div className="ai-search-wrapper bg-[#3a3a3f] rounded-3xl p-4 pb-3 shadow-xl w-full">
         {/* Chat Messages - shown when expanded */}
         {isExpanded && (messages.length > 0 || streamingContent || thinkingStatus) && (
           <>
@@ -704,7 +711,7 @@ function DashboardAISearch({
                     handleSuggestionClick("Tell me more about this: " + insight.title);
                     onDismissInsight(insight.id);
                   }}
-                  className="w-full flex items-start gap-2 px-3 py-2 rounded-xl bg-[#7a7a7f]/50 hover:bg-[#8a8a8f]/50 text-left transition-all duration-200 group"
+                  className="w-full flex items-start gap-2 px-3 py-2 rounded-xl bg-[#4a4a4f]/50 hover:bg-[#5a5a5f]/50 text-left transition-all duration-200 group"
                 >
                   <span className={
                     "mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 " +
@@ -732,7 +739,7 @@ function DashboardAISearch({
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#7a7a7f] hover:bg-[#8a8a8f] text-xs text-white/70 hover:text-white transition-all duration-200"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4a4a4f] hover:bg-[#5a5a5f] text-xs text-white/70 hover:text-white transition-all duration-200"
                 >
                   <span>{suggestion}</span>
                   <Plus className="w-3 h-3" />

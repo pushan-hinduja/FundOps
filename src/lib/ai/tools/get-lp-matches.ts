@@ -1,10 +1,11 @@
 import type { Tool } from "@anthropic-ai/sdk/resources/messages";
 import type { ToolContext, ToolExecutor } from "./types";
+import { computeMatches } from "../matching/compute-matches";
 
 export const getLpMatchesDefinition: Tool = {
   name: "get_lp_matches",
   description:
-    "Get LP match scores for a deal (scored out of 100). Shows which LPs are the best fit based on check size compatibility (30pts), sector alignment (25pts), stage fit (25pts), geographic fit (10pts), and recency of activity (10pts). Only available for private deals that have been scored.",
+    "Get LP match scores for any deal (scored out of 100). Shows which LPs are the best fit based on check size compatibility (30pts), sector alignment (25pts), stage fit (25pts), geographic fit (10pts), and recency of activity (10pts). If scores haven't been computed yet, this tool will compute them automatically.",
   input_schema: {
     type: "object" as const,
     properties: {
@@ -55,6 +56,29 @@ export const executeGetLpMatches: ToolExecutor = async (
     return JSON.stringify({ error: "Either deal_name or deal_id is required" });
   }
 
+  // Check if scores exist
+  const { data: existing } = await ctx.supabase
+    .from("lp_match_scores")
+    .select("id")
+    .eq("deal_id", resolvedDealId)
+    .limit(1);
+
+  // If no scores exist, compute them
+  if (!existing || existing.length === 0) {
+    try {
+      await computeMatches({
+        supabase: ctx.supabase,
+        dealId: resolvedDealId,
+        organizationId: ctx.organizationId,
+      });
+    } catch (err) {
+      return JSON.stringify({
+        error: "Failed to compute match scores: " + (err instanceof Error ? err.message : "unknown error"),
+      });
+    }
+  }
+
+  // Fetch scores
   const { data, error } = await ctx.supabase
     .from("lp_match_scores")
     .select(
@@ -70,16 +94,8 @@ export const executeGetLpMatches: ToolExecutor = async (
     return JSON.stringify({ error: error.message });
   }
 
-  if (!data || data.length === 0) {
-    return JSON.stringify({
-      total: 0,
-      matches: [],
-      note: "No match scores found. The user may need to click 'Match LPs' on the deal page to compute scores first.",
-    });
-  }
-
   return JSON.stringify({
-    total: data.length,
-    matches: data,
+    total: data?.length || 0,
+    matches: data || [],
   });
 };

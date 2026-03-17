@@ -26,6 +26,7 @@ export function buildAgentSystemPrompt(
   prompt += "Chain multiple tools when needed for comprehensive answers. For example, to answer \"which silent LPs should I follow up with on Fund III\", you might call get_deal_pipeline to find the deal, then get_engagement_scores scoped to that deal to find silent LPs.\n\n";
 
   prompt += "## Formatting Guidelines\n\n";
+  prompt += "- NEVER use emoji or icons in your responses. No exceptions.\n";
   prompt += "- Format currency nicely: $1.5M instead of 1500000, $250K instead of 250000\n";
   prompt += "- Use **bold** for emphasis on key numbers and names\n";
   prompt += "- Be conversational but professional\n";

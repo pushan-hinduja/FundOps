@@ -11,6 +11,8 @@ import { EditDealButton } from "@/components/deals/EditDealButton";
 import { DeleteDealButton } from "@/components/deals/DeleteDealButton";
 import { LPMatchButton } from "@/components/deals/LPMatchButton";
 import { InvestorUpdatesCard } from "@/components/deal/InvestorUpdatesCard";
+import { DraftDealSection } from "@/components/deal/DraftDealSection";
+import { DealVotingCard } from "@/components/deal/DealVotingCard";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +137,16 @@ export default async function DealDetailPage({
     .order("parsed_at", { ascending: false })
     .limit(50);
 
+  // Check if draft data exists (for "View Draft Notes" link on active/closed deals)
+  const { data: draftData } = await supabase
+    .from("deal_draft_data")
+    .select("id")
+    .eq("deal_id", id)
+    .maybeSingle();
+
+  const hasDraftData = !!draftData;
+  const isDraft = deal.status === "draft";
+
   const formatCurrency = (amount: number | null) => {
     if (!amount) return "-";
     if (amount >= 1000000) {
@@ -246,7 +258,15 @@ export default async function DealDetailPage({
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            {deal.access === "private" && (
+            {!isDraft && hasDraftData && (
+              <Link
+                href={`/deals/${deal.id}/draft-notes`}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary/80 rounded-xl transition-colors"
+              >
+                Draft Notes
+              </Link>
+            )}
+            {deal.access === "private" && !isDraft && (
               <LPMatchButton dealId={deal.id} dealName={deal.name} />
             )}
             <EditDealButton
@@ -282,30 +302,40 @@ export default async function DealDetailPage({
         </div>
       </div>
 
-      {/* Deal Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <p className="section-label mb-2">Target Raise</p>
-          <p className="metric-number text-3xl">{formatCurrency(deal.target_raise)}</p>
-        </div>
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <p className="section-label mb-2">Allocated</p>
-          <p className="metric-number text-3xl text-[hsl(var(--success))]">{formatCurrency(totalAllocated)}</p>
-          {deal.target_raise && deal.target_raise > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {Math.round((totalAllocated / deal.target_raise) * 100)}% of target
-            </p>
-          )}
-        </div>
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <p className="section-label mb-2">Interested</p>
-          <p className="metric-number text-3xl">{formatCurrency(deal.total_interested)}</p>
-        </div>
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <p className="section-label mb-2">LPs Involved</p>
-          <p className="metric-number text-3xl">{lpRelationships?.length || 0}</p>
-        </div>
-      </div>
+      {/* Draft Deal Layout */}
+      {isDraft ? (
+        <>
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            <DraftDealSection dealId={deal.id} />
+            <DealVotingCard dealId={deal.id} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Deal Stats */}
+          <div className="grid grid-cols-4 gap-4 mb-8">
+            <div className="bg-card rounded-2xl p-6 border border-border">
+              <p className="section-label mb-2">Target Raise</p>
+              <p className="metric-number text-3xl">{formatCurrency(deal.target_raise)}</p>
+            </div>
+            <div className="bg-card rounded-2xl p-6 border border-border">
+              <p className="section-label mb-2">Allocated</p>
+              <p className="metric-number text-3xl text-[hsl(var(--success))]">{formatCurrency(totalAllocated)}</p>
+              {deal.target_raise && deal.target_raise > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Math.round((totalAllocated / deal.target_raise) * 100)}% of target
+                </p>
+              )}
+            </div>
+            <div className="bg-card rounded-2xl p-6 border border-border">
+              <p className="section-label mb-2">Interested</p>
+              <p className="metric-number text-3xl">{formatCurrency(deal.total_interested)}</p>
+            </div>
+            <div className="bg-card rounded-2xl p-6 border border-border">
+              <p className="section-label mb-2">LPs Involved</p>
+              <p className="metric-number text-3xl">{lpRelationships?.length || 0}</p>
+            </div>
+          </div>
 
       {/* Close Readiness / Investor Updates + Allocated LPs row */}
       {committedRelationships.length > 0 && deal.status !== "closed" && (
@@ -387,6 +417,8 @@ export default async function DealDetailPage({
           />
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

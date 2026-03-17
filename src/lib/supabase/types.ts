@@ -523,3 +523,38 @@ export interface LPMatchScore {
 export interface LPMatchScoreWithLP extends LPMatchScore {
   lp_contacts: Pick<LPContact, "id" | "name" | "email" | "firm" | "preferred_check_size" | "investor_type"> | null;
 }
+
+// ============================================
+// Draft Deal Types
+// ============================================
+
+export type DealVoteValue = "up" | "down" | "sideways";
+
+export interface DealDraftData {
+  id: string;
+  deal_id: string;
+  valuation: number | null;
+  round_size: number | null;
+  revenue_current_year: number | null;
+  revenue_previous_year: number | null;
+  yoy_growth: number | null;
+  ebitda: number | null;
+  is_profitable: boolean | null;
+  team_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DealVote {
+  id: string;
+  deal_id: string;
+  user_id: string;
+  vote: DealVoteValue;
+  comment: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DealVoteWithUser extends DealVote {
+  users: Pick<User, "id" | "name" | "email"> | null;
+}

@@ -1,6 +1,140 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchEmailsWithParsed } from "./queries";
 
+import { getAnthropicClient, MODEL_ID } from "../ai/anthropic";
+
+// Patterns that indicate an automated/non-human email address
+const AUTOMATED_LOCAL_PARTS = new Set([
+  "noreply", "no-reply", "no_reply",
+  "donotreply", "do-not-reply", "do_not_reply",
+  "mailer-daemon", "postmaster",
+  "notifications", "notification",
+  "alerts", "alert",
+  "updates", "update",
+  "news", "newsletter",
+  "info", "support", "help", "hello",
+  "orders", "order", "billing", "invoice",
+  "shipping", "delivery", "tracking",
+  "feedback", "survey",
+  "marketing", "promo", "promotions",
+  "unsubscribe", "bounce",
+  "system", "admin", "webmaster",
+  "calendar", "events", "rsvp",
+  "daemon", "automated", "bot",
+  "team", "crew", "receipts",
+]);
+
+const AUTOMATED_DOMAIN_KEYWORDS = [
+  "mail.", "calendar.", "notify.", "bounce.",
+  "email.", "sender.", "mailer.", "campaign.",
+];
+
+const AUTOMATED_DOMAINS = new Set([
+  "mailchimp.com", "sendgrid.net", "amazonses.com",
+  "mailgun.org", "postmarkapp.com", "mandrillapp.com",
+  "hubspot.com", "intercom.io", "zendesk.com",
+  "freshdesk.com", "salesforce.com",
+  "github.com", "gitlab.com", "atlassian.com",
+  "slack.com", "notion.so", "linear.app",
+  "google.com", "googlemail.com",
+  "facebookmail.com", "linkedin.com",
+  "stripe.com", "plaid.com",
+  "vercel.com", "heroku.com", "netlify.com",
+  "luma-mail.com", "calendly.com",
+  "tryapollo.io", "apollo.io",
+  "postman.com", "mail.postman.com",
+]);
+
+function isAutomatedEmail(email: string): boolean {
+  const lower = email.toLowerCase();
+  const atIdx = lower.indexOf("@");
+  if (atIdx < 0) return false;
+
+  const local = lower.slice(0, atIdx);
+  const domain = lower.slice(atIdx + 1);
+
+  // Check exact local part match
+  const baseLocal = local.split("+")[0]; // strip plus-addressing
+  if (AUTOMATED_LOCAL_PARTS.has(baseLocal)) return true;
+
+  // Check if local part contains plus-addressed automated keywords
+  if (local.includes("+")) {
+    const plusPart = local.split("+")[0];
+    if (AUTOMATED_LOCAL_PARTS.has(plusPart)) return true;
+  }
+
+  // Check if the name part looks like a service (no personal name pattern)
+  // e.g., "vercelship", "antlerus" — single word, no first.last pattern
+  if (domain && AUTOMATED_DOMAINS.has(domain)) return true;
+
+  // Check domain subdomains (calendar.luma-mail.com, mail.postman.com)
+  for (const kw of AUTOMATED_DOMAIN_KEYWORDS) {
+    if (domain.startsWith(kw) || domain.includes("." + kw.replace(".", ""))) return true;
+  }
+
+  // Check root domain against known automated domains
+  const domainParts = domain.split(".");
+  if (domainParts.length > 2) {
+    const rootDomain = domainParts.slice(-2).join(".");
+    if (AUTOMATED_DOMAINS.has(rootDomain)) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Use AI to classify a batch of email addresses as human or automated.
+ * Returns the set of emails classified as human.
+ */
+async function classifyEmailsWithAI(
+  contacts: { email: string; name: string }[]
+): Promise<Set<string>> {
+  if (contacts.length === 0) return new Set();
+
+  try {
+    const client = getAnthropicClient();
+    const contactList = contacts
+      .map((c) => c.name + " <" + c.email + ">")
+      .join("\n");
+
+    const response = await client.messages.create({
+      model: MODEL_ID,
+      max_tokens: 1000,
+      messages: [
+        {
+          role: "user",
+          content: [
+            "I'm building a list of potential investor contacts from my email inbox. For each sender below, classify as HUMAN or AUTOMATED.",
+            "",
+            "AUTOMATED means: newsletters, notifications, receipts, order confirmations, marketing emails, service bots, noreply addresses, company announcements, or system-generated messages.",
+            "",
+            "HUMAN means: a real person who wrote a personal or business email. When in doubt, classify as HUMAN — it's better to include a borderline case than to miss a real investor contact.",
+            "",
+            "People at investment firms, startups, law firms, banks, or consulting firms are almost always HUMAN even if their name sounds corporate.",
+            "",
+            "Return ONLY a JSON array of the email addresses (lowercase) that are HUMAN. No explanation.",
+            "",
+            contactList,
+          ].join("\n"),
+        },
+      ],
+    });
+
+    const text = response.content.find((b) => b.type === "text");
+    if (!text || text.type !== "text") return new Set(contacts.map((c) => c.email));
+
+    const match = text.text.match(/\[[\s\S]*\]/);
+    if (!match) return new Set(contacts.map((c) => c.email));
+
+    const humanEmails: string[] = JSON.parse(match[0]);
+    return new Set(humanEmails.map((e) => e.toLowerCase()));
+  } catch (err) {
+    console.error("[Suggested Contacts] AI classification error:", err);
+    // On failure, include all — better to show false positives than miss real people
+    return new Set(contacts.map((c) => c.email.toLowerCase()));
+  }
+}
+
 export interface SuggestedContact {
   id: string;
   email: string;
@@ -30,6 +164,11 @@ export async function processEmailForSuggestedContact(
   }
 
   const emailLower = email.from_email.toLowerCase();
+
+  // Skip non-human email addresses
+  if (isAutomatedEmail(emailLower)) {
+    return { added: false, reason: "automated_email" };
+  }
 
   // Check if already in LP contacts
   const { data: existingLP } = await supabase
@@ -168,12 +307,17 @@ export async function getSuggestedContacts(
 
     const emailLower = email.from_email.toLowerCase();
 
+    // Skip automated/non-human emails
+    if (isAutomatedEmail(emailLower)) {
+      continue;
+    }
+
     // Skip if already in LP table or dismissed
     if (existingEmails.has(emailLower)) {
       skippedExistingLP++;
       continue;
     }
-    
+
     if (dismissedEmails.has(emailLower)) {
       skippedDismissed++;
       continue;
@@ -204,7 +348,26 @@ export async function getSuggestedContacts(
   console.log(`  - Skipped (no email): ${skippedNoEmail}`);
   console.log(`  - Skipped (already in LP table): ${skippedExistingLP}`);
   console.log(`  - Skipped (dismissed): ${skippedDismissed}`);
-  console.log(`  - Unique contacts found: ${contactMap.size}`);
+  console.log(`  - Unique contacts found (pre-AI): ${contactMap.size}`);
+
+    // AI classification: filter out remaining automated emails
+    if (contactMap.size > 0) {
+      const candidates = Array.from(contactMap.values()).map((c) => ({
+        email: c.email.toLowerCase(),
+        name: c.name,
+      }));
+      const humanEmails = await classifyEmailsWithAI(candidates);
+
+      let aiFiltered = 0;
+      for (const [key, contact] of contactMap) {
+        if (!humanEmails.has(contact.email.toLowerCase())) {
+          contactMap.delete(key);
+          aiFiltered++;
+        }
+      }
+      console.log(`  - AI filtered out: ${aiFiltered} automated contacts`);
+      console.log(`  - Final human contacts: ${contactMap.size}`);
+    }
 
     // Upsert into suggested_contacts table
     const contactsToUpsert = Array.from(contactMap.values()).map((contact) => ({
@@ -234,6 +397,26 @@ export async function getSuggestedContacts(
       } else {
         console.log(`[Suggested Contacts] Successfully upserted ${contactsToUpsert.length} contacts`);
       }
+    }
+
+    // Clean out old entries that no longer pass the filter
+    const validEmails = new Set(contactsToUpsert.map((c) => c.email.toLowerCase()));
+    const { data: allStored } = await supabase
+      .from("suggested_contacts")
+      .select("id, email")
+      .eq("organization_id", organizationId)
+      .eq("is_dismissed", false);
+
+    const idsToRemove = (allStored || [])
+      .filter((c) => !validEmails.has(c.email.toLowerCase()))
+      .map((c) => c.id);
+
+    if (idsToRemove.length > 0) {
+      await supabase
+        .from("suggested_contacts")
+        .delete()
+        .in("id", idsToRemove);
+      console.log(`[Suggested Contacts] Cleaned out ${idsToRemove.length} stale/automated entries`);
     }
 
     // Fetch all non-dismissed suggested contacts

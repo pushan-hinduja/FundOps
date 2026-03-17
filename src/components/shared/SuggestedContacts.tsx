@@ -24,12 +24,15 @@ export function SuggestedContacts({
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const fetchContacts = async () => {
+  const fetchContacts = async (forceRefresh = false) => {
     setIsRefreshing(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/suggested-contacts");
+      const url = forceRefresh
+        ? "/api/suggested-contacts?refresh=true"
+        : "/api/suggested-contacts";
+      const response = await fetch(url);
       const data = await response.json();
 
       if (!response.ok) {
@@ -123,7 +126,7 @@ export function SuggestedContacts({
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => fetchContacts()}
+            onClick={() => fetchContacts(true)}
             disabled={isRefreshing}
             className="p-2 hover:bg-secondary rounded-lg transition-colors disabled:opacity-50"
             title="Refresh"

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getSuggestedContacts } from "@/lib/emails/suggested-contacts";
 
 export const dynamic = "force-dynamic";
 
-// GET: Fetch suggested contacts from database (contacts are updated by cron job)
+// GET: Fetch suggested contacts from database
+// ?refresh=true will re-run the full pipeline (pattern filter + AI classification + cleanup)
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -24,7 +26,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No organization found" }, { status: 400 });
   }
 
-  // Fetch suggested contacts
+  const refresh = request.nextUrl.searchParams.get("refresh") === "true";
+
+  if (refresh) {
+    // Re-run the full pipeline: re-evaluate all emails, apply filters, cleanup stale entries
+    const contacts = await getSuggestedContacts(supabase, userData.organization_id);
+    return NextResponse.json({ contacts });
+  }
+
+  // Default: just read from DB
   const { data: contacts, error } = await supabase
     .from("suggested_contacts")
     .select("id, email, name, firm, title, phone, source_email_id")
@@ -41,7 +51,6 @@ export async function GET(request: NextRequest) {
   }
 
   // Filter out anyone who has since been added to lp_contacts
-  // (e.g., auto-created by the deal_lp trigger after AI parsing)
   if (contacts && contacts.length > 0) {
     const emails = contacts.map((c) => c.email.toLowerCase());
     const { data: existingLPs } = await supabase

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   CloseReadinessMetrics,
@@ -27,6 +27,15 @@ export function DealDetailClient({
   const router = useRouter();
   const [relationships, setRelationships] = useState(initialRelationships);
   const [metrics, setMetrics] = useState(closeReadinessMetrics);
+
+  // Sync props to state when server re-renders after router.refresh()
+  useEffect(() => {
+    setRelationships(initialRelationships);
+  }, [initialRelationships]);
+
+  useEffect(() => {
+    setMetrics(closeReadinessMetrics);
+  }, [closeReadinessMetrics]);
 
   const handleUpdateAllocation = async (
     relationshipId: string,

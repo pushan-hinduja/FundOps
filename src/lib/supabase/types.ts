@@ -558,3 +558,15 @@ export interface DealVote {
 export interface DealVoteWithUser extends DealVote {
   users: Pick<User, "id" | "name" | "email"> | null;
 }
+
+export interface DealNote {
+  id: string;
+  deal_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+}
+
+export interface DealNoteWithUser extends DealNote {
+  users: Pick<User, "id" | "name" | "email"> | null;
+}

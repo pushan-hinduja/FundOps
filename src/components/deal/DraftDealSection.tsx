@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
+import { DealNotesTimeline } from "./DealNotesTimeline";
 
 interface DraftData {
   valuation: string;
@@ -11,7 +12,6 @@ interface DraftData {
   yoy_growth: string;
   ebitda: string;
   is_profitable: boolean;
-  team_notes: string;
 }
 
 interface DraftDealSectionProps {
@@ -28,7 +28,6 @@ export function DraftDealSection({ dealId, readOnly = false }: DraftDealSectionP
     yoy_growth: "",
     ebitda: "",
     is_profitable: false,
-    team_notes: "",
   });
   const [loaded, setLoaded] = useState(false);
 
@@ -46,7 +45,6 @@ export function DraftDealSection({ dealId, readOnly = false }: DraftDealSectionP
             yoy_growth: draft.yoy_growth?.toString() || "",
             ebitda: draft.ebitda?.toString() || "",
             is_profitable: draft.is_profitable || false,
-            team_notes: draft.team_notes || "",
           });
         }
       }
@@ -77,8 +75,8 @@ export function DraftDealSection({ dealId, readOnly = false }: DraftDealSectionP
   return (
     <div className="space-y-6">
       {/* Financial Details */}
-      <div className="bg-card rounded-2xl p-6 border border-border">
-        <h3 className="text-sm font-semibold mb-4">Deal Financials</h3>
+      <div className="glass-card rounded-2xl p-6">
+        <h2 className="text-lg font-medium mb-3">Deal Financials</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-muted-foreground mb-1">Round Size ($)</label>
@@ -173,19 +171,8 @@ export function DraftDealSection({ dealId, readOnly = false }: DraftDealSectionP
         </div>
       </div>
 
-      {/* Team Notes */}
-      <div className="bg-card rounded-2xl p-6 border border-border">
-        <h3 className="text-sm font-semibold mb-4">Team Notes</h3>
-        <textarea
-          rows={5}
-          value={data.team_notes}
-          onChange={(e) => setData((d) => ({ ...d, team_notes: e.target.value }))}
-          onBlur={() => handleFieldBlur("team_notes", data.team_notes, false)}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm resize-none"
-          placeholder="Add notes about this deal for the team..."
-          disabled={readOnly}
-        />
-      </div>
+      {/* Team Notes Timeline */}
+      <DealNotesTimeline dealId={dealId} readOnly={readOnly} />
     </div>
   );
 }

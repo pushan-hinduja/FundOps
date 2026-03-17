@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
 import { BackfillSyncButton } from "@/components/shared/BackfillSyncButton";
 import Link from "next/link";
-import { Briefcase, Plus, ArrowUpRight } from "lucide-react";
+import { Briefcase, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { DealsGrid } from "@/components/deals/DealsGrid";
 
 export const dynamic = "force-dynamic";
 
@@ -59,36 +60,91 @@ export default async function DealsPage() {
     .eq("organization_id", userData.organization_id)
     .order("created_at", { ascending: false });
 
-  const formatCurrency = (amount: number | null) => {
-    if (!amount) return "-";
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}k`;
-    }
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // Fetch supplementary data for cards
+  const dealIds = (deals || []).map((d) => d.id);
 
-  const getStatusStyles = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
-      case "draft":
-        return "bg-secondary text-muted-foreground";
-      case "closed":
-        return "bg-foreground/10 text-foreground";
-      case "cancelled":
-        return "bg-destructive/10 text-destructive";
-      default:
-        return "bg-secondary text-muted-foreground";
+  // Votes per deal (for draft cards)
+  const { data: allVotes } = dealIds.length > 0
+    ? await supabase.from("deal_votes").select("deal_id, vote").in("deal_id", dealIds)
+    : { data: [] };
+
+  // Draft data (for valuation on draft cards)
+  const { data: allDraftData } = dealIds.length > 0
+    ? await supabase.from("deal_draft_data").select("deal_id, valuation, round_size").in("deal_id", dealIds)
+    : { data: [] };
+
+  // LP counts per deal (for closed cards)
+  const { data: allRelationships } = dealIds.length > 0
+    ? await supabase
+        .from("deal_lp_relationships")
+        .select("deal_id, status, allocated_amount")
+        .in("deal_id", dealIds)
+        .in("status", ["committed", "allocated"])
+    : { data: [] };
+
+  // Org member count (for vote %) — check both user_organizations and users table
+  const { data: orgMembersNew } = await supabase
+    .from("user_organizations")
+    .select("user_id")
+    .eq("organization_id", userData.organization_id);
+  const { data: orgMembersLegacy } = await supabase
+    .from("users")
+    .select("id")
+    .eq("organization_id", userData.organization_id);
+
+  const allMemberIds = new Set([
+    ...(orgMembersNew || []).map((m) => m.user_id),
+    ...(orgMembersLegacy || []).map((m) => m.id),
+  ]);
+  const totalMembers = allMemberIds.size || 1;
+
+  // Next investor update per deal (for closed cards)
+  const { data: allUpdates } = dealIds.length > 0
+    ? await supabase
+        .from("investor_updates")
+        .select("deal_id, due_date, status")
+        .in("deal_id", dealIds)
+        .in("status", ["pending_request", "request_sent"])
+        .order("due_date", { ascending: true })
+    : { data: [] };
+
+  // Build supplementary data map
+  const dealExtras: Record<string, {
+    votesSummary?: { up: number; down: number; sideways: number; total: number; memberCount: number };
+    valuation?: number | null;
+    roundSize?: number | null;
+    lpCount?: number;
+    totalAllocated?: number;
+    nextUpdateDate?: string | null;
+  }> = {};
+
+  for (const d of deals || []) {
+    const extras: typeof dealExtras[string] = {};
+
+    if (d.status === "draft") {
+      const votes = (allVotes || []).filter((v) => v.deal_id === d.id);
+      extras.votesSummary = {
+        up: votes.filter((v) => v.vote === "up").length,
+        down: votes.filter((v) => v.vote === "down").length,
+        sideways: votes.filter((v) => v.vote === "sideways").length,
+        total: votes.length,
+        memberCount: totalMembers,
+      };
+      const draft = (allDraftData || []).find((dd) => dd.deal_id === d.id);
+      extras.valuation = draft?.valuation ?? null;
+      extras.roundSize = draft?.round_size ?? null;
     }
-  };
+
+    if (d.status === "closed") {
+      const rels = (allRelationships || []).filter((r) => r.deal_id === d.id);
+      extras.lpCount = rels.length;
+      extras.totalAllocated = rels.reduce((sum, r) => sum + (Number(r.allocated_amount) || 0), 0);
+      const nextUpdate = (allUpdates || []).find((u) => u.deal_id === d.id);
+      extras.nextUpdateDate = nextUpdate?.due_date ?? null;
+    }
+
+    dealExtras[d.id] = extras;
+  }
 
   return (
     <div className="px-8 py-6">
@@ -142,74 +198,7 @@ export default async function DealsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {deals.map((deal) => (
-            <Link
-              key={deal.id}
-              href={`/deals/${deal.id}`}
-              className="group glass-card glass-card-hover rounded-2xl p-6"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-lg truncate">{deal.name}</h3>
-                  {deal.company_name && (
-                    <p className="text-sm text-muted-foreground truncate">{deal.company_name}</p>
-                  )}
-                </div>
-                <span
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${getStatusStyles(deal.status)}`}
-                >
-                  {deal.status}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Target</span>
-                  <span className="font-medium metric-number text-lg">{formatCurrency(deal.target_raise)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Committed</span>
-                  <span className="font-medium text-[hsl(var(--success))] metric-number text-lg">
-                    {formatCurrency(deal.total_committed)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Interested</span>
-                  <span className="font-medium metric-number text-lg">
-                    {formatCurrency(deal.total_interested)}
-                  </span>
-                </div>
-              </div>
-
-              {deal.target_raise && deal.target_raise > 0 && (
-                <div className="mt-5 pt-4 border-t border-border">
-                  <div className="flex justify-between items-center text-xs mb-2">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">
-                      {Math.round(((deal.total_committed || 0) / deal.target_raise) * 100)}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-foreground rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(100, ((deal.total_committed || 0) / deal.target_raise) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-4 flex items-center justify-end">
-                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors flex items-center gap-1">
-                  View details
-                  <ArrowUpRight className="w-3 h-3" />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <DealsGrid deals={deals} dealExtras={dealExtras} />
       )}
     </div>
   );

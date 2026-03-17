@@ -11,6 +11,13 @@ export async function GET(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // Get user's org
+    const { data: userData } = await supabase
+      .from("users")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
     // Fetch votes
     const { data: votes, error } = await supabase
       .from("deal_votes")
@@ -20,28 +27,59 @@ export async function GET(
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Fetch user info for all voters from public users table
-    const userIds = [...new Set((votes || []).map((v) => v.user_id))];
-    let usersMap: Record<string, { id: string; name: string | null; email: string }> = {};
+    // Fetch all org members
+    const orgId = userData?.organization_id;
+    let allMembers: { id: string; name: string | null; email: string }[] = [];
 
-    if (userIds.length > 0) {
-      const { data: users } = await supabase
+    if (orgId) {
+      const { data: memberLinks } = await supabase
+        .from("user_organizations")
+        .select("user_id")
+        .eq("organization_id", orgId);
+
+      const memberIds = (memberLinks || []).map((m) => m.user_id);
+      if (memberIds.length > 0) {
+        const { data: users } = await supabase
+          .from("users")
+          .select("id, name, email")
+          .in("id", memberIds);
+        allMembers = users || [];
+      }
+    }
+
+    const membersMap: Record<string, { id: string; name: string | null; email: string }> = {};
+    for (const m of allMembers) {
+      membersMap[m.id] = m;
+    }
+
+    // Also look up any voters not in org members (e.g., users without user_organizations row)
+    const missingVoterIds = (votes || [])
+      .map((v) => v.user_id)
+      .filter((uid) => !membersMap[uid]);
+
+    if (missingVoterIds.length > 0) {
+      const { data: extraUsers } = await supabase
         .from("users")
         .select("id, name, email")
-        .in("id", userIds);
-
-      for (const u of users || []) {
-        usersMap[u.id] = u;
+        .in("id", missingVoterIds);
+      for (const u of extraUsers || []) {
+        membersMap[u.id] = u;
+        // Also add them to allMembers so they don't show as missing
+        allMembers.push(u);
       }
     }
 
     // Attach user info to votes
     const votesWithUsers = (votes || []).map((v) => ({
       ...v,
-      users: usersMap[v.user_id] || null,
+      users: membersMap[v.user_id] || null,
     }));
 
-    return NextResponse.json({ votes: votesWithUsers, currentUserId: user.id });
+    // Find members who haven't voted
+    const votedUserIds = new Set((votes || []).map((v) => v.user_id));
+    const missingMembers = allMembers.filter((m) => !votedUserIds.has(m.id));
+
+    return NextResponse.json({ votes: votesWithUsers, currentUserId: user.id, missingMembers });
   } catch (error) {
     console.error("Get votes error:", error);
     return NextResponse.json({ error: "Failed to get votes" }, { status: 500 });

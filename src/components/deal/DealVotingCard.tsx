@@ -18,17 +18,45 @@ interface DealVotingCardProps {
   readOnly?: boolean;
 }
 
-const VOTE_ICONS: Record<VoteValue, { icon: typeof ThumbsUp; label: string; color: string; activeColor: string }> = {
-  up: { icon: ThumbsUp, label: "Yes", color: "text-muted-foreground", activeColor: "text-green-600 bg-green-50" },
-  down: { icon: ThumbsDown, label: "No", color: "text-muted-foreground", activeColor: "text-red-600 bg-red-50" },
-  sideways: { icon: Minus, label: "Maybe", color: "text-muted-foreground", activeColor: "text-yellow-600 bg-yellow-50" },
+const VOTE_CONFIG: Record<VoteValue, {
+  icon: typeof ThumbsUp;
+  label: string;
+  activeRing: string;
+  activeBg: string;
+  activeText: string;
+  iconActive: string;
+}> = {
+  up: {
+    icon: ThumbsUp,
+    label: "Yes",
+    activeRing: "ring-2 ring-green-400",
+    activeBg: "bg-green-50",
+    activeText: "text-green-600",
+    iconActive: "text-green-600",
+  },
+  down: {
+    icon: ThumbsDown,
+    label: "No",
+    activeRing: "ring-2 ring-red-400",
+    activeBg: "bg-red-50",
+    activeText: "text-red-600",
+    iconActive: "text-red-600",
+  },
+  sideways: {
+    icon: Minus,
+    label: "Maybe",
+    activeRing: "ring-2 ring-yellow-400",
+    activeBg: "bg-yellow-50",
+    activeText: "text-yellow-600",
+    iconActive: "text-yellow-600",
+  },
 };
 
 export function DealVotingCard({ dealId, readOnly = false }: DealVotingCardProps) {
   const [votes, setVotes] = useState<Vote[]>([]);
+  const [missingMembers, setMissingMembers] = useState<{ id: string; name: string | null; email: string }[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
-  const [showComment, setShowComment] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -40,8 +68,8 @@ export function DealVotingCard({ dealId, readOnly = false }: DealVotingCardProps
     if (res.ok) {
       const data = await res.json();
       setVotes(data.votes || []);
+      setMissingMembers(data.missingMembers || []);
       setCurrentUserId(data.currentUserId);
-      // Load existing comment if user has voted
       const myVote = (data.votes || []).find((v: Vote) => v.user_id === data.currentUserId);
       if (myVote?.comment) setCommentDraft(myVote.comment);
     }
@@ -56,10 +84,7 @@ export function DealVotingCard({ dealId, readOnly = false }: DealVotingCardProps
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vote, comment: commentDraft || null }),
       });
-      if (res.ok) {
-        await loadVotes();
-        setShowComment(true);
-      }
+      if (res.ok) await loadVotes();
     } finally {
       setSubmitting(false);
     }
@@ -83,10 +108,10 @@ export function DealVotingCard({ dealId, readOnly = false }: DealVotingCardProps
   const sidewaysCount = votes.filter((v) => v.vote === "sideways").length;
 
   return (
-    <div className="bg-card rounded-2xl p-6 border border-border">
+    <div className="glass-card rounded-2xl p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">Team Votes</h3>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-medium">Team Votes</h2>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           {upCount > 0 && (
             <span className="flex items-center gap-1">
@@ -107,62 +132,77 @@ export function DealVotingCard({ dealId, readOnly = false }: DealVotingCardProps
         </div>
       </div>
 
-      {/* Current user's vote buttons */}
+      {/* Current user vote selector */}
       {!readOnly && (
-        <div className="mb-4 p-3 rounded-xl bg-secondary/30 border border-border">
-          <p className="text-xs text-muted-foreground mb-2">Your vote</p>
-          <div className="flex items-center gap-2">
-            {(Object.entries(VOTE_ICONS) as [VoteValue, typeof VOTE_ICONS.up][]).map(
-              ([value, { icon: Icon, label, activeColor }]) => (
-                <button
-                  key={value}
-                  onClick={() => submitVote(value)}
-                  disabled={submitting}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                    myVote?.vote === value
-                      ? activeColor + " border-current"
-                      : "text-muted-foreground border-border hover:bg-secondary"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
-                </button>
-              )
+        <div className="mb-6">
+          <p className="text-xs text-muted-foreground mb-3">Your vote</p>
+          <div className="flex items-center justify-center gap-6 mb-4">
+            {(Object.entries(VOTE_CONFIG) as [VoteValue, typeof VOTE_CONFIG.up][]).map(
+              ([value, config]) => {
+                const Icon = config.icon;
+                const isSelected = myVote?.vote === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => submitVote(value)}
+                    disabled={submitting}
+                    className={`flex flex-col items-center gap-1.5 transition-all ${submitting ? "opacity-50" : ""}`}
+                  >
+                    <div
+                      className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+                        isSelected
+                          ? `${config.activeBg} ${config.activeRing} scale-110`
+                          : "bg-secondary/50 hover:bg-secondary hover:scale-105"
+                      }`}
+                    >
+                      <Icon className={`w-6 h-6 ${isSelected ? config.iconActive : "text-muted-foreground"}`} />
+                    </div>
+                    <span className={`text-xs font-medium ${isSelected ? config.activeText : "text-muted-foreground"}`}>
+                      {config.label}
+                    </span>
+                  </button>
+                );
+              }
             )}
           </div>
-          {(myVote || showComment) && (
-            <div className="mt-2">
-              <input
-                type="text"
-                value={commentDraft}
-                onChange={(e) => setCommentDraft(e.target.value)}
-                onBlur={updateComment}
-                placeholder="Add a reason (optional)..."
-                className="w-full px-3 py-1.5 text-xs border border-border rounded-lg bg-background"
-              />
+
+          {/* Comment bubble */}
+          {myVote && (
+            <div className="relative">
+              {/* Triangle pointer */}
+              <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-secondary/40 rotate-45 rounded-sm" />
+              <div className="bg-secondary/40 rounded-2xl px-4 py-2.5 relative">
+                <input
+                  type="text"
+                  value={commentDraft}
+                  onChange={(e) => setCommentDraft(e.target.value)}
+                  onBlur={updateComment}
+                  onKeyDown={(e) => { if (e.key === "Enter") updateComment(); }}
+                  placeholder="Add a comment..."
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                />
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* All votes */}
-      <div className="space-y-2">
+      {/* Divider */}
+      {votes.length > 0 && !readOnly && (
+        <div className="border-t border-border mb-4" />
+      )}
+
+      {/* All votes list */}
+      <div className="space-y-3">
         {votes.map((v) => {
-          const voteInfo = VOTE_ICONS[v.vote];
-          const Icon = voteInfo.icon;
+          const config = VOTE_CONFIG[v.vote];
+          const Icon = config.icon;
           const isMe = v.user_id === currentUserId;
 
           return (
-            <div
-              key={v.id}
-              className={`flex items-start gap-3 p-2 rounded-lg ${isMe ? "bg-secondary/20" : ""}`}
-            >
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                v.vote === "up" ? "bg-green-50 text-green-600" :
-                v.vote === "down" ? "bg-red-50 text-red-600" :
-                "bg-yellow-50 text-yellow-600"
-              }`}>
-                <Icon className="w-3 h-3" />
+            <div key={v.id} className="flex items-start gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${config.activeBg}`}>
+                <Icon className={`w-3.5 h-3.5 ${config.iconActive}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium">
@@ -170,13 +210,42 @@ export function DealVotingCard({ dealId, readOnly = false }: DealVotingCardProps
                   {isMe && <span className="text-xs text-muted-foreground ml-1">(you)</span>}
                 </p>
                 {v.comment && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{v.comment}</p>
+                  <div className="mt-1 relative inline-block">
+                    <div className="bg-secondary/40 rounded-xl px-3 py-1.5">
+                      <p className="text-xs text-muted-foreground">{v.comment}</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Missing votes */}
+      {missingMembers.length > 0 && (
+        <>
+          <div className="border-t border-border mt-4 pt-3">
+            <p className="text-xs text-muted-foreground mb-2">Waiting on ({missingMembers.length})</p>
+          </div>
+          <div className="space-y-2">
+            {missingMembers.map((m) => {
+              const initial = (m.name || m.email || "?")[0].toUpperCase();
+              return (
+                <div key={m.id} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-medium text-muted-foreground">{initial}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {m.name || m.email}
+                    {m.id === currentUserId && <span className="text-xs ml-1">(you)</span>}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

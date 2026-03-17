@@ -68,11 +68,19 @@ function renderMarkdown(text: string): ReactNode {
       continue;
     }
 
-    // Headers: #, ##, ###
+    // Horizontal rule: --- or ***
+    if (/^[\-\*]{3,}\s*$/.test(line.trim())) {
+      elements.push(<hr key={elements.length} className="border-white/10 my-3" />);
+      i++;
+      continue;
+    }
+
+    // Headers: #, ##, ### (strip leading emoji)
     const headerMatch = line.match(/^(#{1,3})\s+(.+)$/);
     if (headerMatch) {
       const level = headerMatch[1].length;
-      const headerText = headerMatch[2];
+      // Strip leading emoji/symbols
+      const headerText = headerMatch[2].replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d]+\s*/u, "");
       const cls = level === 1
         ? "text-base font-bold text-white mt-3 mb-1"
         : level === 2
@@ -82,6 +90,26 @@ function renderMarkdown(text: string): ReactNode {
         <p key={elements.length} className={cls}>{renderInlineMarkdown(headerText)}</p>
       );
       i++;
+      continue;
+    }
+
+    // Blockquote: > text (collect consecutive lines)
+    if (line.trim().startsWith(">")) {
+      const quoteLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith(">")) {
+        const content = lines[i].trim().replace(/^>\s?/, "");
+        if (content) quoteLines.push(content);
+        i++;
+      }
+      if (quoteLines.length > 0) {
+        elements.push(
+          <div key={elements.length} className="border-l-2 border-white/20 pl-3 my-2 text-white/80 italic">
+            {quoteLines.map((ql, qi) => (
+              <p key={qi}>{renderInlineMarkdown(ql)}</p>
+            ))}
+          </div>
+        );
+      }
       continue;
     }
 

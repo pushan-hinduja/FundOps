@@ -23,6 +23,10 @@ interface Deal {
   investment_type: string | null;
   founder_email: string | null;
   investor_update_frequency: string | null;
+  access: string;
+  sector: string | null;
+  geography: string | null;
+  investment_thesis: string | null;
 }
 
 interface EditDealModalProps {
@@ -65,6 +69,10 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
     investment_type: deal.investment_type || "",
     founder_email: deal.founder_email || "",
     investor_update_frequency: deal.investor_update_frequency || "",
+    access: deal.access || "public",
+    sector: deal.sector || "",
+    geography: deal.geography || "",
+    investment_thesis: deal.investment_thesis || "",
   });
 
   if (!isOpen) return null;
@@ -94,6 +102,10 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
           investment_type: formData.investment_type || null,
           founder_email: formData.founder_email || null,
           investor_update_frequency: formData.investor_update_frequency || null,
+          access: formData.access,
+          sector: formData.sector || null,
+          geography: formData.geography || null,
+          investment_thesis: formData.investment_thesis || null,
         }),
       });
 
@@ -164,6 +176,70 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3 py-2 border border-border rounded-lg bg-background resize-none"
             />
+          </div>
+
+          {/* Investment Thesis */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Investment Thesis</label>
+            <textarea
+              rows={2}
+              value={formData.investment_thesis}
+              onChange={(e) => setFormData({ ...formData, investment_thesis: e.target.value })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background resize-none"
+              placeholder="Brief description of the investment thesis..."
+            />
+          </div>
+
+          {/* Access + Sector + Geography */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Access</label>
+              <select
+                value={formData.access}
+                onChange={(e) => setFormData({ ...formData, access: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+              >
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Sector</label>
+              <select
+                value={formData.sector}
+                onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+              >
+                <option value="">Select...</option>
+                <option value="fintech">Fintech</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="saas">SaaS</option>
+                <option value="ai_ml">AI / ML</option>
+                <option value="consumer">Consumer</option>
+                <option value="enterprise">Enterprise</option>
+                <option value="biotech">Biotech</option>
+                <option value="climate">Climate</option>
+                <option value="crypto">Crypto / Web3</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Geography</label>
+              <select
+                value={formData.geography}
+                onChange={(e) => setFormData({ ...formData, geography: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+              >
+                <option value="">Select...</option>
+                <option value="us">United States</option>
+                <option value="europe">Europe</option>
+                <option value="asia">Asia</option>
+                <option value="global">Global</option>
+                <option value="latam">Latin America</option>
+                <option value="mena">MENA</option>
+                <option value="africa">Africa</option>
+              </select>
+            </div>
           </div>
 
           {/* Dates */}

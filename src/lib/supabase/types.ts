@@ -163,9 +163,64 @@ export interface LPContact {
   // Special Deal Terms
   special_fee_percent: number | null;
   special_carry_percent: number | null;
+  // Manual preferences
+  preferred_sectors: string[];
+  preferred_stages: string[];
+  preferred_geographies: string[];
+  // Derived preferences (from deal history + emails)
+  derived_sectors: string[];
+  derived_stages: string[];
+  derived_geographies: string[];
+  last_deal_activity_at: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export type DealAccess = "public" | "private";
+
+export type DealSector =
+  | "fintech"
+  | "healthcare"
+  | "saas"
+  | "ai_ml"
+  | "consumer"
+  | "enterprise"
+  | "biotech"
+  | "climate"
+  | "crypto"
+  | "other";
+
+export type DealGeography =
+  | "us"
+  | "europe"
+  | "asia"
+  | "global"
+  | "latam"
+  | "mena"
+  | "africa";
+
+export const DEAL_SECTOR_LABELS: Record<DealSector, string> = {
+  fintech: "Fintech",
+  healthcare: "Healthcare",
+  saas: "SaaS",
+  ai_ml: "AI / ML",
+  consumer: "Consumer",
+  enterprise: "Enterprise",
+  biotech: "Biotech",
+  climate: "Climate",
+  crypto: "Crypto / Web3",
+  other: "Other",
+};
+
+export const DEAL_GEOGRAPHY_LABELS: Record<DealGeography, string> = {
+  us: "United States",
+  europe: "Europe",
+  asia: "Asia",
+  global: "Global",
+  latam: "Latin America",
+  mena: "MENA",
+  africa: "Africa",
+};
 
 export interface Deal {
   id: string;
@@ -187,6 +242,10 @@ export interface Deal {
   investment_type: string | null;
   founder_email: string | null;
   investor_update_frequency: InvestorUpdateFrequency | null;
+  access: DealAccess;
+  sector: string | null;
+  geography: string | null;
+  investment_thesis: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -440,4 +499,27 @@ export interface AgentInsight {
   dismissed_at: string | null;
   insight_hash: string;
   created_at: string;
+}
+
+// ============================================
+// LP Match Score Types
+// ============================================
+
+export interface LPMatchScore {
+  id: string;
+  deal_id: string;
+  lp_contact_id: string;
+  total_score: number;
+  check_size_score: number;
+  sector_score: number;
+  stage_score: number;
+  geography_score: number;
+  recency_score: number;
+  score_breakdown: Json | null;
+  is_excluded: boolean;
+  computed_at: string;
+}
+
+export interface LPMatchScoreWithLP extends LPMatchScore {
+  lp_contacts: Pick<LPContact, "id" | "name" | "email" | "firm" | "preferred_check_size" | "investor_type"> | null;
 }

@@ -23,6 +23,10 @@ export default function NewDealPage() {
   const [investmentType, setInvestmentType] = useState("");
   const [founderEmail, setFounderEmail] = useState("");
   const [investorUpdateFrequency, setInvestorUpdateFrequency] = useState("");
+  const [access, setAccess] = useState("public");
+  const [sector, setSector] = useState("");
+  const [geography, setGeography] = useState("");
+  const [investmentThesis, setInvestmentThesis] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,6 +71,10 @@ export default function NewDealPage() {
         investment_type: investmentType || null,
         founder_email: founderEmail || null,
         investor_update_frequency: investorUpdateFrequency || null,
+        access: access,
+        sector: sector || null,
+        geography: geography || null,
+        investment_thesis: investmentThesis || null,
         status: "draft",
       });
 
@@ -140,6 +148,76 @@ export default function NewDealPage() {
             className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
             placeholder="Brief description of the deal..."
           />
+        </div>
+
+        {/* Investment Thesis */}
+        <div>
+          <label htmlFor="investmentThesis" className="block text-sm font-medium mb-2">
+            Investment Thesis
+          </label>
+          <textarea
+            id="investmentThesis"
+            value={investmentThesis}
+            onChange={(e) => setInvestmentThesis(e.target.value)}
+            rows={2}
+            className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+            placeholder="Brief description of the investment thesis..."
+          />
+        </div>
+
+        {/* Access + Sector + Geography */}
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label htmlFor="access" className="block text-sm font-medium mb-2">Access</label>
+            <select
+              id="access"
+              value={access}
+              onChange={(e) => setAccess(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            >
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="sector" className="block text-sm font-medium mb-2">Sector</label>
+            <select
+              id="sector"
+              value={sector}
+              onChange={(e) => setSector(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            >
+              <option value="">Select...</option>
+              <option value="fintech">Fintech</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="saas">SaaS</option>
+              <option value="ai_ml">AI / ML</option>
+              <option value="consumer">Consumer</option>
+              <option value="enterprise">Enterprise</option>
+              <option value="biotech">Biotech</option>
+              <option value="climate">Climate</option>
+              <option value="crypto">Crypto / Web3</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="geography" className="block text-sm font-medium mb-2">Geography</label>
+            <select
+              id="geography"
+              value={geography}
+              onChange={(e) => setGeography(e.target.value)}
+              className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            >
+              <option value="">Select...</option>
+              <option value="us">United States</option>
+              <option value="europe">Europe</option>
+              <option value="asia">Asia</option>
+              <option value="global">Global</option>
+              <option value="latam">Latin America</option>
+              <option value="mena">MENA</option>
+              <option value="africa">Africa</option>
+            </select>
+          </div>
         </div>
 
         {/* Dates */}

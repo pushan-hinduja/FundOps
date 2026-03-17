@@ -267,6 +267,8 @@ function summarizeToolResult(toolName: string, result: string): string {
         return `Drafted email to ${parsed.metadata?.lp_name ?? "LP"}`;
       case "remember":
         return parsed.status === "saved" ? "Saved to memory" : "Updated memory";
+      case "get_lp_matches":
+        return `Found ${parsed.total ?? 0} LP match(es)`;
       default:
         return `Completed`;
     }

@@ -12,6 +12,7 @@ import { getInvestorUpdatesDefinition, executeGetInvestorUpdates } from "./get-i
 import { searchAcrossAllDefinition, executeSearchAcrossAll } from "./search-across-all";
 import { draftEmailDefinition, executeDraftEmail } from "./draft-email";
 import { rememberDefinition, executeRemember } from "./remember";
+import { getLpMatchesDefinition, executeGetLpMatches } from "./get-lp-matches";
 
 const TOOL_MAP: Record<string, ToolRegistryEntry> = {
   query_lps: { definition: queryLpsDefinition, execute: executeQueryLps },
@@ -25,6 +26,7 @@ const TOOL_MAP: Record<string, ToolRegistryEntry> = {
   search_across_all: { definition: searchAcrossAllDefinition, execute: executeSearchAcrossAll },
   draft_email: { definition: draftEmailDefinition, execute: executeDraftEmail },
   remember: { definition: rememberDefinition, execute: executeRemember },
+  get_lp_matches: { definition: getLpMatchesDefinition, execute: executeGetLpMatches },
 };
 
 export const TOOL_DEFINITIONS: Tool[] = Object.values(TOOL_MAP).map(

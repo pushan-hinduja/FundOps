@@ -22,6 +22,10 @@ interface Deal {
   investment_type: string | null;
   founder_email: string | null;
   investor_update_frequency: string | null;
+  access: string;
+  sector: string | null;
+  geography: string | null;
+  investment_thesis: string | null;
 }
 
 interface EditDealButtonProps {

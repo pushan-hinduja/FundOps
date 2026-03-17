@@ -116,6 +116,10 @@ export async function PATCH(
         investment_type: body.investment_type,
         founder_email: body.founder_email,
         investor_update_frequency: body.investor_update_frequency,
+        access: body.access,
+        sector: body.sector,
+        geography: body.geography,
+        investment_thesis: body.investment_thesis,
         updated_at: new Date().toISOString(),
       })
       .eq("id", dealId)

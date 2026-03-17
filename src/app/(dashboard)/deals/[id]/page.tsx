@@ -9,6 +9,7 @@ import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
 import { LPInvolvementSection } from "@/components/deals/LPInvolvementSection";
 import { EditDealButton } from "@/components/deals/EditDealButton";
 import { DeleteDealButton } from "@/components/deals/DeleteDealButton";
+import { LPMatchButton } from "@/components/deals/LPMatchButton";
 import { InvestorUpdatesCard } from "@/components/deal/InvestorUpdatesCard";
 
 export const dynamic = "force-dynamic";
@@ -245,6 +246,9 @@ export default async function DealDetailPage({
             )}
           </div>
           <div className="flex items-center gap-1.5">
+            {deal.access === "private" && (
+              <LPMatchButton dealId={deal.id} dealName={deal.name} />
+            )}
             <EditDealButton
               deal={{
                 id: deal.id,
@@ -264,6 +268,10 @@ export default async function DealDetailPage({
                 investment_type: deal.investment_type,
                 founder_email: deal.founder_email,
                 investor_update_frequency: deal.investor_update_frequency,
+                access: deal.access || "public",
+                sector: deal.sector,
+                geography: deal.geography,
+                investment_thesis: deal.investment_thesis,
               }}
             />
             <DeleteDealButton dealId={deal.id} dealName={deal.name} />
@@ -337,6 +345,10 @@ export default async function DealDetailPage({
                 investment_type: deal.investment_type,
                 founder_email: deal.founder_email,
                 investor_update_frequency: deal.investor_update_frequency,
+                access: deal.access || "public",
+                sector: deal.sector,
+                geography: deal.geography,
+                investment_thesis: deal.investment_thesis,
               }}
             />
           </div>

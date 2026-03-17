@@ -171,7 +171,7 @@ export default async function LPDetailPage({
           </p>
         </div>
         <div className="bg-card rounded-2xl p-6 border border-border">
-          <p className="section-label mb-2">Preferred Check Size</p>
+          <p className="section-label mb-2">Avg Check Size</p>
           <p className="metric-number text-3xl">
             {formatCurrency(lp.preferred_check_size)}
           </p>

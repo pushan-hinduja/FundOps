@@ -4,7 +4,7 @@ import type { ToolContext, ToolExecutor } from "./types";
 export const getLpMatchesDefinition: Tool = {
   name: "get_lp_matches",
   description:
-    "Get LP match scores for a deal. Shows which LPs are the best fit based on check size compatibility, sector alignment, stage fit, geographic fit, and recency of activity. Only available for private deals that have been scored.",
+    "Get LP match scores for a deal (scored out of 100). Shows which LPs are the best fit based on check size compatibility (30pts), sector alignment (25pts), stage fit (25pts), geographic fit (10pts), and recency of activity (10pts). Only available for private deals that have been scored.",
   input_schema: {
     type: "object" as const,
     properties: {
@@ -18,7 +18,7 @@ export const getLpMatchesDefinition: Tool = {
       },
       min_score: {
         type: "integer",
-        description: "Minimum total score to include (default 0, max 85)",
+        description: "Minimum total score to include (default 0, max 100)",
       },
       limit: {
         type: "integer",

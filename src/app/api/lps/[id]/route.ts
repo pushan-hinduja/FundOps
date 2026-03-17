@@ -144,7 +144,6 @@ export async function PATCH(
       "firm",
       "title",
       "phone",
-      "preferred_check_size",
       "notes",
       "investor_type",
       "accreditation_status",

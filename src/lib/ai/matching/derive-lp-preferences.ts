@@ -16,11 +16,11 @@ export async function deriveLpPreferences(
 
   if (!lps || lps.length === 0) return;
 
-  // Get all committed/allocated relationships with deal details
+  // Get all committed/allocated relationships with deal details and amounts
   const { data: relationships } = await supabase
     .from("deal_lp_relationships")
     .select(
-      "lp_contact_id, status, updated_at, deals!inner(sector, investment_stage, geography, organization_id)"
+      "lp_contact_id, status, committed_amount, updated_at, deals!inner(sector, investment_stage, geography, organization_id)"
     )
     .eq("deals.organization_id", organizationId)
     .in("status", ["committed", "allocated"]);
@@ -30,13 +30,25 @@ export async function deriveLpPreferences(
   // Group by LP
   const lpData: Record<
     string,
-    { sectors: Set<string>; stages: Set<string>; geos: Set<string>; lastActivity: string | null }
+    {
+      sectors: Set<string>;
+      stages: Set<string>;
+      geos: Set<string>;
+      lastActivity: string | null;
+      commitAmounts: number[];
+    }
   > = {};
 
   for (const rel of relationships) {
     const lpId = rel.lp_contact_id as string;
     if (!lpData[lpId]) {
-      lpData[lpId] = { sectors: new Set(), stages: new Set(), geos: new Set(), lastActivity: null };
+      lpData[lpId] = {
+        sectors: new Set(),
+        stages: new Set(),
+        geos: new Set(),
+        lastActivity: null,
+        commitAmounts: [],
+      };
     }
 
     const deal = rel.deals as unknown as {
@@ -49,6 +61,12 @@ export async function deriveLpPreferences(
     if (deal.investment_stage) lpData[lpId].stages.add(deal.investment_stage);
     if (deal.geography) lpData[lpId].geos.add(deal.geography);
 
+    // Track commitment amounts for avg check size
+    const amount = Number(rel.committed_amount);
+    if (amount > 0) {
+      lpData[lpId].commitAmounts.push(amount);
+    }
+
     // Track most recent activity
     const updatedAt = rel.updated_at as string;
     if (!lpData[lpId].lastActivity || updatedAt > lpData[lpId].lastActivity!) {
@@ -56,8 +74,15 @@ export async function deriveLpPreferences(
     }
   }
 
-  // Update each LP with derived preferences
+  // Update each LP with derived preferences + avg check size
   for (const [lpId, data] of Object.entries(lpData)) {
+    const avgCheckSize =
+      data.commitAmounts.length > 0
+        ? Math.round(
+            data.commitAmounts.reduce((a, b) => a + b, 0) / data.commitAmounts.length
+          )
+        : null;
+
     await supabase
       .from("lp_contacts")
       .update({
@@ -65,6 +90,8 @@ export async function deriveLpPreferences(
         derived_stages: Array.from(data.stages),
         derived_geographies: Array.from(data.geos),
         last_deal_activity_at: data.lastActivity,
+        // Auto-compute preferred_check_size from historical avg
+        ...(avgCheckSize !== null ? { preferred_check_size: avgCheckSize } : {}),
       })
       .eq("id", lpId);
   }

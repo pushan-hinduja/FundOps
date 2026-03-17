@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, RefreshCw, Loader2 } from "lucide-react";
+import { X, RefreshCw, Loader2, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 interface MatchScore {
   id: string;
@@ -30,33 +31,128 @@ interface LPMatchModalProps {
   onClose: () => void;
 }
 
-function ScoreBadge({ score, max, label }: { score: number; max: number; label: string }) {
-  const pct = max > 0 ? (score / max) * 100 : 0;
-  const color =
-    pct >= 80 ? "bg-green-500/20 text-green-400" :
-    pct >= 50 ? "bg-yellow-500/20 text-yellow-400" :
-    "bg-white/10 text-white/50";
+const DIMENSION_INFO: { key: string; label: string; max: number; breakdownKey: string }[] = [
+  { key: "check_size_score", label: "Check Size", max: 30, breakdownKey: "checkSize" },
+  { key: "sector_score", label: "Sector", max: 25, breakdownKey: "sector" },
+  { key: "stage_score", label: "Stage", max: 25, breakdownKey: "stage" },
+  { key: "geography_score", label: "Geo", max: 10, breakdownKey: "geography" },
+  { key: "recency_score", label: "Recent", max: 10, breakdownKey: "recency" },
+];
 
+function ScoreBadge({ score, max }: { score: number; max: number }) {
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${color}`}>
-        {score}/{max}
-      </span>
-      <span className="text-[9px] text-muted-foreground">{label}</span>
-    </div>
+    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-border text-foreground">
+      {score}/{max}
+    </span>
   );
 }
 
 function TotalScoreBadge({ score }: { score: number }) {
   const color =
-    score >= 60 ? "bg-green-500/20 text-green-400 border-green-500/30" :
-    score >= 40 ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
-    "bg-white/10 text-white/60 border-white/10";
+    score >= 70 ? "bg-green-100 text-green-700 border-green-200" :
+    score >= 45 ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
+    "bg-gray-100 text-gray-500 border-gray-200";
 
   return (
-    <span className={`text-sm font-bold px-2.5 py-1 rounded-lg border ${color}`}>
+    <span className={`text-sm font-bold w-10 h-10 rounded-full border flex items-center justify-center flex-shrink-0 ${color}`}>
       {score}
     </span>
+  );
+}
+
+function ScoreRow({ score }: { score: MatchScore }) {
+  const [expanded, setExpanded] = useState(false);
+  const breakdown = score.score_breakdown as Record<string, string> | null;
+
+  return (
+    <div className="rounded-xl border border-border overflow-hidden">
+      {/* Main row */}
+      <div
+        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-secondary/30 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {/* Total score */}
+        <TotalScoreBadge score={score.total_score} />
+
+        {/* LP info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">
+            {score.lp_contacts?.name || "Unknown LP"}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            {score.lp_contacts?.firm || ""}
+            {score.lp_contacts?.preferred_check_size
+              ? " · $" + (score.lp_contacts.preferred_check_size / 1000).toFixed(0) + "K avg. check"
+              : ""}
+          </p>
+        </div>
+
+        {/* Dimension scores */}
+        <div className="flex items-center gap-1.5">
+          {DIMENSION_INFO.map((dim) => (
+            <div key={dim.key} className="flex flex-col items-center gap-0.5">
+              <ScoreBadge
+                score={score[dim.key as keyof MatchScore] as number}
+                max={dim.max}
+              />
+              <span className="text-[8px] text-muted-foreground">{dim.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* LP link */}
+        {score.lp_contacts?.id && (
+          <Link
+            href={"/lps/" + score.lp_contacts.id}
+            onClick={(e) => e.stopPropagation()}
+            className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors"
+            title="View LP profile"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+          </Link>
+        )}
+
+        {/* Expand chevron */}
+        <div className="text-muted-foreground flex-shrink-0">
+          {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </div>
+      </div>
+
+      {/* Expanded detail */}
+      {expanded && breakdown && (
+        <div className="px-4 pb-3 pt-1 border-t border-border bg-secondary/10">
+          <div className="space-y-2.5 pt-2">
+            {DIMENSION_INFO.map((dim) => {
+              const dimScore = score[dim.key as keyof MatchScore] as number;
+              const reason = breakdown[dim.breakdownKey] || "No data";
+              const pct = dim.max > 0 ? (dimScore / dim.max) * 100 : 0;
+              const barColor =
+                pct >= 80 ? "bg-green-400" :
+                pct >= 50 ? "bg-yellow-400" :
+                "bg-gray-300";
+
+              return (
+                <div key={dim.key}>
+                  <div className="flex items-center gap-3 mb-0.5">
+                    <span className="text-xs font-medium text-foreground w-20 flex-shrink-0">{dim.label}</span>
+                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={"h-full rounded-full " + barColor}
+                        style={{ width: pct + "%" }}
+                      />
+                    </div>
+                    <span className="text-[10px] tabular-nums text-muted-foreground w-10 text-right">
+                      {dimScore}/{dim.max}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground ml-[calc(5rem+0.75rem)]">{reason}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -74,13 +170,12 @@ export function LPMatchModal({ dealId, dealName, isOpen, onClose }: LPMatchModal
   async function loadScores() {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/deals/${dealId}/matches`);
+      const res = await fetch("/api/deals/" + dealId + "/matches");
       const data = await res.json();
       if (data.scores && data.scores.length > 0) {
         setScores(data.scores);
         setHasLoaded(true);
       } else {
-        // No cached scores — compute them
         await refreshScores();
       }
     } catch {
@@ -93,7 +188,7 @@ export function LPMatchModal({ dealId, dealName, isOpen, onClose }: LPMatchModal
   async function refreshScores() {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/deals/${dealId}/matches`, { method: "POST" });
+      const res = await fetch("/api/deals/" + dealId + "/matches", { method: "POST" });
       const data = await res.json();
       setScores(data.scores || []);
       setHasLoaded(true);
@@ -116,23 +211,23 @@ export function LPMatchModal({ dealId, dealName, isOpen, onClose }: LPMatchModal
         {/* Header */}
         <div className="flex items-center justify-between p-6 pb-4 border-b border-border">
           <div>
-            <h2 className="text-lg font-semibold">Recommended Investors</h2>
+            <h2 className="text-lg font-semibold text-foreground">Recommended Investors</h2>
             <p className="text-sm text-muted-foreground">{dealName}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={refreshScores}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary hover:bg-secondary/80 rounded-lg transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={"w-3 h-3 " + (isLoading ? "animate-spin" : "")} />
               Refresh
             </button>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 text-foreground" />
             </button>
           </div>
         </div>
@@ -152,48 +247,20 @@ export function LPMatchModal({ dealId, dealName, isOpen, onClose }: LPMatchModal
             <div className="space-y-2">
               {/* Score legend */}
               <div className="flex items-center gap-4 text-[10px] text-muted-foreground mb-4 px-1">
-                <span>Score out of 85:</span>
+                <span>Score out of 100:</span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500/40" /> 60+ Strong
+                  <span className="w-2 h-2 rounded-full bg-green-400" /> 70+ Strong
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-yellow-500/40" /> 40-59 Moderate
+                  <span className="w-2 h-2 rounded-full bg-yellow-400" /> 45-69 Moderate
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-white/20" /> &lt;40 Weak
+                  <span className="w-2 h-2 rounded-full bg-gray-300" /> &lt;45 Weak
                 </span>
               </div>
 
               {activeScores.map((score) => (
-                <div
-                  key={score.id}
-                  className="flex items-center gap-4 p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                >
-                  {/* Total score */}
-                  <TotalScoreBadge score={score.total_score} />
-
-                  {/* LP info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {score.lp_contacts?.name || "Unknown LP"}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {score.lp_contacts?.firm || ""}
-                      {score.lp_contacts?.preferred_check_size
-                        ? ` · $${(score.lp_contacts.preferred_check_size / 1000).toFixed(0)}K check`
-                        : ""}
-                    </p>
-                  </div>
-
-                  {/* Dimension scores */}
-                  <div className="flex items-center gap-2">
-                    <ScoreBadge score={score.check_size_score} max={25} label="Size" />
-                    <ScoreBadge score={score.sector_score} max={20} label="Sector" />
-                    <ScoreBadge score={score.stage_score} max={20} label="Stage" />
-                    <ScoreBadge score={score.geography_score} max={10} label="Geo" />
-                    <ScoreBadge score={score.recency_score} max={10} label="Recent" />
-                  </div>
-                </div>
+                <ScoreRow key={score.id} score={score} />
               ))}
 
               {/* Excluded section */}
@@ -207,17 +274,26 @@ export function LPMatchModal({ dealId, dealName, isOpen, onClose }: LPMatchModal
                   {excludedScores.map((score) => (
                     <div
                       key={score.id}
-                      className="flex items-center gap-4 p-3 rounded-xl bg-secondary/10 opacity-50"
+                      className="flex items-center gap-3 p-3 rounded-xl border border-border opacity-50"
                     >
                       <TotalScoreBadge score={score.total_score} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {score.lp_contacts?.name || "Unknown LP"}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
                           {score.lp_contacts?.firm || ""}
                         </p>
                       </div>
+                      {score.lp_contacts?.id && (
+                        <Link
+                          href={"/lps/" + score.lp_contacts.id}
+                          className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors"
+                          title="View LP profile"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                        </Link>
+                      )}
                     </div>
                   ))}
                 </>

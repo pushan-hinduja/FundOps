@@ -35,6 +35,12 @@ export interface ScoreResult {
   };
 }
 
+function fmtUsd(n: number): string {
+  if (n >= 1_000_000) return "$" + (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return "$" + (n / 1_000).toFixed(0) + "K";
+  return "$" + n;
+}
+
 const STAGE_ORDER = [
   "pre_seed",
   "pre-seed",
@@ -115,81 +121,80 @@ function scoreCheckSize(
   lp: LPForScoring
 ): { score: number; reason: string } {
   const lpCheck = lp.preferred_check_size;
-  if (!lpCheck) return { score: 6, reason: "No check size data — neutral score" };
+  if (!lpCheck) return { score: 8, reason: "No historical check size data" };
 
   const dealMin = deal.min_check_size || 0;
   const dealMax = deal.max_check_size || deal.target_raise || 0;
+  const fmtLp = fmtUsd(lpCheck);
+  const fmtRange = dealMin && dealMax ? fmtUsd(dealMin) + "–" + fmtUsd(dealMax) : fmtUsd(dealMax);
 
   if (dealMin === 0 && dealMax === 0) {
-    return { score: 10, reason: "No deal size constraints" };
+    return { score: 12, reason: "LP avg check " + fmtLp + "; deal has no size constraints" };
   }
 
-  // Check if LP's preferred check fits within deal range
   const inRange = lpCheck >= dealMin && lpCheck <= dealMax;
   const within1_5x = lpCheck >= dealMin / 1.5 && lpCheck <= dealMax * 1.5;
   const atEdge = lpCheck >= dealMin / 2 && lpCheck <= dealMax * 2;
 
   if (inRange) {
-    // Check for sweet spot bonus (middle third of range)
     const rangeSize = dealMax - dealMin;
     const lowerThird = dealMin + rangeSize / 3;
     const upperThird = dealMax - rangeSize / 3;
     const inSweetSpot = rangeSize > 0 && lpCheck >= lowerThird && lpCheck <= upperThird;
 
     if (inSweetSpot) {
-      return { score: 25, reason: "Check size in sweet spot of deal range (+5 bonus)" };
+      return { score: 30, reason: "LP avg check " + fmtLp + " is in the sweet spot of deal range " + fmtRange };
     }
-    return { score: 20, reason: "Check size within deal range" };
+    return { score: 24, reason: "LP avg check " + fmtLp + " fits within deal range " + fmtRange };
   }
 
   if (within1_5x) {
-    return { score: 10, reason: "Check size slightly outside range (within 1.5x)" };
+    return { score: 12, reason: "LP avg check " + fmtLp + " slightly outside deal range " + fmtRange + " (within 1.5x)" };
   }
 
   if (atEdge) {
-    return { score: 5, reason: "Check size at edge of deal range" };
+    return { score: 6, reason: "LP avg check " + fmtLp + " at edge of deal range " + fmtRange };
   }
 
-  return { score: 0, reason: "Check size outside deal range" };
+  return { score: 0, reason: "LP avg check " + fmtLp + " outside deal range " + fmtRange };
 }
 
 function scoreSector(
   deal: DealForScoring,
   lp: LPForScoring
 ): { score: number; reason: string } {
-  if (!deal.sector) return { score: 10, reason: "No deal sector specified" };
+  if (!deal.sector) return { score: 12, reason: "No sector set on deal" };
 
-  const allLpSectors = [
-    ...((lp.preferred_sectors || []) as string[]),
-    ...((lp.derived_sectors || []) as string[]),
-  ].map((s) => s.toLowerCase());
+  const prefSectors = ((lp.preferred_sectors || []) as string[]).map((s) => s.toLowerCase());
+  const derivedSectors = ((lp.derived_sectors || []) as string[]).map((s) => s.toLowerCase());
+  const allLpSectors = [...prefSectors, ...derivedSectors];
 
   if (allLpSectors.length === 0) {
-    return { score: 6, reason: "Generalist — no sector preferences" };
+    return { score: 8, reason: "Generalist investor — no sector history or preferences on file" };
   }
 
   const dealSector = deal.sector.toLowerCase();
+  const sectorList = [...new Set(allLpSectors)].join(", ");
 
-  // Exact match
   if (allLpSectors.includes(dealSector)) {
-    return { score: 20, reason: "Exact sector match: " + deal.sector };
+    const source = prefSectors.includes(dealSector) ? "preferred sectors" : "past deal history";
+    return { score: 25, reason: "Direct " + deal.sector + " investor (from " + source + "). Active in: " + sectorList };
   }
 
-  // Adjacent sector with portfolio overlap
   const adjacents = ADJACENT_SECTORS[dealSector] || [];
-  const hasAdjacent = allLpSectors.some((s) => adjacents.includes(s));
-  if (hasAdjacent) {
-    return { score: 12, reason: "Adjacent sector with portfolio overlap" };
+  const matchedAdj = allLpSectors.filter((s) => adjacents.includes(s));
+  if (matchedAdj.length > 0) {
+    return { score: 15, reason: "Adjacent sector overlap via " + matchedAdj.join(", ") + ". LP sectors: " + sectorList };
   }
 
-  return { score: 0, reason: "No sector alignment" };
+  return { score: 0, reason: "LP invests in " + sectorList + " — no overlap with " + deal.sector };
 }
 
 function scoreStage(
   deal: DealForScoring,
   lp: LPForScoring
 ): { score: number; reason: string } {
-  if (!deal.investment_stage) return { score: 10, reason: "No deal stage specified" };
+  if (!deal.investment_stage) return { score: 12, reason: "No stage set on deal" };
 
   const allLpStages = [
     ...((lp.preferred_stages || []) as string[]),
@@ -197,11 +202,12 @@ function scoreStage(
   ].map((s) => s.toLowerCase());
 
   if (allLpStages.length === 0) {
-    return { score: 10, reason: "No stage preferences — neutral" };
+    return { score: 12, reason: "No stage history or preferences on file" };
   }
 
   const dealStageIdx = normalizeStage(deal.investment_stage);
-  if (dealStageIdx < 0) return { score: 10, reason: "Unknown deal stage" };
+  const stageList = [...new Set(allLpStages)].join(", ");
+  if (dealStageIdx < 0) return { score: 12, reason: "Unknown deal stage; LP stages: " + stageList };
 
   let bestDistance = Infinity;
   for (const lpStage of allLpStages) {
@@ -211,16 +217,16 @@ function scoreStage(
     }
   }
 
-  if (bestDistance === 0) return { score: 20, reason: "Exact stage match" };
-  if (bestDistance === 1) return { score: 10, reason: "One stage off" };
-  return { score: 0, reason: "Two or more stages off" };
+  if (bestDistance === 0) return { score: 25, reason: "Invests at " + deal.investment_stage + " stage (exact match). History: " + stageList };
+  if (bestDistance === 1) return { score: 12, reason: "Invests at " + stageList + " — one stage off from " + deal.investment_stage };
+  return { score: 0, reason: "Invests at " + stageList + " — two+ stages off from " + deal.investment_stage };
 }
 
 function scoreGeography(
   deal: DealForScoring,
   lp: LPForScoring
 ): { score: number; reason: string } {
-  if (!deal.geography) return { score: 5, reason: "No deal geography specified" };
+  if (!deal.geography) return { score: 5, reason: "No geography set on deal" };
 
   const allLpGeos = [
     ...((lp.preferred_geographies || []) as string[]),
@@ -228,31 +234,34 @@ function scoreGeography(
   ].map((s) => s.toLowerCase());
 
   if (allLpGeos.length === 0) {
-    return { score: 5, reason: "No geography preferences — neutral" };
+    return { score: 5, reason: "No geography history or preferences on file" };
   }
 
   const dealGeo = deal.geography.toLowerCase();
+  const geoList = [...new Set(allLpGeos)].join(", ");
 
   if (allLpGeos.includes(dealGeo)) {
-    return { score: 10, reason: "Exact geography match" };
+    return { score: 10, reason: "Invests in " + deal.geography + " (exact match). Regions: " + geoList };
   }
 
   const adjacents = ADJACENT_GEOS[dealGeo] || [];
   if (allLpGeos.some((g) => adjacents.includes(g))) {
-    return { score: 5, reason: "Adjacent geography" };
+    return { score: 5, reason: "Invests in " + geoList + " — adjacent to " + deal.geography };
   }
 
-  return { score: 0, reason: "No geographic alignment" };
+  return { score: 0, reason: "Invests in " + geoList + " — no overlap with " + deal.geography };
 }
 
 function scoreRecency(lp: LPForScoring): { score: number; reason: string } {
   const lastActivity = lp.last_deal_activity_at || lp.last_interaction_at;
-  if (!lastActivity) return { score: 0, reason: "No activity history" };
+  if (!lastActivity) return { score: 0, reason: "No deal activity or interaction on record" };
 
+  const date = new Date(lastActivity);
   const monthsAgo =
-    (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24 * 30);
+    (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24 * 30);
+  const dateStr = date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 
-  if (monthsAgo <= 6) return { score: 10, reason: "Active in last 6 months" };
-  if (monthsAgo <= 18) return { score: 5, reason: "Last activity 6-18 months ago" };
-  return { score: 0, reason: "No activity in 18+ months" };
+  if (monthsAgo <= 6) return { score: 10, reason: "Last active " + dateStr + " (" + Math.round(monthsAgo) + " months ago)" };
+  if (monthsAgo <= 18) return { score: 5, reason: "Last active " + dateStr + " (" + Math.round(monthsAgo) + " months ago — slowing down)" };
+  return { score: 0, reason: "Last active " + dateStr + " (" + Math.round(monthsAgo) + " months ago — may be between funds)" };
 }

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { CurrencyInput } from "@/components/shared/CurrencyInput";
+
 import {
   InvestorType,
   AccreditationStatus,
@@ -21,7 +21,6 @@ export default function NewLPPage() {
   const [firm, setFirm] = useState("");
   const [title, setTitle] = useState("");
   const [phone, setPhone] = useState("");
-  const [preferredCheckSize, setPreferredCheckSize] = useState("");
   const [notes, setNotes] = useState("");
 
   // LP Passport fields
@@ -92,9 +91,6 @@ export default function NewLPPage() {
         firm: firm || null,
         title: title || null,
         phone: phone || null,
-        preferred_check_size: preferredCheckSize
-          ? parseInt(preferredCheckSize)
-          : null,
         notes: notes || null,
         investor_type: investorType || null,
         accreditation_status: accreditationStatus || null,
@@ -222,21 +218,6 @@ export default function NewLPPage() {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="preferredCheckSize"
-                className="block text-sm font-medium mb-2"
-              >
-                Preferred Check Size ($)
-              </label>
-              <CurrencyInput
-                id="preferredCheckSize"
-                value={preferredCheckSize}
-                onChange={(val) => setPreferredCheckSize(val)}
-                className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                placeholder="250,000"
-              />
-            </div>
           </div>
         </div>
 

@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Briefcase,
-  Bell,
   Users,
   Settings,
   LogOut,
@@ -218,7 +217,6 @@ export function TopNav() {
         {/* Action Icons */}
         <div className="flex items-center gap-2">
           {[
-            { href: "/notifications", icon: Bell, label: "Notifications" },
             { href: "/settings", icon: Settings, label: "Settings" },
           ].map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");

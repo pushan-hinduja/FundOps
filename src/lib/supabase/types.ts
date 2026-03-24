@@ -232,7 +232,7 @@ export interface Deal {
   min_check_size: number | null;
   max_check_size: number | null;
   deadline: string | null;
-  status: "draft" | "active" | "closed" | "cancelled";
+  status: "draft" | "active" | "closed" | "archived";
   total_committed: number;
   total_interested: number;
   memo_url: string | null;
@@ -246,6 +246,7 @@ export interface Deal {
   sector: string | null;
   geography: string | null;
   investment_thesis: string | null;
+  nda_document_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -569,4 +570,17 @@ export interface DealNote {
 
 export interface DealNoteWithUser extends DealNote {
   users: Pick<User, "id" | "name" | "email"> | null;
+}
+
+// ============================================
+// NDA Types
+// ============================================
+
+export interface DealNdaAcceptance {
+  id: string;
+  deal_id: string;
+  user_id: string;
+  accepted_at: string;
+  ip_address: string | null;
+  user_agent: string | null;
 }

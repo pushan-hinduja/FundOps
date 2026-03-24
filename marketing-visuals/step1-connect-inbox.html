@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Step 1 - Connect Your Inbox</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: transparent; padding: 24px; width: 380px; }
+  .card { background: white; border-radius: 14px; border: 1px solid #e5e5e5; box-shadow: 0 2px 16px rgba(0,0,0,0.05); overflow: hidden; }
+  .header { padding: 16px 18px 12px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+  .header h3 { font-size: 13px; font-weight: 600; color: #171717; }
+  .badge { font-size: 10px; background: #f0f0f0; color: #666; padding: 2px 8px; border-radius: 6px; }
+  .inbox-list { padding: 6px 10px; }
+  .inbox-item { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 8px; }
+  .inbox-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .gmail { background: #fef2f2; }
+  .outlook { background: #eff6ff; }
+  .inbox-info { flex: 1; }
+  .inbox-name { font-size: 11px; font-weight: 500; color: #171717; }
+  .inbox-email { font-size: 9px; color: #999; margin-top: 1px; }
+  .status-row { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; background: #22c55e; }
+  .status-text { font-size: 8px; color: #22c55e; }
+  .toggle { width: 30px; height: 16px; border-radius: 8px; position: relative; }
+  .toggle.on { background: #22c55e; }
+  .toggle.off { background: #e0e0e0; }
+  .toggle .knob { width: 12px; height: 12px; border-radius: 50%; background: white; position: absolute; top: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+  .toggle.on .knob { left: 16px; }
+  .toggle.off .knob { left: 2px; }
+  .divider { height: 1px; background: #f0f0f0; margin: 0 18px; }
+  .stats { padding: 10px 18px; display: flex; gap: 6px; }
+  .stat-chip { font-size: 8px; color: #666; background: #f5f5f5; padding: 3px 8px; border-radius: 5px; }
+  .stat-chip strong { color: #171717; }
+  .footer { padding: 10px 18px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; }
+  .footer-text { font-size: 9px; color: #999; }
+  .footer-text strong { color: #171717; }
+  .add-btn { font-size: 10px; color: #171717; font-weight: 500; background: #f5f5f5; border: 1px solid #e5e5e5; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h3>Integrations</h3>
+      <span class="badge">2 active</span>
+    </div>
+    <div class="inbox-list">
+      <div class="inbox-item">
+        <div class="inbox-icon gmail">
+          <svg width="14" height="11" viewBox="0 0 18 14" fill="none"><path d="M16 0H2C0.9 0 0 0.9 0 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm0 4l-7 4-7-4V2l7 4 7-4v2z" fill="#ea4335"/></svg>
+        </div>
+        <div class="inbox-info">
+          <div class="inbox-name">Gmail - Fund Operations</div>
+          <div class="inbox-email">ops@demoventures.com</div>
+          <div class="status-row"><div class="status-dot"></div><span class="status-text">Monitoring 3 labels</span></div>
+        </div>
+        <div class="toggle on"><div class="knob"></div></div>
+      </div>
+      <div class="inbox-item">
+        <div class="inbox-icon gmail">
+          <svg width="14" height="11" viewBox="0 0 18 14" fill="none"><path d="M16 0H2C0.9 0 0 0.9 0 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm0 4l-7 4-7-4V2l7 4 7-4v2z" fill="#ea4335"/></svg>
+        </div>
+        <div class="inbox-info">
+          <div class="inbox-name">Gmail - Partner</div>
+          <div class="inbox-email">sarah@demoventures.com</div>
+          <div class="status-row"><div class="status-dot"></div><span class="status-text">Monitoring all mail</span></div>
+        </div>
+        <div class="toggle on"><div class="knob"></div></div>
+      </div>
+      <div class="inbox-item" style="opacity: 0.4;">
+        <div class="inbox-icon" style="background: #f0fdf4;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="#25D366"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke="#25D366" stroke-width="1.5" fill="none"/></svg>
+        </div>
+        <div class="inbox-info">
+          <div class="inbox-name">WhatsApp</div>
+          <div class="inbox-email">Connect WhatsApp...</div>
+        </div>
+        <div class="toggle off"><div class="knob"></div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="stats">
+      <div class="stat-chip"><strong>847</strong> emails scanned</div>
+      <div class="stat-chip"><strong>23</strong> signals detected</div>
+      <div class="stat-chip"><strong>12</strong> LPs identified</div>
+    </div>
+    <div class="footer">
+      <div class="footer-text">Last sync <strong>2 min ago</strong></div>
+      <button class="add-btn">+ Add inbox</button>
+    </div>
+  </div>
+</body>
+</html>

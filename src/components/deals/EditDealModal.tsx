@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { X, Upload, FileText } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 interface Deal {
@@ -27,6 +28,7 @@ interface Deal {
   sector: string | null;
   geography: string | null;
   investment_thesis: string | null;
+  nda_document_url?: string | null;
 }
 
 interface EditDealModalProps {
@@ -38,7 +40,10 @@ interface EditDealModalProps {
 
 export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDealModalProps) {
   const router = useRouter();
+  const supabase = createClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [ndaRequired, setNdaRequired] = useState(false);
+  const [ndaFile, setNdaFile] = useState<File | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to section when modal opens
@@ -52,6 +57,29 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
       }, 100);
     }
   }, [isOpen, scrollToSection]);
+
+  // Check if org requires NDA
+  useEffect(() => {
+    if (!isOpen) return;
+    async function checkNdaSetting() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: userData } = await supabase
+        .from("users")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+      if (!userData?.organization_id) return;
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("settings")
+        .eq("id", userData.organization_id)
+        .single();
+      if ((org?.settings as any)?.require_nda) setNdaRequired(true);
+    }
+    checkNdaSetting();
+  }, [isOpen, supabase]);
+
   const [formData, setFormData] = useState({
     name: deal.name,
     company_name: deal.company_name || "",
@@ -82,31 +110,58 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
     setIsSubmitting(true);
 
     try {
+      // Upload NDA document if a new file was selected
+      let ndaDocumentUrl: string | null | undefined = undefined;
+      if (ndaFile) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: userData } = await supabase
+          .from("users")
+          .select("organization_id")
+          .eq("id", user!.id)
+          .single();
+
+        const fileExt = ndaFile.name.split(".").pop();
+        const filePath = `${userData!.organization_id}/${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("nda-documents")
+          .upload(filePath, ndaFile);
+
+        if (uploadError) throw new Error(`NDA upload failed: ${uploadError.message}`);
+        ndaDocumentUrl = filePath;
+      }
+
+      const body: Record<string, unknown> = {
+        name: formData.name,
+        company_name: formData.company_name || null,
+        description: formData.description || null,
+        target_raise: formData.target_raise ? parseFloat(formData.target_raise) : null,
+        min_check_size: formData.min_check_size ? parseFloat(formData.min_check_size) : null,
+        max_check_size: formData.max_check_size ? parseFloat(formData.max_check_size) : null,
+        fee_percent: formData.fee_percent ? parseFloat(formData.fee_percent) : null,
+        carry_percent: formData.carry_percent ? parseFloat(formData.carry_percent) : null,
+        status: formData.status,
+        memo_url: formData.memo_url || null,
+        created_date: formData.created_date || null,
+        close_date: formData.close_date || null,
+        investment_stage: formData.investment_stage || null,
+        investment_type: formData.investment_type || null,
+        founder_email: formData.founder_email || null,
+        investor_update_frequency: formData.investor_update_frequency || null,
+        access: formData.access,
+        sector: formData.sector || null,
+        geography: formData.geography || null,
+        investment_thesis: formData.investment_thesis || null,
+      };
+
+      if (ndaDocumentUrl !== undefined) {
+        body.nda_document_url = ndaDocumentUrl;
+      }
+
       const response = await fetch(`/api/deals/${deal.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          company_name: formData.company_name || null,
-          description: formData.description || null,
-          target_raise: formData.target_raise ? parseFloat(formData.target_raise) : null,
-          min_check_size: formData.min_check_size ? parseFloat(formData.min_check_size) : null,
-          max_check_size: formData.max_check_size ? parseFloat(formData.max_check_size) : null,
-          fee_percent: formData.fee_percent ? parseFloat(formData.fee_percent) : null,
-          carry_percent: formData.carry_percent ? parseFloat(formData.carry_percent) : null,
-          status: formData.status,
-          memo_url: formData.memo_url || null,
-          created_date: formData.created_date || null,
-          close_date: formData.close_date || null,
-          investment_stage: formData.investment_stage || null,
-          investment_type: formData.investment_type || null,
-          founder_email: formData.founder_email || null,
-          investor_update_frequency: formData.investor_update_frequency || null,
-          access: formData.access,
-          sector: formData.sector || null,
-          geography: formData.geography || null,
-          investment_thesis: formData.investment_thesis || null,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -364,6 +419,48 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
             </div>
           </div>
 
+          {/* NDA Upload (only when org requires NDA) */}
+          {ndaRequired && (
+            <div className="border-t border-border pt-4 mt-4">
+              <h3 className="text-sm font-medium mb-3">NDA Document</h3>
+              {deal.nda_document_url && !ndaFile && (
+                <div className="flex items-center gap-3 px-3 py-2 border border-border rounded-lg bg-secondary/30 mb-3">
+                  <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground truncate flex-1">Current NDA uploaded</span>
+                </div>
+              )}
+              {ndaFile ? (
+                <div className="flex items-center gap-3 px-3 py-2 border border-border rounded-lg bg-secondary/30">
+                  <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium truncate flex-1">{ndaFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setNdaFile(null)}
+                    className="p-1 hover:bg-secondary rounded transition-colors shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 px-3 py-3 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 hover:bg-secondary/30 transition-all">
+                  <Upload className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {deal.nda_document_url ? "Replace NDA document" : "Upload NDA document"}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setNdaFile(file);
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+          )}
+
           {/* Status */}
           <div>
             <label className="block text-sm font-medium mb-1">Status</label>
@@ -375,7 +472,7 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
               <option value="draft">Draft</option>
               <option value="active">Active</option>
               <option value="closed">Closed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="archived">Archived</option>
             </select>
           </div>
 

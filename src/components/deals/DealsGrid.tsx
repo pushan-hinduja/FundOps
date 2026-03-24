@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
+import { ArrowUpRight, ThumbsUp, ThumbsDown, Minus, Archive } from "lucide-react";
 import { DealStatusFilter } from "./DealStatusFilter";
 
 interface Deal {
@@ -50,8 +50,8 @@ function getStatusStyles(status: string) {
       return "bg-secondary text-muted-foreground";
     case "closed":
       return "bg-foreground/10 text-foreground";
-    case "cancelled":
-      return "bg-destructive/10 text-destructive";
+    case "archived":
+      return "bg-muted-foreground/10 text-muted-foreground border border-dashed border-muted-foreground/30";
     default:
       return "bg-secondary text-muted-foreground";
   }
@@ -216,12 +216,14 @@ function ActiveCardContent({ deal }: { deal: Deal }) {
 export function DealsGrid({ deals, dealExtras }: DealsGridProps) {
   const [filter, setFilter] = useState("all");
 
-  const counts: Record<string, number> = { all: deals.length };
+  const counts: Record<string, number> = { all: deals.filter((d) => d.status !== "archived").length };
   for (const d of deals) {
     counts[d.status] = (counts[d.status] || 0) + 1;
   }
 
-  const filtered = filter === "all" ? deals : deals.filter((d) => d.status === filter);
+  const filtered = filter === "all"
+    ? deals.filter((d) => d.status !== "archived")
+    : deals.filter((d) => d.status === filter);
 
   return (
     <>
@@ -242,7 +244,7 @@ export function DealsGrid({ deals, dealExtras }: DealsGridProps) {
               <Link
                 key={deal.id}
                 href={`/deals/${deal.id}`}
-                className="group glass-card glass-card-hover rounded-2xl p-6"
+                className={`group glass-card glass-card-hover rounded-2xl p-6 ${deal.status === "archived" ? "opacity-60 hover:opacity-80 border-dashed" : ""}`}
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1 min-w-0">
@@ -258,7 +260,12 @@ export function DealsGrid({ deals, dealExtras }: DealsGridProps) {
                   </span>
                 </div>
 
-                {deal.status === "draft" ? (
+                {deal.status === "archived" ? (
+                  <div className="text-sm text-muted-foreground/60 italic flex items-center gap-2">
+                    <Archive className="w-4 h-4" />
+                    This deal has been archived
+                  </div>
+                ) : deal.status === "draft" ? (
                   <DraftCardContent deal={deal} extras={extras} />
                 ) : deal.status === "closed" ? (
                   <ClosedCardContent extras={extras} />

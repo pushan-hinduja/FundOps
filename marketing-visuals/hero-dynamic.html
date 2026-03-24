@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FundOps Hero Visual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 30px;
+  }
+  .scene {
+    position: relative;
+    width: 580px;
+    height: 560px;
+  }
+
+  /* ===== Email card ===== */
+  .email-card {
+    position: absolute;
+    top: 0; left: 0;
+    width: 280px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+    padding: 14px;
+    z-index: 1;
+  }
+  .email-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0;
+  }
+  .email-avatar {
+    width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #e0e7ff, #c7d2fe); display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 600; color: #4f46e5;
+  }
+  .email-from { font-size: 11px; font-weight: 600; color: #171717; }
+  .email-subj { font-size: 9px; color: #999; }
+  .email-body { font-size: 10px; color: #555; line-height: 1.7; }
+  .hl-green { background: rgba(34,197,94,0.1); border-bottom: 1.5px solid #22c55e; padding: 0 2px; border-radius: 2px; color: #171717; font-weight: 500; }
+  .hl-blue { background: rgba(59,130,246,0.1); border-bottom: 1.5px solid #3b82f6; padding: 0 2px; border-radius: 2px; color: #171717; font-weight: 500; }
+  .hl-amber { background: rgba(245,158,11,0.1); border-bottom: 1.5px solid #f59e0b; padding: 0 2px; border-radius: 2px; color: #171717; font-weight: 500; }
+  .ai-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f0f0f0; }
+  .ai-tag { font-size: 8px; font-weight: 500; padding: 2px 7px; border-radius: 4px; display: flex; align-items: center; gap: 3px; }
+  .ai-tag::before { content: ''; width: 4px; height: 4px; border-radius: 50%; }
+  .tag-intent { background: #f0fdf4; color: #16a34a; }
+  .tag-intent::before { background: #22c55e; }
+  .tag-amount { background: #eff6ff; color: #2563eb; }
+  .tag-amount::before { background: #3b82f6; }
+  .tag-lp { background: #fefce8; color: #ca8a04; }
+  .tag-lp::before { background: #f59e0b; }
+  .tag-deal { background: #faf5ff; color: #9333ea; }
+  .tag-deal::before { background: #a855f7; }
+
+  /* ===== Agent card ===== */
+  .agent-card {
+    position: absolute;
+    top: 80px; right: 0;
+    width: 270px;
+    background: #2a2a2f;
+    border-radius: 12px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.15);
+    overflow: hidden;
+    z-index: 3;
+  }
+  .agent-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .agent-title { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.9); }
+  .agent-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+  .agent-body { padding: 12px 14px; }
+  .agent-msg { font-size: 9.5px; color: rgba(255,255,255,0.75); line-height: 1.5; margin-bottom: 8px; }
+  .agent-msg strong { color: white; font-weight: 600; }
+  .agent-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  .agent-table th { font-size: 8px; color: rgba(255,255,255,0.35); text-align: left; padding: 3px 6px; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+  .agent-table td { font-size: 9px; color: rgba(255,255,255,0.7); padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .agent-table td strong { color: white; font-weight: 600; }
+  .agent-table .green { color: #4ade80; }
+  .agent-input {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.06); border-radius: 8px; padding: 7px 10px; margin-top: 4px;
+  }
+  .agent-input-icon { width: 22px; height: 22px; border-radius: 6px; background: #1e3a5f; display: flex; align-items: center; justify-content: center; }
+  .agent-input-icon svg { width: 10px; height: 10px; fill: white; }
+  .agent-input-text { font-size: 9px; color: rgba(255,255,255,0.25); }
+
+  /* ===== Match cards ===== */
+  .match-stack {
+    position: absolute;
+    top: 355px; left: 20px;
+    z-index: 2;
+    display: flex;
+    gap: 8px;
+  }
+  .match-card {
+    width: 155px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e5e5e5;
+    padding: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .match-card:nth-child(2) { transform: translateY(-6px); }
+  .match-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .match-score {
+    width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .score-high { background: #f0fdf4; color: #16a34a; border: 1.5px solid #bbf7d0; }
+  .score-med { background: #fefce8; color: #a16207; border: 1.5px solid #fde68a; }
+  .match-name { font-size: 10px; font-weight: 600; color: #171717; }
+  .match-firm { font-size: 8px; color: #999; }
+  .match-bars { display: flex; flex-direction: column; gap: 3px; }
+  .match-bar-row { display: flex; align-items: center; gap: 4px; }
+  .match-bar-label { font-size: 7px; color: #999; width: 28px; flex-shrink: 0; }
+  .match-bar-track { flex: 1; height: 2.5px; background: #f0f0f0; border-radius: 2px; overflow: hidden; }
+  .match-bar-fill { height: 100%; border-radius: 2px; }
+  .fill-green { background: #22c55e; }
+  .fill-yellow { background: #eab308; }
+  .match-bar-pts { font-size: 7px; color: #bbb; width: 16px; text-align: right; }
+
+  /* ===== Connectors (SVG) ===== */
+  .connectors-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 4;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .conn-line {
+    stroke: #1e3a5f;
+    stroke-width: 1;
+    fill: none;
+  }
+  .conn-dot {
+    fill: #1e3a5f;
+    filter: drop-shadow(0 0 3px rgba(30,58,95,0.3));
+  }
+
+  /* Scan line on email */
+  .scan-line {
+    position: absolute;
+    left: 14px; right: 14px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, #1e3a5f 50%, transparent 100%);
+    opacity: 0.5;
+    border-radius: 1px;
+    animation: scanDown 3s ease-in-out infinite;
+    z-index: 2;
+  }
+  @keyframes scanDown {
+    0% { top: 50px; opacity: 0; }
+    10% { opacity: 0.5; }
+    80% { opacity: 0.5; }
+    100% { top: 240px; opacity: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="scene">
+
+    <!-- Email being parsed -->
+    <div class="email-card">
+      <div class="scan-line"></div>
+      <div class="email-header">
+        <div class="email-avatar">SC</div>
+        <div>
+          <div class="email-from">Sarah Chen</div>
+          <div class="email-subj">Re: Zenith Consumer SPV - Allocation</div>
+        </div>
+      </div>
+      <div class="email-body">
+        Hi team,<br><br>
+        After reviewing the memo, we'd like to <span class="hl-green">commit $500K</span> to the
+        <span class="hl-blue">Zenith Consumer SPV</span>. Please send the
+        subscription docs.<br><br>
+        We're also interested in <span class="hl-amber">co-invest rights</span>
+        for this round.<br><br>
+        Best,<br>
+        <span class="hl-amber">Sarah Chen</span> &middot; Sequoia Capital
+      </div>
+      <div class="ai-tags">
+        <span class="ai-tag tag-intent">Committed</span>
+        <span class="ai-tag tag-amount">$500K</span>
+        <span class="ai-tag tag-lp">Sarah Chen</span>
+        <span class="ai-tag tag-deal">Zenith Consumer</span>
+        <span class="ai-tag tag-intent">Question</span>
+      </div>
+    </div>
+
+    <!-- Agent chat -->
+    <div class="agent-card">
+      <div class="agent-header">
+        <span class="agent-title">FundOps Agent</span>
+        <div class="agent-dot"></div>
+      </div>
+      <div class="agent-body">
+        <div class="agent-msg">
+          <strong>Zenith Consumer SPV</strong> just crossed <strong>60% committed</strong>:
+        </div>
+        <table class="agent-table">
+          <thead><tr><th>LP</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Sarah Chen</strong></td><td class="green">$500K</td><td>Just committed</td></tr>
+            <tr><td>Robert Zhang</td><td>$600K</td><td class="green">Wired</td></tr>
+            <tr><td>Amanda Walsh</td><td>$650K</td><td>Committed</td></tr>
+            <tr><td>Lisa Park</td><td>$400K</td><td>Interested</td></tr>
+          </tbody>
+        </table>
+        <div class="agent-msg" style="margin-bottom: 6px;">
+          <strong>3 LPs</strong> have pending wires. Draft follow-ups?
+        </div>
+        <div class="agent-input">
+          <div class="agent-input-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <span class="agent-input-text">Ask anything about your deals...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LP match cards (2 only) -->
+    <div class="match-stack">
+      <div class="match-card">
+        <div class="match-header">
+          <div class="match-score score-high">92</div>
+          <div>
+            <div class="match-name">Rachel Thompson</div>
+            <div class="match-firm">Founders Fund</div>
+          </div>
+        </div>
+        <div class="match-bars">
+          <div class="match-bar-row"><span class="match-bar-label">Size</span><div class="match-bar-track"><div class="match-bar-fill fill-green" style="width:100%"></div></div><span class="match-bar-pts">30</span></div>
+          <div class="match-bar-row"><span class="match-bar-label">Sector</span><div class="match-bar-track"><div class="match-bar-fill fill-green" style="width:100%"></div></div><span class="match-bar-pts">25</span></div>
+          <div class="match-bar-row"><span class="match-bar-label">Stage</span><div class="match-bar-track"><div class="match-bar-fill fill-green" style="width:100%"></div></div><span class="match-bar-pts">25</span></div>
+          <div class="match-bar-row"><span class="match-bar-label">Geo</span><div class="match-bar-track"><div class="match-bar-fill fill-green" style="width:100%"></div></div><span class="match-bar-pts">10</span></div>
+          <div class="match-bar-row"><span class="match-bar-label">Active</span><div class="match-bar-track"><div class="match-bar-fill fill-yellow" style="width:50%"></div></div><span class="match-bar-pts">5</span></div>
+        </div>
+      </div>
+      <div class="match-card">
+        <div class="match-header">
+          <div class="match-score score-med">76</div>
+          <div>
+            <div class="match-name">Andrew Foster</div>
+            <div class="match-firm">Index Ventures</div>
+          </div>
+        </div>
+        <div class="match-bars">
+          <div class="match-bar-row"><span class="match-bar-label">Size</span><div class="match-bar-track"><div class="match-bar-fill fill-green" style="width:80%"></div></div><span class="match-bar-pts">24</span></div>
+          <div class="match-bar-row"><span class="match-bar-label">Sector</span><div class="match-bar-track"><div class="match-bar-fill fill-yellow" style="width:60%"></div></div><span class="match-bar-pts">15</span></div>
+          <div class="match-bar-row"><span class="match-bar-label">Stage</span><div class="match-bar-track"><div class="match-bar-fill fill-green" style="width:100%"></div></div><span class="match-bar-pts">25</span></div>
+          <div class="match-bar-row"><span class="match-bar-label">Geo</span><div class="match-bar-track"><div class="match-bar-fill fill-yellow" style="width:50%"></div></div><span class="match-bar-pts">5</span></div>
+          <div class="match-bar-row"><span class="match-bar-label">Active</span><div class="match-bar-track"><div class="match-bar-fill fill-green" style="width:100%"></div></div><span class="match-bar-pts">10</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connectors SVG overlay -->
+    <svg class="connectors-svg" viewBox="0 0 580 560">
+      <!-- Connector 1: Email right edge → right-angle up to Agent top -->
+      <polyline class="conn-line" points="280,140 300,140 300,68 445,68 445,80" />
+      <circle class="conn-dot" cx="280" cy="140" r="3" />
+      <circle class="conn-dot" cx="445" cy="80" r="3" />
+
+      <!-- Connector 2: Email card bottom → trunk down → fork to cards
+           Email card bottom ≈ 305
+           Fork at y=330
+           Card 1 top at y=355, center x≈97
+           Card 2 top at y=349, center x≈240 -->
+      <line class="conn-line" x1="140" y1="305" x2="140" y2="330" />
+      <polyline class="conn-line" points="140,330 97,330 97,355" />
+      <polyline class="conn-line" points="140,330 240,330 240,349" />
+      <circle class="conn-dot" cx="140" cy="305" r="3" />
+      <circle class="conn-dot" cx="97" cy="355" r="3" />
+      <circle class="conn-dot" cx="240" cy="349" r="3" />
+    </svg>
+
+  </div>
+</body>
+</html>

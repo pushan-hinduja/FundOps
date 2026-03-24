@@ -7,7 +7,7 @@ import { DealVotingCard } from "@/components/deal/DealVotingCard";
 
 export const dynamic = "force-dynamic";
 
-export default async function DraftNotesPage({
+export default async function DealNotesPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -45,25 +45,28 @@ export default async function DraftNotesPage({
   if (!draftData) return notFound();
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <Link
-        href={`/deals/${deal.id}`}
-        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to {deal.name}
-      </Link>
-
+    <div className="px-8 py-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Draft Notes</h1>
-        <p className="text-muted-foreground">
-          {deal.name}{deal.company_name ? ` — ${deal.company_name}` : ""}
-        </p>
+        <Link
+          href={`/deals/${deal.id}`}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to {deal.name}
+        </Link>
+        <div className="mt-4">
+          <h1 className="text-3xl font-medium tracking-tight">
+            Deal Notes
+            <span className="text-muted-foreground">
+              {" "}— {deal.name}{deal.company_name ? ` (${deal.company_name})` : ""}
+            </span>
+          </h1>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <DraftDealSection dealId={deal.id} readOnly />
-        <DealVotingCard dealId={deal.id} readOnly />
+        <DraftDealSection dealId={deal.id} />
+        <DealVotingCard dealId={deal.id} />
       </div>
     </div>
   );

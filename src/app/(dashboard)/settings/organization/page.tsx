@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, Users, AlertTriangle } from "lucide-react";
+import { Building2, Users, AlertTriangle, ShieldCheck } from "lucide-react";
 import { OrganizationMembers } from "@/components/settings/OrganizationMembers";
 import { OrganizationDetails } from "@/components/settings/OrganizationDetails";
 import { DeleteOrganizationButton } from "@/components/settings/DeleteOrganizationButton";
+import { NdaSettings } from "@/components/settings/NdaSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,22 @@ export default async function OrganizationPage() {
             </div>
           </div>
           <OrganizationMembers />
+        </div>
+
+        {/* NDA Settings */}
+        <div className="glass-card rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div>
+              <h2 className="text-lg font-medium">NDA Settings</h2>
+              <p className="text-sm text-muted-foreground">
+                Configure non-disclosure agreement requirements for deals
+              </p>
+            </div>
+          </div>
+          <NdaSettings initialEnabled={!!((org.settings as any)?.require_nda)} />
         </div>
 
         {/* Danger Zone */}

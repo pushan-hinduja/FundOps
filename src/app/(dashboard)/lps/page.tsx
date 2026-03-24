@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { HubSpotSyncButton } from "@/components/shared/HubSpotSyncButton";
 import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
 import { SuggestedContacts } from "@/components/shared/SuggestedContacts";
 import Link from "next/link";
@@ -115,7 +114,6 @@ export default async function LPsPage() {
             </div>
             <div className="flex items-center gap-3">
               <EmailSyncButton />
-              <HubSpotSyncButton />
               <Link
                 href="/lps/new"
                 className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"

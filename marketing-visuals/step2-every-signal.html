@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Step 2 - Every Signal, Captured</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: transparent; padding: 24px; width: 380px; }
+  .card { background: white; border-radius: 14px; border: 1px solid #e5e5e5; box-shadow: 0 2px 16px rgba(0,0,0,0.05); overflow: hidden; }
+  .header { padding: 16px 18px 12px; border-bottom: 1px solid #f0f0f0; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .header h3 { font-size: 13px; font-weight: 600; color: #171717; }
+  .header p { font-size: 9px; color: #999; }
+  .badge-green { font-size: 9px; background: #f0fdf4; color: #22c55e; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+
+  .signals { padding: 8px 12px; }
+  .signal-item { display: flex; gap: 10px; padding: 9px 6px; border-bottom: 1px solid #f7f7f7; align-items: flex-start; }
+  .signal-item:last-child { border-bottom: none; }
+  .signal-icon { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .icon-commit { background: #f0fdf4; }
+  .icon-commit::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+  .icon-wire { background: #eff6ff; }
+  .icon-wire::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
+  .icon-question { background: #fefce8; }
+  .icon-question::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; }
+  .icon-interest { background: #faf5ff; }
+  .icon-interest::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #a855f7; }
+  .icon-silent { background: #fef2f2; }
+  .icon-silent::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+
+  .signal-content { flex: 1; }
+  .signal-text { font-size: 11px; color: #171717; line-height: 1.4; }
+  .signal-text strong { font-weight: 600; }
+  .signal-meta { font-size: 8px; color: #bbb; margin-top: 2px; }
+  .signal-tag { font-size: 8px; padding: 2px 7px; border-radius: 5px; font-weight: 500; align-self: center; flex-shrink: 0; }
+  .tag-commit { background: #f0fdf4; color: #16a34a; }
+  .tag-wire { background: #eff6ff; color: #2563eb; }
+  .tag-question { background: #fefce8; color: #ca8a04; }
+  .tag-interest { background: #faf5ff; color: #9333ea; }
+  .tag-alert { background: #fef2f2; color: #dc2626; }
+
+  .footer { padding: 10px 18px; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+  .footer-stat { font-size: 9px; color: #999; }
+  .footer-stat strong { color: #171717; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="header-top">
+        <h3>Signal Feed</h3>
+        <span class="badge-green">Live</span>
+      </div>
+      <p>AI-detected across all inboxes</p>
+    </div>
+    <div class="signals">
+      <div class="signal-item">
+        <div class="signal-icon icon-commit"></div>
+        <div class="signal-content">
+          <div class="signal-text"><strong>Sarah Chen</strong> committed <strong>$500K</strong> to Zenith Consumer SPV</div>
+          <div class="signal-meta">Parsed from email &middot; 10 min ago</div>
+        </div>
+        <span class="signal-tag tag-commit">Committed</span>
+      </div>
+      <div class="signal-item">
+        <div class="signal-icon icon-wire"></div>
+        <div class="signal-content">
+          <div class="signal-text"><strong>Robert Zhang</strong> confirmed wire of <strong>$600K</strong></div>
+          <div class="signal-meta">Wire details detected &middot; 1 hr ago</div>
+        </div>
+        <span class="signal-tag tag-wire">Wired</span>
+      </div>
+      <div class="signal-item">
+        <div class="signal-icon icon-question"></div>
+        <div class="signal-content">
+          <div class="signal-text"><strong>Lisa Park</strong> asked about co-invest rights and fee structure</div>
+          <div class="signal-meta">Response auto-drafted &middot; 2 hrs ago</div>
+        </div>
+        <span class="signal-tag tag-question">Question</span>
+      </div>
+      <div class="signal-item">
+        <div class="signal-icon icon-interest"></div>
+        <div class="signal-content">
+          <div class="signal-text"><strong>Amanda Walsh</strong> expressed interest in Helios DeepTech (<strong>$650K</strong>)</div>
+          <div class="signal-meta">Intent classified &middot; 3 hrs ago</div>
+        </div>
+        <span class="signal-tag tag-interest">Interested</span>
+      </div>
+      <div class="signal-item">
+        <div class="signal-icon icon-silent"></div>
+        <div class="signal-content">
+          <div class="signal-text"><strong>3 LPs</strong> have gone silent on Halo Fintech SPV for 14+ days</div>
+          <div class="signal-meta">Engagement alert &middot; Today</div>
+        </div>
+        <span class="signal-tag tag-alert">At Risk</span>
+      </div>
+    </div>
+    <div class="footer">
+      <div class="footer-stat"><strong>23</strong> signals today</div>
+      <div class="footer-stat"><strong>5</strong> deals monitored</div>
+    </div>
+  </div>
+</body>
+</html>

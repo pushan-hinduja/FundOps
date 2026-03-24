@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Step 2 - Define Your Rules</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: transparent; padding: 40px; width: 520px; }
+  .card { background: white; border-radius: 16px; border: 1px solid #e5e5e5; overflow: hidden; }
+  .header { padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0; }
+  .header h3 { font-size: 15px; font-weight: 600; color: #171717; }
+  .header p { font-size: 11px; color: #999; margin-top: 2px; }
+  .section { padding: 16px 24px; }
+  .section-title { font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .rule-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f7f7f7; }
+  .rule-row:last-child { border-bottom: none; }
+  .rule-label { font-size: 13px; color: #171717; font-weight: 500; }
+  .rule-desc { font-size: 11px; color: #999; margin-top: 1px; }
+  .rule-value { font-size: 13px; font-weight: 600; color: #171717; background: #f5f5f5; padding: 4px 12px; border-radius: 8px; }
+  .rule-value.green { background: #f0fdf4; color: #22c55e; }
+  .tier-row { display: flex; gap: 8px; margin-top: 8px; }
+  .tier { flex: 1; background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 10px; text-align: center; }
+  .tier-name { font-size: 11px; font-weight: 600; color: #171717; }
+  .tier-range { font-size: 10px; color: #999; margin-top: 2px; }
+  .tier-alloc { font-size: 12px; font-weight: 700; color: #22c55e; margin-top: 4px; }
+  .tier.highlight { border-color: #22c55e; background: #f0fdf4; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+  .toggle-mini { width: 32px; height: 18px; border-radius: 9px; background: #22c55e; position: relative; }
+  .toggle-mini .knob { width: 14px; height: 14px; border-radius: 50%; background: white; position: absolute; top: 2px; left: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+  .divider { height: 1px; background: #f0f0f0; margin: 0 24px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h3>Allocation Rules</h3>
+      <p>Zenith Consumer SPV</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Deal Parameters</div>
+      <div class="rule-row">
+        <div>
+          <div class="rule-label">Target Raise</div>
+        </div>
+        <div class="rule-value">$6.0M</div>
+      </div>
+      <div class="rule-row">
+        <div>
+          <div class="rule-label">Min Check Size</div>
+        </div>
+        <div class="rule-value">$150K</div>
+      </div>
+      <div class="rule-row">
+        <div>
+          <div class="rule-label">Max Check Size</div>
+        </div>
+        <div class="rule-value">$800K</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <div class="section-title">LP Tiers</div>
+      <div class="tier-row">
+        <div class="tier highlight">
+          <div class="tier-name">Tier 1</div>
+          <div class="tier-range">$500K+</div>
+          <div class="tier-alloc">50%</div>
+        </div>
+        <div class="tier">
+          <div class="tier-name">Tier 2</div>
+          <div class="tier-range">$250K-$500K</div>
+          <div class="tier-alloc">30%</div>
+        </div>
+        <div class="tier">
+          <div class="tier-name">Tier 3</div>
+          <div class="tier-range">$150K-$250K</div>
+          <div class="tier-alloc">20%</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

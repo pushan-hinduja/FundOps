@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X, FileText } from "lucide-react";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 export default function NewDealPage() {
@@ -27,11 +27,40 @@ export default function NewDealPage() {
   const [sector, setSector] = useState("");
   const [geography, setGeography] = useState("");
   const [investmentThesis, setInvestmentThesis] = useState("");
+  const [ndaFile, setNdaFile] = useState<File | null>(null);
+  const [ndaRequired, setNdaRequired] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
   const supabase = createClient();
+
+  // Check if org requires NDA
+  useEffect(() => {
+    async function checkNdaSetting() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: userData } = await supabase
+        .from("users")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!userData?.organization_id) return;
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("settings")
+        .eq("id", userData.organization_id)
+        .single();
+
+      if ((org?.settings as any)?.require_nda) {
+        setNdaRequired(true);
+      }
+    }
+    checkNdaSetting();
+  }, [supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +80,20 @@ export default function NewDealPage() {
 
       if (!userData?.organization_id) {
         throw new Error("No organization found");
+      }
+
+      // Upload NDA document if provided
+      let ndaDocumentUrl: string | null = null;
+      if (ndaFile) {
+        const fileExt = ndaFile.name.split(".").pop();
+        const filePath = `${userData.organization_id}/${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("nda-documents")
+          .upload(filePath, ndaFile);
+
+        if (uploadError) throw new Error(`NDA upload failed: ${uploadError.message}`);
+        ndaDocumentUrl = filePath;
       }
 
       // Create deal
@@ -75,6 +118,7 @@ export default function NewDealPage() {
         sector: sector || null,
         geography: geography || null,
         investment_thesis: investmentThesis || null,
+        nda_document_url: ndaDocumentUrl,
         status: "draft",
       });
 
@@ -394,6 +438,44 @@ export default function NewDealPage() {
             </div>
           </div>
         </div>
+
+        {/* NDA Upload (only shown when org requires NDA) */}
+        {ndaRequired && (
+          <div className="border-t border-border pt-6 mt-6">
+            <h3 className="text-sm font-medium mb-4">NDA Document</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Upload the NDA that team members must accept before viewing this deal.
+            </p>
+            {ndaFile ? (
+              <div className="flex items-center gap-3 px-4 py-3 border border-border rounded-xl bg-secondary/30">
+                <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
+                <span className="text-sm font-medium truncate flex-1">{ndaFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setNdaFile(null)}
+                  className="p-1 hover:bg-secondary rounded-lg transition-colors shrink-0"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center gap-2 px-4 py-6 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-secondary/30 transition-all">
+                <Upload className="w-6 h-6 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Click to upload NDA document</span>
+                <span className="text-xs text-muted-foreground">PDF, DOC, or DOCX</span>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setNdaFile(file);
+                  }}
+                />
+              </label>
+            )}
+          </div>
+        )}
 
         {/* Memo URL */}
         <div>

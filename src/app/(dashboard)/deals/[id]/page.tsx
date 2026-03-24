@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft } from "lucide-react";
@@ -9,6 +9,7 @@ import { EmailsWithFilters } from "@/components/deals/EmailsWithFilters";
 import { LPInvolvementSection } from "@/components/deals/LPInvolvementSection";
 import { EditDealButton } from "@/components/deals/EditDealButton";
 import { DeleteDealButton } from "@/components/deals/DeleteDealButton";
+import { DealStatusPill } from "@/components/deals/DealStatusPill";
 import { LPMatchButton } from "@/components/deals/LPMatchButton";
 import { InvestorUpdatesCard } from "@/components/deal/InvestorUpdatesCard";
 import { DraftDealSection } from "@/components/deal/DraftDealSection";
@@ -49,6 +50,28 @@ export default async function DealDetailPage({
 
   if (dealError || !deal) {
     return notFound();
+  }
+
+  // Check if org requires NDA acceptance for deals
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("settings")
+    .eq("id", userData.organization_id)
+    .single();
+
+  const requireNda = !!(org?.settings as any)?.require_nda;
+
+  if (requireNda) {
+    const { data: ndaAcceptance } = await supabase
+      .from("deal_nda_acceptances")
+      .select("id")
+      .eq("deal_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!ndaAcceptance) {
+      redirect(`/deals/${id}/nda`);
+    }
   }
 
   // Fetch LP relationships for this deal with LP contact info
@@ -137,7 +160,7 @@ export default async function DealDetailPage({
     .order("parsed_at", { ascending: false })
     .limit(50);
 
-  // Check if draft data exists (for "View Draft Notes" link on active/closed deals)
+  // Check if draft data exists (for "Deal Notes" link on active/closed deals)
   const { data: draftData } = await supabase
     .from("deal_draft_data")
     .select("id")
@@ -187,8 +210,8 @@ export default async function DealDetailPage({
         return "bg-secondary text-muted-foreground";
       case "closed":
         return "bg-foreground/10 text-foreground";
-      case "cancelled":
-        return "bg-destructive/10 text-destructive";
+      case "archived":
+        return "bg-muted-foreground/10 text-muted-foreground border border-dashed border-muted-foreground/30";
       default:
         return "bg-secondary text-muted-foreground";
     }
@@ -263,7 +286,7 @@ export default async function DealDetailPage({
                 href={`/deals/${deal.id}/draft-notes`}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary/80 rounded-xl transition-colors"
               >
-                Draft Notes
+                Deal Notes
               </Link>
             )}
             {deal.access === "private" && !isDraft && (
@@ -292,12 +315,11 @@ export default async function DealDetailPage({
                 sector: deal.sector,
                 geography: deal.geography,
                 investment_thesis: deal.investment_thesis,
+                nda_document_url: deal.nda_document_url,
               }}
             />
             <DeleteDealButton dealId={deal.id} dealName={deal.name} />
-            <span className={`px-4 py-2 rounded-xl text-sm font-medium capitalize ${getDealStatusColor(deal.status)}`}>
-              {deal.status}
-            </span>
+            <DealStatusPill dealId={deal.id} currentStatus={deal.status} />
           </div>
         </div>
       </div>

@@ -96,32 +96,39 @@ export async function PATCH(
       return NextResponse.json({ error: "Deal not found" }, { status: 404 });
     }
 
+    // Build update object, only including nda_document_url if explicitly provided
+    const updateData: Record<string, unknown> = {
+      name: body.name,
+      company_name: body.company_name,
+      description: body.description,
+      target_raise: body.target_raise,
+      min_check_size: body.min_check_size,
+      max_check_size: body.max_check_size,
+      fee_percent: body.fee_percent,
+      carry_percent: body.carry_percent,
+      status: body.status,
+      memo_url: body.memo_url,
+      created_date: body.created_date,
+      close_date: body.close_date,
+      investment_stage: body.investment_stage,
+      investment_type: body.investment_type,
+      founder_email: body.founder_email,
+      investor_update_frequency: body.investor_update_frequency,
+      access: body.access,
+      sector: body.sector,
+      geography: body.geography,
+      investment_thesis: body.investment_thesis,
+      updated_at: new Date().toISOString(),
+    };
+
+    if ("nda_document_url" in body) {
+      updateData.nda_document_url = body.nda_document_url;
+    }
+
     // Update deal
     const { data: updatedDeal, error: updateError } = await supabase
       .from("deals")
-      .update({
-        name: body.name,
-        company_name: body.company_name,
-        description: body.description,
-        target_raise: body.target_raise,
-        min_check_size: body.min_check_size,
-        max_check_size: body.max_check_size,
-        fee_percent: body.fee_percent,
-        carry_percent: body.carry_percent,
-        status: body.status,
-        memo_url: body.memo_url,
-        created_date: body.created_date,
-        close_date: body.close_date,
-        investment_stage: body.investment_stage,
-        investment_type: body.investment_type,
-        founder_email: body.founder_email,
-        investor_update_frequency: body.investor_update_frequency,
-        access: body.access,
-        sector: body.sector,
-        geography: body.geography,
-        investment_thesis: body.investment_thesis,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", dealId)
       .select()
       .single();

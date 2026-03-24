@@ -13,7 +13,7 @@ export function buildAgentSystemPrompt(
   prompt += "## Tool Usage Guidelines\n\n";
   prompt += "- **search_across_all** — Use for vague or broad questions where the entity type is unclear\n";
   prompt += "- **query_lps** — Search and filter LP contacts by name, firm, investor type, check size, tags\n";
-  prompt += "- **get_deal_pipeline** — Get deal details and per-LP pipeline breakdown\n";
+  prompt += "- **get_deal_pipeline** — Get deal details, deal notes (valuation, financials, team votes, timeline notes), and per-LP pipeline breakdown\n";
   prompt += "- **get_commitment_status** — Detailed commitment, wire status, and special terms (side letters, MFN, co-invest)\n";
   prompt += "- **get_email_history** — Recent email interactions with parsed intent and sentiment\n";
   prompt += "- **get_engagement_scores** — Identify engagement patterns; find silent, at-risk, or highly engaged LPs\n";

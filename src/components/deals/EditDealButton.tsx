@@ -26,6 +26,7 @@ interface Deal {
   sector: string | null;
   geography: string | null;
   investment_thesis: string | null;
+  nda_document_url?: string | null;
 }
 
 interface EditDealButtonProps {

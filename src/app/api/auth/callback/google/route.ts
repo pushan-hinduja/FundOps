@@ -76,8 +76,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${appUrl}/settings/email?error=save_failed`);
     }
 
+    // Check if this is a first-time connection (no prior sync) to trigger auto-backfill
+    const { data: existingAccount } = await supabase
+      .from("auth_accounts")
+      .select("last_sync_at")
+      .eq("user_id", user.id)
+      .eq("provider", "gmail")
+      .eq("email", gmailEmail)
+      .single();
+
+    const isFirstConnection = !existingAccount?.last_sync_at;
+
     // Success - redirect to settings
-    return NextResponse.redirect(`${appUrl}/settings/email?success=gmail_connected`);
+    return NextResponse.redirect(
+      `${appUrl}/settings/email?success=gmail_connected${isFirstConnection ? "&autoBackfill=true" : ""}`
+    );
   } catch (err) {
     console.error("Gmail OAuth callback error:", err);
     const errorMessage = err instanceof Error ? err.message : "";

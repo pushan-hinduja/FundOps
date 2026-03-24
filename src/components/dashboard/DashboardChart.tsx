@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Deal } from "@/lib/supabase/types";
 
 type Timeframe = "week" | "month" | "quarter" | "year";
@@ -421,9 +423,16 @@ export default function DashboardChart({
               </svg>
             </div>
             <h3 className="text-lg font-medium text-foreground mb-1">No data available yet</h3>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Start tracking deals to see your capital commitments visualized here.
+            <p className="text-sm text-muted-foreground text-center max-w-sm mb-5">
+              Create a new deal to start tracking your pipeline and see capital commitments visualized here.
             </p>
+            <Link
+              href="/deals/new"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <Plus className="w-4 h-4" />
+              Create New Deal
+            </Link>
           </div>
         )}
       </div>

@@ -115,9 +115,10 @@ export function TopNav() {
 
   const activeOrg = organizations.find((o) => o.isActive);
   const hasMultipleOrgs = organizations.length > 1;
+  const orgsLoaded = organizations.length > 0;
 
   return (
-    <header className="h-20 bg-white px-8 flex items-center">
+    <header className="h-20 bg-white px-8 flex items-center relative">
       {/* Left: Logo + Org Switcher */}
       <div className="flex items-center gap-3">
         <Link href="/dashboard" className="flex items-center gap-2">
@@ -135,7 +136,15 @@ export function TopNav() {
           <span className="text-lg font-medium tracking-tight">FundOps</span>
         </Link>
 
-        {activeOrg && (
+        {!orgsLoaded ? (
+          <>
+            <span className="text-muted-foreground/40 text-lg">/</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5">
+              <div className="w-3.5 h-3.5 rounded bg-muted animate-pulse" />
+              <div className="w-20 h-4 rounded bg-muted animate-pulse" />
+            </div>
+          </>
+        ) : activeOrg ? (
           <>
             <span className="text-muted-foreground/40 text-lg">/</span>
             <div className="relative">
@@ -184,11 +193,11 @@ export function TopNav() {
               )}
             </div>
           </>
-        )}
+        ) : null}
       </div>
 
-      {/* Center: Navigation */}
-      <nav className="flex-1 flex items-center justify-center gap-2">
+      {/* Center: Navigation - absolutely centered */}
+      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
@@ -213,7 +222,7 @@ export function TopNav() {
       </nav>
 
       {/* Right: Actions and Profile */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 ml-auto">
         {/* Action Icons */}
         <div className="flex items-center gap-2">
           {[

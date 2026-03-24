@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
-import { Sparkles, HelpCircle, Plus, Send, X, Search, Database, Mail, BarChart3, Loader2, MessageSquarePlus, History } from "lucide-react";
+import { Sparkles, HelpCircle, Send, X, Search, Database, Mail, BarChart3, Loader2, MessageSquarePlus, History } from "lucide-react";
 import { useAISearch } from "./AISearchContext";
 import type { ThinkingStatus } from "./AISearchContext";
 
@@ -171,10 +171,6 @@ function ToolIcon({ icon }: { icon: string }) {
   }
 }
 
-const suggestedQueries = [
-  "How many committed LPs do I have?",
-  "What's the total pipeline value?",
-];
 
 // Parse SSE events from a text chunk (may contain multiple events or partial ones)
 function parseSSEEvents(buffer: string): { events: { type: string; data: string }[]; remaining: string } {
@@ -463,22 +459,6 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
           </div>
         )}
 
-        {/* Suggested Queries - shown when not expanded */}
-        {!isExpanded && (
-          <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
-            {suggestedQueries.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4a4a4f] hover:bg-[#5a5a5f] text-xs text-white/70 hover:text-white transition-all duration-200 shadow-md"
-              >
-                <span>{suggestion}</span>
-                <Plus className="w-3 h-3" />
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Main Search Bar */}
         <div className="relative">
           <div className="flex items-center gap-2 bg-primary rounded-2xl p-2 shadow-lg">
@@ -700,53 +680,38 @@ function DashboardAISearch({
           </>
         )}
 
-        {/* Suggestions / Insights - shown when not expanded */}
-        {!isExpanded && (
-          insights.length > 0 ? (
-            <div className="mb-3 px-2 space-y-1.5">
-              {insights.slice(0, 3).map((insight) => (
-                <button
-                  key={insight.id}
-                  onClick={() => {
-                    handleSuggestionClick("Tell me more about this: " + insight.title);
+        {/* Insights - shown when not expanded and insights exist */}
+        {!isExpanded && insights.length > 0 && (
+          <div className="mb-3 px-2 space-y-1.5">
+            {insights.slice(0, 3).map((insight) => (
+              <button
+                key={insight.id}
+                onClick={() => {
+                  handleSuggestionClick("Tell me more about this: " + insight.title);
+                  onDismissInsight(insight.id);
+                }}
+                className="w-full flex items-start gap-2 px-3 py-2 rounded-xl bg-[#4a4a4f]/50 hover:bg-[#5a5a5f]/50 text-left transition-all duration-200 group"
+              >
+                <span className={
+                  "mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 " +
+                  (insight.priority === "urgent" || insight.priority === "high"
+                    ? "bg-orange-400"
+                    : "bg-blue-400")
+                } />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-white/90 truncate">{insight.title}</p>
+                  <p className="text-[10px] text-white/50 truncate">{insight.description}</p>
+                </div>
+                <X
+                  className="w-3 h-3 text-white/30 hover:text-white/70 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onDismissInsight(insight.id);
                   }}
-                  className="w-full flex items-start gap-2 px-3 py-2 rounded-xl bg-[#4a4a4f]/50 hover:bg-[#5a5a5f]/50 text-left transition-all duration-200 group"
-                >
-                  <span className={
-                    "mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 " +
-                    (insight.priority === "urgent" || insight.priority === "high"
-                      ? "bg-orange-400"
-                      : "bg-blue-400")
-                  } />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-white/90 truncate">{insight.title}</p>
-                    <p className="text-[10px] text-white/50 truncate">{insight.description}</p>
-                  </div>
-                  <X
-                    className="w-3 h-3 text-white/30 hover:text-white/70 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDismissInsight(insight.id);
-                    }}
-                  />
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2 mb-3 px-2">
-              {suggestedQueries.map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4a4a4f] hover:bg-[#5a5a5f] text-xs text-white/70 hover:text-white transition-all duration-200"
-                >
-                  <span>{suggestion}</span>
-                  <Plus className="w-3 h-3" />
-                </button>
-              ))}
-            </div>
-          )
+                />
+              </button>
+            ))}
+          </div>
         )}
 
         {/* Main Search Bar */}

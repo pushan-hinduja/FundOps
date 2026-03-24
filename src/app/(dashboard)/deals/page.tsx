@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
-import { BackfillSyncButton } from "@/components/shared/BackfillSyncButton";
 import Link from "next/link";
 import { Briefcase, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -161,7 +160,6 @@ export default async function DealsPage() {
             </p>
           )}
           <div className="flex items-center gap-3">
-            <BackfillSyncButton />
             <EmailSyncButton />
             <Link
               href="/deals/new"

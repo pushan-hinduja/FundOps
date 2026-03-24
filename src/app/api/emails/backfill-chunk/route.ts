@@ -22,6 +22,7 @@ interface IngestCursor {
   messageIdsToProcess: string[];
   totalListed: number;
   newEmailsIngested: number;
+  accountIndex?: number;
 }
 
 interface ParseCursor {
@@ -75,16 +76,15 @@ export async function POST(request: NextRequest) {
 
   const organizationId = userData.organization_id;
 
-  // Get auth account for Gmail
-  const { data: authAccount, error: authError } = await supabase
+  // Get ALL active Gmail accounts for this user
+  const { data: authAccounts, error: authError } = await supabase
     .from("auth_accounts")
     .select("*")
     .eq("user_id", user.id)
     .eq("provider", "gmail")
-    .eq("is_active", true)
-    .single();
+    .eq("is_active", true);
 
-  if (authError || !authAccount) {
+  if (authError || !authAccounts || authAccounts.length === 0) {
     return NextResponse.json(
       { error: "No Gmail account connected" },
       { status: 400 }
@@ -98,16 +98,23 @@ export async function POST(request: NextRequest) {
     ? JSON.parse(body.cursor)
     : null;
 
+  // Determine which account to use for this chunk
+  // The cursor tracks accountIndex so we iterate through all accounts during ingest
+  const accountIndex = (cursor as any)?.accountIndex ?? 0;
+  const currentAccount = authAccounts[Math.min(accountIndex, authAccounts.length - 1)];
+
   try {
-    const gmail = await getGmailClient(authAccount as AuthAccount);
+    const gmail = await getGmailClient(currentAccount as AuthAccount);
 
     if (phase === "ingest") {
       return handleIngestChunk(
         gmail,
         supabase,
         organizationId,
-        authAccount.id,
-        cursor as IngestCursor | null
+        currentAccount.id,
+        cursor as IngestCursor | null,
+        authAccounts.length,
+        accountIndex
       );
     } else if (phase === "parse") {
       return handleParseChunk(
@@ -116,7 +123,7 @@ export async function POST(request: NextRequest) {
         cursor as ParseCursor | null
       );
     } else if (phase === "finalize") {
-      return handleFinalize(gmail, supabase, organizationId, authAccount.id);
+      return handleFinalizeAllAccounts(supabase, authAccounts as AuthAccount[], organizationId);
     }
 
     return NextResponse.json({ error: "Invalid phase" }, { status: 400 });
@@ -134,7 +141,9 @@ async function handleIngestChunk(
   supabase: SupabaseClient,
   organizationId: string,
   authAccountId: string,
-  cursor: IngestCursor | null
+  cursor: IngestCursor | null,
+  totalAccounts: number = 1,
+  accountIndex: number = 0
 ) {
   const stats: ChunkStats = {
     totalGmailMessages: cursor?.totalListed || 0,
@@ -183,18 +192,41 @@ async function handleIngestChunk(
           messageIdsToProcess: [],
           totalListed,
           newEmailsIngested: cumulativeIngested,
-        } satisfies IngestCursor),
+          accountIndex,
+        }),
         stats: { ...stats, totalGmailMessages: totalListed, newEmailsIngested: 0 },
         progress: {
           current: totalListed - messageIds.length,
           total: totalListed,
-          message: `Scanning inbox (${cumulativeIngested} new emails found)...`,
+          message: `Scanning inbox${totalAccounts > 1 ? ` (account ${accountIndex + 1}/${totalAccounts})` : ""} (${cumulativeIngested} new emails found)...`,
         },
       });
     }
 
-    // If no new messages and no more pages, transition to parse
+    // If no new messages and no more pages for this account
     if (messageIds.length === 0 && !gmailPageToken) {
+      // If there are more accounts to process, move to the next one
+      if (accountIndex + 1 < totalAccounts) {
+        return NextResponse.json({
+          done: false,
+          phase: "ingest",
+          cursor: JSON.stringify({
+            phase: "ingest",
+            gmailPageToken: null,
+            messageIdsToProcess: [],
+            totalListed,
+            newEmailsIngested: cumulativeIngested,
+            accountIndex: accountIndex + 1,
+          }),
+          stats: { ...stats, totalGmailMessages: totalListed, newEmailsIngested: 0 },
+          progress: {
+            current: totalListed,
+            total: totalListed,
+            message: `Moving to account ${accountIndex + 2}/${totalAccounts}...`,
+          },
+        });
+      }
+      // All accounts done, transition to parse
       return NextResponse.json({
         done: false,
         phase: "parse",
@@ -260,7 +292,29 @@ async function handleIngestChunk(
   const hasMorePages = !!gmailPageToken;
 
   if (!hasMoreIds && !hasMorePages) {
-    // All pages exhausted, all IDs processed — transition to parse
+    // All pages exhausted for this account
+    if (accountIndex + 1 < totalAccounts) {
+      // Move to next account
+      return NextResponse.json({
+        done: false,
+        phase: "ingest",
+        cursor: JSON.stringify({
+          phase: "ingest",
+          gmailPageToken: null,
+          messageIdsToProcess: [],
+          totalListed,
+          newEmailsIngested: cumulativeIngested,
+          accountIndex: accountIndex + 1,
+        }),
+        stats,
+        progress: {
+          current: totalListed,
+          total: totalListed,
+          message: `Moving to account ${accountIndex + 2}/${totalAccounts}...`,
+        },
+      });
+    }
+    // All accounts done — transition to parse
     return NextResponse.json({
       done: false,
       phase: "parse",
@@ -284,12 +338,13 @@ async function handleIngestChunk(
       messageIdsToProcess: remaining,
       totalListed,
       newEmailsIngested: cumulativeIngested,
-    } satisfies IngestCursor),
+      accountIndex,
+    }),
     stats,
     progress: {
       current: totalListed - remaining.length,
-      total: totalListed + (hasMorePages ? 500 : 0), // estimate if more pages
-      message: `Ingesting emails (${cumulativeIngested} new)...`,
+      total: totalListed + (hasMorePages ? 500 : 0),
+      message: `Ingesting emails${totalAccounts > 1 ? ` (account ${accountIndex + 1}/${totalAccounts})` : ""} (${cumulativeIngested} new)...`,
     },
   });
 }
@@ -413,11 +468,10 @@ async function handleParseChunk(
   });
 }
 
-async function handleFinalize(
-  gmail: gmail_v1.Gmail,
+async function handleFinalizeAllAccounts(
   supabase: SupabaseClient,
-  organizationId: string,
-  authAccountId: string
+  authAccounts: AuthAccount[],
+  organizationId: string
 ) {
   // Detect thread-based answers
   try {
@@ -445,19 +499,22 @@ async function handleFinalize(
     );
   }
 
-  // Save sync_cursor for future incremental syncs
-  try {
-    const currentHistoryId = await getCurrentHistoryId(gmail);
-    await supabase
-      .from("auth_accounts")
-      .update({
-        sync_cursor: currentHistoryId,
-        last_sync_at: new Date().toISOString(),
-      })
-      .eq("id", authAccountId);
-    console.log(`[Backfill] Saved sync_cursor: ${currentHistoryId}`);
-  } catch (cursorErr) {
-    console.error(`[Backfill] Failed to save sync_cursor:`, cursorErr);
+  // Save sync_cursor for ALL accounts
+  for (const account of authAccounts) {
+    try {
+      const gmail = await getGmailClient(account);
+      const currentHistoryId = await getCurrentHistoryId(gmail);
+      await supabase
+        .from("auth_accounts")
+        .update({
+          sync_cursor: currentHistoryId,
+          last_sync_at: new Date().toISOString(),
+        })
+        .eq("id", account.id);
+      console.log(`[Backfill] Saved sync_cursor for ${account.email}: ${currentHistoryId}`);
+    } catch (cursorErr) {
+      console.error(`[Backfill] Failed to save sync_cursor for ${account.email}:`, cursorErr);
+    }
   }
 
   return NextResponse.json({

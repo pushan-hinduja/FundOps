@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { DisconnectGmailButton } from "@/components/shared/DisconnectGmailButton";
+import { BackfillSyncButton } from "@/components/shared/BackfillSyncButton";
+import { AutoBackfill } from "@/components/shared/AutoBackfill";
 import { WhatsAppConnection } from "@/components/settings/WhatsAppConnection";
 import { verifyGmailConnection } from "@/lib/gmail/client";
 import type { AuthAccount } from "@/lib/supabase/types";
@@ -11,9 +13,9 @@ export const dynamic = "force-dynamic";
 export default async function EmailSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string; error?: string }>;
+  searchParams: Promise<{ success?: string; error?: string; autoBackfill?: string }>;
 }) {
-  const { success, error: errorParam } = await searchParams;
+  const { success, error: errorParam, autoBackfill } = await searchParams;
   const supabase = await createClient();
 
   // Get current user
@@ -70,6 +72,8 @@ export default async function EmailSettingsPage({
         <h1 className="text-2xl font-medium mt-2">Integrations</h1>
       </div>
 
+      {autoBackfill === "true" && <AutoBackfill />}
+
       {successMessage && (
         <div className="bg-green-50 text-green-800 p-4 rounded-lg mb-6">
           {successMessage}
@@ -90,12 +94,15 @@ export default async function EmailSettingsPage({
               Emails from these accounts will be automatically ingested and parsed.
             </p>
           </div>
-          <Link
-            href="/api/auth/google"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
-          >
-            Connect Gmail
-          </Link>
+          <div className="flex items-center gap-3">
+            {accounts && accounts.length > 0 && <BackfillSyncButton />}
+            <Link
+              href="/api/auth/google"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition"
+            >
+              Connect Gmail
+            </Link>
+          </div>
         </div>
 
         {!accounts || accounts.length === 0 ? (

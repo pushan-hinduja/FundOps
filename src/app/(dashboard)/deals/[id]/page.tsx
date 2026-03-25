@@ -10,10 +10,10 @@ import { LPInvolvementSection } from "@/components/deals/LPInvolvementSection";
 import { EditDealButton } from "@/components/deals/EditDealButton";
 import { DeleteDealButton } from "@/components/deals/DeleteDealButton";
 import { DealStatusPill } from "@/components/deals/DealStatusPill";
-import { LPMatchButton } from "@/components/deals/LPMatchButton";
 import { InvestorUpdatesCard } from "@/components/deal/InvestorUpdatesCard";
 import { DraftDealSection } from "@/components/deal/DraftDealSection";
 import { DealVotingCard } from "@/components/deal/DealVotingCard";
+import { LPsInvolvedCard } from "@/components/deals/LPsInvolvedCard";
 
 export const dynamic = "force-dynamic";
 
@@ -160,14 +160,6 @@ export default async function DealDetailPage({
     .order("parsed_at", { ascending: false })
     .limit(50);
 
-  // Check if draft data exists (for "Deal Notes" link on active/closed deals)
-  const { data: draftData } = await supabase
-    .from("deal_draft_data")
-    .select("id")
-    .eq("deal_id", id)
-    .maybeSingle();
-
-  const hasDraftData = !!draftData;
   const isDraft = deal.status === "draft";
 
   const formatCurrency = (amount: number | null) => {
@@ -281,16 +273,13 @@ export default async function DealDetailPage({
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            {!isDraft && hasDraftData && (
+            {!isDraft && (
               <Link
                 href={`/deals/${deal.id}/draft-notes`}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-secondary hover:bg-secondary/80 rounded-xl transition-colors"
               >
                 Deal Notes
               </Link>
-            )}
-            {deal.access === "private" && !isDraft && (
-              <LPMatchButton dealId={deal.id} dealName={deal.name} />
             )}
             <EditDealButton
               deal={{
@@ -353,10 +342,23 @@ export default async function DealDetailPage({
               <p className="section-label mb-2">Interested</p>
               <p className="metric-number text-3xl">{formatCurrency(deal.total_interested)}</p>
             </div>
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <p className="section-label mb-2">LPs Involved</p>
-              <p className="metric-number text-3xl">{lpRelationships?.length || 0}</p>
-            </div>
+            <LPsInvolvedCard
+              count={lpRelationships?.length || 0}
+              dealId={deal.id}
+              dealName={deal.name}
+              lpRelationships={(lpRelationships || []).map((r) => ({
+                id: r.id,
+                status: r.status,
+                committed_amount: r.committed_amount,
+                lp_contacts: r.lp_contacts ? {
+                  id: r.lp_contacts.id,
+                  name: r.lp_contacts.name,
+                  firm: r.lp_contacts.firm,
+                  email: r.lp_contacts.email,
+                } : null,
+              }))}
+              showMatchLPs={deal.access === "private" && !isDraft}
+            />
           </div>
 
       {/* Close Readiness / Investor Updates + Allocated LPs row */}

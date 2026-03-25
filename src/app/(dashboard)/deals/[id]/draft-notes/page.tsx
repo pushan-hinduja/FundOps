@@ -35,15 +35,6 @@ export default async function DealNotesPage({
 
   if (!deal) return notFound();
 
-  // Verify draft data exists
-  const { data: draftData } = await supabase
-    .from("deal_draft_data")
-    .select("id")
-    .eq("deal_id", id)
-    .maybeSingle();
-
-  if (!draftData) return notFound();
-
   return (
     <div className="px-8 py-6">
       <div className="mb-8">

@@ -13,6 +13,7 @@ function LoginForm() {
   const [orgName, setOrgName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
@@ -68,6 +69,26 @@ function LoginForm() {
       router.refresh();
     } catch (err: any) {
       setError(err.message || "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError("Enter your email address first, then click forgot password.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email");
     } finally {
       setIsLoading(false);
     }
@@ -140,6 +161,31 @@ function LoginForm() {
 
   // Sign In form
   if (mode === "signin") {
+    if (resetSent) {
+      return (
+        <div className="w-full max-w-sm mx-auto">
+          {logo}
+          <div className="text-center space-y-4">
+            <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+              <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-medium">Check your email</h2>
+            <p className="text-sm text-neutral-500">
+              We sent a password reset link to <span className="font-medium text-black">{email}</span>. Click the link to reset your password.
+            </p>
+            <button
+              onClick={() => setResetSent(false)}
+              className="mt-4 w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="w-full max-w-sm mx-auto">
         {logo}
@@ -176,6 +222,15 @@ function LoginForm() {
               className={inputClass}
               placeholder="••••••••"
             />
+            <div className="text-right mt-1.5">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
           </div>
 
           <button

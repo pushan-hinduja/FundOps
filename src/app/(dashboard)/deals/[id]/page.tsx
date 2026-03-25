@@ -357,7 +357,7 @@ export default async function DealDetailPage({
                   email: r.lp_contacts.email,
                 } : null,
               }))}
-              showMatchLPs={deal.access === "private" && !isDraft}
+              showMatchLPs={deal.status === "active"}
             />
           </div>
 

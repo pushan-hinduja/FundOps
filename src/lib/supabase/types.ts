@@ -463,7 +463,8 @@ export type InsightType =
   | "commitment_milestone"
   | "engagement_drop"
   | "wire_stalled"
-  | "follow_up_due";
+  | "follow_up_due"
+  | "ai_generated";
 
 export type InsightPriority = "low" | "medium" | "high" | "urgent";
 

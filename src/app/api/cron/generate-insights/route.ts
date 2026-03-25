@@ -5,12 +5,14 @@ import { generateInsights } from "@/lib/ai/memory/insights";
 // POST /api/cron/generate-insights — generate proactive insights for all orgs
 export async function POST(request: NextRequest) {
   try {
-    // Verify cron secret
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
+    // Verify cron secret (skip in development)
+    if (process.env.NODE_ENV !== "development") {
+      const authHeader = request.headers.get("authorization");
+      const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== "Bearer " + cronSecret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      if (cronSecret && authHeader !== "Bearer " + cronSecret) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
     const supabase = createServiceClient();
@@ -25,17 +27,20 @@ export async function POST(request: NextRequest) {
     }
 
     let totalInsights = 0;
+    const orgResults: { name: string; breakdown: Record<string, number> }[] = [];
 
     for (const org of orgs || []) {
       try {
-        const count = await generateInsights({
+        const result = await generateInsights({
           supabase,
           organizationId: org.id,
         });
-        totalInsights += count;
-        if (count > 0) {
+        totalInsights += result.total;
+        orgResults.push({ name: org.name, breakdown: result.breakdown });
+        if (result.total > 0) {
           console.log(
-            "[Insights] Generated " + count + " insight(s) for " + org.name
+            "[Insights] Generated " + result.total + " insight(s) for " + org.name,
+            result.breakdown
           );
         }
       } catch (err) {
@@ -50,6 +55,7 @@ export async function POST(request: NextRequest) {
       success: true,
       organizations_processed: orgs?.length || 0,
       insights_created: totalInsights,
+      details: orgResults,
     });
   } catch (error) {
     console.error("Generate insights error:", error);

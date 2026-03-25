@@ -47,8 +47,9 @@ export function runAgent(params: RunAgentParams): ReadableStream<Uint8Array> {
       try {
         const client = getAnthropicClient();
 
-        // Load relevant memories for this conversation
+        // Load relevant memories and active insights for this conversation
         let memoriesSection = "";
+        let insightsSection = "";
         try {
           memoriesSection = await loadRelevantMemories(
             {
@@ -62,7 +63,28 @@ export function runAgent(params: RunAgentParams): ReadableStream<Uint8Array> {
           console.error("[Agent] Memory loading error:", err);
         }
 
-        const systemPrompt = buildAgentSystemPrompt(orgName, memoriesSection);
+        try {
+          const { data: activeInsights } = await toolContext.supabase
+            .from("agent_insights")
+            .select("insight_type, title, description, priority")
+            .eq("organization_id", toolContext.organizationId)
+            .eq("is_dismissed", false)
+            .order("created_at", { ascending: false })
+            .limit(10);
+
+          if (activeInsights && activeInsights.length > 0) {
+            const items = activeInsights
+              .map((i) => "- [" + i.priority.toUpperCase() + "] " + i.title + ": " + i.description)
+              .join("\n");
+            insightsSection =
+              "\n## Active Insights\n\nThe following proactive insights have been detected for this organization. Reference them when relevant to the user's question:\n\n" +
+              items;
+          }
+        } catch (err) {
+          console.error("[Agent] Insights loading error:", err);
+        }
+
+        const systemPrompt = buildAgentSystemPrompt(orgName, memoriesSection, insightsSection);
 
         // Build messages array
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

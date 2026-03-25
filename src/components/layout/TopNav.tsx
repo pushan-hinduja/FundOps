@@ -35,39 +35,47 @@ export function TopNav() {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<{ email?: string; name?: string } | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [organizations, setOrganizations] = useState<OrgItem[]>([]);
+  const [orgsLoading, setOrgsLoading] = useState(true);
   const [showOrgMenu, setShowOrgMenu] = useState(false);
   const [switchingOrg, setSwitchingOrg] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
-
-      // Use the profile API which bypasses RLS (works for users without an org)
+      setUserLoading(true);
       try {
-        const res = await fetch("/api/user/profile");
-        if (res.ok) {
-          const data = await res.json();
-          setUser({
-            email: data.user?.email || authUser.email,
-            name: data.user?.name || authUser.user_metadata?.full_name || authUser.email?.split("@")[0],
-          });
-          return;
-        }
-      } catch {}
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) return;
 
-      // Fallback to auth metadata
-      setUser({
-        email: authUser.email,
-        name: authUser.user_metadata?.full_name || authUser.email?.split("@")[0],
-      });
+        // Use the profile API which bypasses RLS (works for users without an org)
+        try {
+          const res = await fetch("/api/user/profile");
+          if (res.ok) {
+            const data = await res.json();
+            setUser({
+              email: data.user?.email || authUser.email,
+              name: data.user?.name || authUser.user_metadata?.full_name || authUser.email?.split("@")[0],
+            });
+            return;
+          }
+        } catch {}
+
+        // Fallback to auth metadata
+        setUser({
+          email: authUser.email,
+          name: authUser.user_metadata?.full_name || authUser.email?.split("@")[0],
+        });
+      } finally {
+        setUserLoading(false);
+      }
     };
     getUser();
   }, [supabase, pathname]);
 
   const fetchOrgs = useCallback(async () => {
+    setOrgsLoading(true);
     try {
       const res = await fetch("/api/user/organizations");
       const data = await res.json();
@@ -76,6 +84,8 @@ export function TopNav() {
       }
     } catch {
       // Silently fail - org switcher just won't show
+    } finally {
+      setOrgsLoading(false);
     }
   }, []);
 
@@ -124,7 +134,6 @@ export function TopNav() {
 
   const activeOrg = organizations.find((o) => o.isActive);
   const hasMultipleOrgs = organizations.length > 1;
-  const orgsLoading = organizations.length === 0 && !user;
   const hasOrg = !!activeOrg;
 
   return (
@@ -146,7 +155,15 @@ export function TopNav() {
           <span className="text-lg font-medium tracking-tight">FundOps</span>
         </Link>
 
-        {hasOrg ? (
+        {orgsLoading ? (
+          <>
+            <span className="text-muted-foreground/40 text-lg">/</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5">
+              <div className="w-3.5 h-3.5 rounded bg-muted animate-pulse" />
+              <div className="w-28 h-4 rounded bg-muted animate-pulse" />
+            </div>
+          </>
+        ) : hasOrg ? (
           <>
             <span className="text-muted-foreground/40 text-lg">/</span>
             <div className="relative">
@@ -198,10 +215,15 @@ export function TopNav() {
         ) : null}
       </div>
 
-      {/* Center: Navigation - only shown when user has an org */}
-      {hasOrg && (
+      {/* Center: Navigation - only shown when user has an org, skeleton while loading */}
+      {(hasOrg || orgsLoading) && (
         <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-          {navItems.map((item) => {
+          {orgsLoading ? (
+            navItems.map((item) => (
+              <div key={item.href} className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
+            ))
+          ) : (
+          navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <div key={item.href} className="relative group">
@@ -221,7 +243,8 @@ export function TopNav() {
                 </div>
               </div>
             );
-          })}
+          })
+          )}
         </nav>
       )}
 
@@ -229,62 +252,74 @@ export function TopNav() {
       <div className="flex items-center gap-3 ml-auto">
         {/* Action Icons */}
         <div className="flex items-center gap-2">
-          {[
-            { href: "/settings", icon: Settings, label: "Settings" },
-          ].map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <div key={item.href} className="relative group">
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200",
-                    isActive
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "text-muted-foreground border-border hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                  )}
-                >
-                  <item.icon className="w-[18px] h-[18px]" />
-                </Link>
-                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 glass-menu rounded-lg px-3 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
-                  <span className="text-xs font-medium">{item.label}</span>
+          {orgsLoading ? (
+            <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
+          ) : (
+            [
+              { href: "/settings", icon: Settings, label: "Settings" },
+            ].map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <div key={item.href} className="relative group">
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200",
+                      isActive
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "text-muted-foreground border-border hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                    )}
+                  >
+                    <item.icon className="w-[18px] h-[18px]" />
+                  </Link>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 glass-menu rounded-lg px-3 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         {/* Profile */}
         <div className="relative">
-          <button
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-xl hover:bg-secondary/50 transition-colors"
-          >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-xs font-medium text-white">
-              {getInitials(user?.name)}
+          {userLoading ? (
+            <div className="flex items-center pl-3 pr-2 py-1.5">
+              <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
             </div>
-            <div className="text-left hidden sm:block">
-              <div className="text-sm font-medium leading-tight">{user?.name || "User"}</div>
-              <div className="text-xs text-muted-foreground leading-tight">{user?.email || ""}</div>
-            </div>
-          </button>
-
-          {/* Dropdown Menu */}
-          {showProfileMenu && (
+          ) : (
             <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setShowProfileMenu(false)}
-              />
-              <div className="absolute right-0 top-full mt-2 w-48 glass-menu rounded-xl py-1 z-50">
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-white/30 dark:hover:bg-white/10 transition-colors w-full"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
-              </div>
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-xl hover:bg-secondary/50 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-xs font-medium text-white">
+                  {getInitials(user?.name)}
+                </div>
+                <div className="text-left hidden sm:block">
+                  <div className="text-sm font-medium leading-tight">{user?.name || "User"}</div>
+                  <div className="text-xs text-muted-foreground leading-tight">{user?.email || ""}</div>
+                </div>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showProfileMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowProfileMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-48 glass-menu rounded-xl py-1 z-50">
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-white/30 dark:hover:bg-white/10 transition-colors w-full"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>

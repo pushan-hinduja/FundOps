@@ -11,11 +11,13 @@ interface ProfileDetailsProps {
 export function ProfileDetails({ name: initialName, email: initialEmail }: ProfileDetailsProps) {
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
+  const [savedName, setSavedName] = useState(initialName);
+  const [savedEmail, setSavedEmail] = useState(initialEmail);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const hasChanges = name !== initialName || email !== initialEmail;
+  const hasChanges = name !== savedName || email !== savedEmail;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +36,8 @@ export function ProfileDetails({ name: initialName, email: initialEmail }: Profi
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      setSavedName(name.trim());
+      setSavedEmail(email.trim());
       setSuccess("Profile updated");
     } catch (err: any) {
       setError(err.message || "Failed to update profile");

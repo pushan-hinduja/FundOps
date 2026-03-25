@@ -43,20 +43,29 @@ export function TopNav() {
   useEffect(() => {
     const getUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: userData } = await supabase
-          .from("users")
-          .select("name, email")
-          .eq("id", authUser.id)
-          .single();
-        setUser({
-          email: userData?.email || authUser.email,
-          name: userData?.name || authUser.email?.split("@")[0],
-        });
-      }
+      if (!authUser) return;
+
+      // Use the profile API which bypasses RLS (works for users without an org)
+      try {
+        const res = await fetch("/api/user/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setUser({
+            email: data.user?.email || authUser.email,
+            name: data.user?.name || authUser.user_metadata?.full_name || authUser.email?.split("@")[0],
+          });
+          return;
+        }
+      } catch {}
+
+      // Fallback to auth metadata
+      setUser({
+        email: authUser.email,
+        name: authUser.user_metadata?.full_name || authUser.email?.split("@")[0],
+      });
     };
     getUser();
-  }, [supabase]);
+  }, [supabase, pathname]);
 
   const fetchOrgs = useCallback(async () => {
     try {
@@ -115,7 +124,8 @@ export function TopNav() {
 
   const activeOrg = organizations.find((o) => o.isActive);
   const hasMultipleOrgs = organizations.length > 1;
-  const orgsLoaded = organizations.length > 0;
+  const orgsLoading = organizations.length === 0 && !user;
+  const hasOrg = !!activeOrg;
 
   return (
     <header className="h-20 bg-white px-8 flex items-center relative">
@@ -136,15 +146,7 @@ export function TopNav() {
           <span className="text-lg font-medium tracking-tight">FundOps</span>
         </Link>
 
-        {!orgsLoaded ? (
-          <>
-            <span className="text-muted-foreground/40 text-lg">/</span>
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5">
-              <div className="w-3.5 h-3.5 rounded bg-muted animate-pulse" />
-              <div className="w-20 h-4 rounded bg-muted animate-pulse" />
-            </div>
-          </>
-        ) : activeOrg ? (
+        {hasOrg ? (
           <>
             <span className="text-muted-foreground/40 text-lg">/</span>
             <div className="relative">
@@ -158,7 +160,7 @@ export function TopNav() {
                 )}
               >
                 <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>{activeOrg.name}</span>
+                <span>{activeOrg!.name}</span>
                 {hasMultipleOrgs && (
                   <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", showOrgMenu && "rotate-180")} />
                 )}
@@ -196,30 +198,32 @@ export function TopNav() {
         ) : null}
       </div>
 
-      {/* Center: Navigation - absolutely centered */}
-      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <div key={item.href} className="relative group">
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200",
-                  isActive
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "text-muted-foreground border-border hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                )}
-              >
-                <item.icon className="w-[18px] h-[18px]" />
-              </Link>
-              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 glass-menu rounded-lg px-3 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
-                <span className="text-xs font-medium">{item.label}</span>
+      {/* Center: Navigation - only shown when user has an org */}
+      {hasOrg && (
+        <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <div key={item.href} className="relative group">
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200",
+                    isActive
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "text-muted-foreground border-border hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                  )}
+                >
+                  <item.icon className="w-[18px] h-[18px]" />
+                </Link>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 glass-menu rounded-lg px-3 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
+                  <span className="text-xs font-medium">{item.label}</span>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </nav>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Right: Actions and Profile */}
       <div className="flex items-center gap-3 ml-auto">

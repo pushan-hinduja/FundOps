@@ -68,6 +68,60 @@ export async function GET() {
   }
 }
 
+export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { name } = await request.json();
+
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return NextResponse.json({ error: "Organization name is required" }, { status: 400 });
+    }
+
+    const serviceClient = createServiceClient();
+
+    // Create organization
+    const { data: org, error: orgError } = await serviceClient
+      .from("organizations")
+      .insert({ name: name.trim() })
+      .select()
+      .single();
+
+    if (orgError || !org) {
+      throw new Error(orgError?.message || "Failed to create organization");
+    }
+
+    // Set as user's active org
+    await serviceClient
+      .from("users")
+      .update({ organization_id: org.id })
+      .eq("id", user.id);
+
+    // Add to junction table as admin
+    await serviceClient
+      .from("user_organizations")
+      .upsert(
+        { user_id: user.id, organization_id: org.id, role: "admin" },
+        { onConflict: "user_id,organization_id" }
+      );
+
+    return NextResponse.json({ organization: org });
+  } catch (error: any) {
+    console.error("[User Orgs POST] Error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to create organization" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   const supabase = await createClient();
   const {

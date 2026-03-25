@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
+import { OrgGuard } from "@/components/shared/OrgGuard";
 import { SuggestedContacts } from "@/components/shared/SuggestedContacts";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -22,19 +23,7 @@ export default async function LPsPage() {
     .single();
 
   if (!userData?.organization_id) {
-    return (
-      <div className="px-8 py-6">
-        <h1 className="text-3xl font-medium tracking-tight mb-4">LP Contacts</h1>
-        <div className="glass-card p-8 rounded-2xl text-center">
-          <p className="text-muted-foreground">
-            Set up your organization first.
-          </p>
-          <Link href="/settings" className="text-foreground font-medium hover:underline mt-2 inline-block">
-            Go to Settings
-          </Link>
-        </div>
-      </div>
-    );
+    return <OrgGuard><div /></OrgGuard>;
   }
 
   // Fetch LPs and suggested contacts in parallel (both use same email data source)

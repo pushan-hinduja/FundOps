@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import DashboardChart from "@/components/dashboard/DashboardChart";
 import { DashboardMetricCards } from "@/components/dashboard/DashboardMetricCards";
+import { OrgGuard } from "@/components/shared/OrgGuard";
 import { Deal } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +105,7 @@ export default async function DashboardPage() {
   const totalTarget = activeDealsData.reduce((sum, deal) => sum + (deal.target_raise || 0), 0);
 
   return (
+    <OrgGuard>
     <div className="px-8 py-6 pb-36">
       {/* Chart Section - Client Component */}
       <DashboardChart
@@ -126,5 +128,6 @@ export default async function DashboardPage() {
         unansweredQuestions={unansweredQuestionsData}
       />
     </div>
+    </OrgGuard>
   );
 }

@@ -20,6 +20,7 @@ function LoginForm() {
 
   const [mode, setMode] = useState<"signin" | "signup">(initialMode);
   const [step, setStep] = useState(1);
+  const [signupComplete, setSignupComplete] = useState(false);
   const [barStyle, setBarStyle] = useState<React.CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -78,39 +79,20 @@ function LoginForm() {
     setError(null);
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: { full_name: name },
+          data: {
+            full_name: name,
+            org_name: orgName.trim() || undefined,
+          },
         },
       });
       if (signUpError) throw signUpError;
 
-      if (orgName.trim() && data.user) {
-        const { data: org, error: orgError } = await supabase
-          .from("organizations")
-          .insert({ name: orgName.trim() })
-          .select()
-          .single();
-
-        if (!orgError && org) {
-          await supabase
-            .from("users")
-            .update({ organization_id: org.id })
-            .eq("id", data.user.id);
-
-          // Role lives in user_organizations only
-          await supabase
-            .from("user_organizations")
-            .insert({ user_id: data.user.id, organization_id: org.id, role: "admin" });
-        }
-      }
-
-      setError("Check your email to confirm your account.");
-      setIsLoading(false);
-      return;
+      setSignupComplete(true);
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -218,6 +200,31 @@ function LoginForm() {
   }
 
   // Sign Up flow
+  if (signupComplete) {
+    return (
+      <div className="w-full max-w-sm mx-auto">
+        {logo}
+        <div className="text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+            <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-medium">Check your email</h2>
+          <p className="text-sm text-neutral-500">
+            We sent a confirmation link to <span className="font-medium text-black">{email}</span>. Click the link to activate your account.
+          </p>
+          <button
+            onClick={switchToSignIn}
+            className="mt-4 w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Back to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={wrapperRef} className="w-full max-w-sm mx-auto">
       {logo}
@@ -280,7 +287,7 @@ function LoginForm() {
       ) : (
         <form onSubmit={handleSignUp} className="space-y-3.5">
           {error && (
-            <div className={`p-3 rounded-xl text-sm ${error.includes("Check your email") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+            <div className="p-3 rounded-xl text-sm bg-red-50 text-red-600">
               {error}
             </div>
           )}

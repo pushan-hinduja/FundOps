@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { User } from "lucide-react";
 import { ProfileDetails } from "@/components/settings/ProfileDetails";
@@ -13,7 +13,8 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: userData } = await supabase
+  const serviceClient = createServiceClient();
+  const { data: userData } = await serviceClient
     .from("users")
     .select("name, email")
     .eq("id", user.id)

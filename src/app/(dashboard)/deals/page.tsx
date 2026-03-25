@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmailSyncButton } from "@/components/shared/EmailSyncButton";
+import { OrgGuard } from "@/components/shared/OrgGuard";
 import Link from "next/link";
 import { Briefcase, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -146,6 +147,7 @@ export default async function DealsPage() {
   }
 
   return (
+    <OrgGuard>
     <div className="px-8 py-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
@@ -199,5 +201,6 @@ export default async function DealsPage() {
         <DealsGrid deals={deals} dealExtras={dealExtras} />
       )}
     </div>
+    </OrgGuard>
   );
 }

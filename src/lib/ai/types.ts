@@ -17,6 +17,10 @@ export const ParsedEmailSchema = z.object({
   sentiment: z.enum(["positive", "neutral", "negative", "urgent"]).nullable(),
   questions: z.array(z.string()),
   has_wire_details: z.boolean(),
+  deal_links: z.array(z.object({
+    link_type: z.enum(["data_room", "deal_folder"]),
+    url: z.string().url(),
+  })).optional().default([]),
   confidence: z.object({
     lp: z.number().min(0).max(1),
     deal: z.number().min(0).max(1),

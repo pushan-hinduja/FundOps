@@ -12,7 +12,9 @@ export const maxDuration = 300; // 5 minutes
  *
  * Reparse ALL emails with AI (use with caution - can be expensive)
  */
-export async function POST() {
+export async function POST(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const forceAll = searchParams.get("all") === "true";
   const supabase = await createClient();
 
   // Get current user
@@ -36,8 +38,8 @@ export async function POST() {
 
   const organizationId = userData.organization_id;
 
-  // Find all emails parsed with simple method OR that failed
-  const { data: parsedEmails, error: fetchError } = await supabase
+  // Find emails to reparse
+  let query = supabase
     .from("emails_parsed")
     .select(
       `
@@ -65,9 +67,14 @@ export async function POST() {
       )
     `
     )
-    .eq("emails_raw.organization_id", organizationId)
-    .or("parsing_method.eq.simple,processing_status.eq.failed")
-    .limit(500); // Safety limit
+    .eq("emails_raw.organization_id", organizationId);
+
+  // Only filter to simple/failed unless ?all=true is passed
+  if (!forceAll) {
+    query = query.or("parsing_method.eq.simple,processing_status.eq.failed");
+  }
+
+  const { data: parsedEmails, error: fetchError } = await query.limit(500);
 
   if (fetchError) {
     console.error("Error fetching emails for reparse:", fetchError);

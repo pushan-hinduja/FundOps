@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, X, FileText } from "lucide-react";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
+import { DealLinksEditor, type DealLinkEntry } from "@/components/deals/DealLinksEditor";
 
 export default function NewDealPage() {
   const [name, setName] = useState("");
@@ -16,7 +17,7 @@ export default function NewDealPage() {
   const [maxCheckSize, setMaxCheckSize] = useState("");
   const [feePercent, setFeePercent] = useState("");
   const [carryPercent, setCarryPercent] = useState("");
-  const [memoUrl, setMemoUrl] = useState("");
+  const [dealLinks, setDealLinks] = useState<DealLinkEntry[]>([]);
   const [createdDate, setCreatedDate] = useState("");
   const [closeDate, setCloseDate] = useState("");
   const [investmentStage, setInvestmentStage] = useState("");
@@ -97,7 +98,7 @@ export default function NewDealPage() {
       }
 
       // Create deal
-      const { error: insertError } = await supabase.from("deals").insert({
+      const { data: newDeal, error: insertError } = await supabase.from("deals").insert({
         organization_id: userData.organization_id,
         name,
         company_name: companyName || null,
@@ -107,7 +108,6 @@ export default function NewDealPage() {
         max_check_size: maxCheckSize ? parseFloat(maxCheckSize) : null,
         fee_percent: feePercent ? parseFloat(feePercent) : null,
         carry_percent: carryPercent ? parseFloat(carryPercent) : null,
-        memo_url: memoUrl || null,
         created_date: createdDate || null,
         close_date: closeDate || null,
         investment_stage: investmentStage || null,
@@ -120,9 +120,23 @@ export default function NewDealPage() {
         investment_thesis: investmentThesis || null,
         nda_document_url: ndaDocumentUrl,
         status: "draft",
-      });
+      }).select("id").single();
 
       if (insertError) throw insertError;
+
+      // Create deal links
+      if (newDeal) {
+        const validLinks = dealLinks.filter((l) => l.url.trim());
+        if (validLinks.length > 0) {
+          await supabase.from("deal_links").insert(
+            validLinks.map((l) => ({
+              deal_id: newDeal.id,
+              link_type: l.link_type,
+              url: l.url.trim(),
+            }))
+          );
+        }
+      }
 
       router.push("/deals");
       router.refresh();
@@ -477,19 +491,10 @@ export default function NewDealPage() {
           </div>
         )}
 
-        {/* Memo URL */}
+        {/* Deal Links */}
         <div>
-          <label htmlFor="memoUrl" className="block text-sm font-medium mb-2">
-            Memo URL
-          </label>
-          <input
-            id="memoUrl"
-            type="url"
-            value={memoUrl}
-            onChange={(e) => setMemoUrl(e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-            placeholder="https://..."
-          />
+          <label className="block text-sm font-medium mb-2">Deal Links</label>
+          <DealLinksEditor links={dealLinks} onChange={setDealLinks} />
         </div>
 
         <div className="flex gap-3 pt-4">

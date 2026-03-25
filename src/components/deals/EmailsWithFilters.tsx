@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { EmailResponseOverlay } from "@/components/email/EmailResponseOverlay";
 
-type EmailFilter = "all" | "questions" | "interest" | "commitments" | "wires";
+type EmailFilter = "all" | "questions" | "interest" | "commitments" | "wires" | "info";
 
 interface EmailResponse {
   final_response: string;
@@ -34,6 +34,8 @@ interface ParsedEmail {
   has_wire_details: boolean | null;
   processing_status: string | null;
   is_answered: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  entities: any;
   emails_raw: EmailRawData | null;
   lp_contacts: {
     name: string;
@@ -57,6 +59,7 @@ interface GroupedEmail {
   intents: Set<string>;
   totalCommitmentAmount: number | null;
   hasWireDetails: boolean;
+  hasDealLinks: boolean;
   hasUrgent: boolean;
   hasManualReview: boolean;
   // Map question text → source email body_text
@@ -107,6 +110,10 @@ function getIntentDisplay(intent: string): { label: string; color: string } {
         color: "bg-secondary text-muted-foreground",
       };
   }
+}
+
+function hasDealLinksInEntities(parsed: ParsedEmail): boolean {
+  return Array.isArray(parsed.entities?.deal_links) && parsed.entities.deal_links.length > 0;
 }
 
 function stripRePrefix(subject: string | null): string | null {
@@ -165,6 +172,7 @@ export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFilter
 
         // Merge flags
         if (parsed.has_wire_details) existing.hasWireDetails = true;
+        if (hasDealLinksInEntities(parsed)) existing.hasDealLinks = true;
         if (parsed.sentiment === "urgent") existing.hasUrgent = true;
         if (parsed.processing_status === "manual_review") existing.hasManualReview = true;
 
@@ -194,6 +202,7 @@ export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFilter
           intents: new Set(parsed.intent ? [parsed.intent] : []),
           totalCommitmentAmount: parsed.commitment_amount,
           hasWireDetails: parsed.has_wire_details === true,
+          hasDealLinks: hasDealLinksInEntities(parsed),
           hasUrgent: parsed.sentiment === "urgent",
           hasManualReview: parsed.processing_status === "manual_review",
           questionBodies: initialBodies,
@@ -219,6 +228,8 @@ export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFilter
         return group.intents.has("committed") || (group.totalCommitmentAmount != null && group.totalCommitmentAmount > 0);
       case "wires":
         return group.hasWireDetails;
+      case "info":
+        return group.hasDealLinks;
       case "all":
       default:
         return true;
@@ -247,13 +258,21 @@ export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFilter
     });
   };
 
-  const filters: { key: EmailFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "questions", label: "Questions" },
-    { key: "interest", label: "Interest" },
-    { key: "commitments", label: "Commitments" },
-    { key: "wires", label: "Wires" },
-  ];
+  const filters = useMemo(() => {
+    const hasQuestions = groupedEmails.some((g) => g.allQuestions.length > 0);
+    const hasInterest = groupedEmails.some((g) => g.intents.has("interested"));
+    const hasCommitments = groupedEmails.some((g) => g.intents.has("committed") || (g.totalCommitmentAmount != null && g.totalCommitmentAmount > 0));
+    const hasWires = groupedEmails.some((g) => g.hasWireDetails);
+    const hasInfo = groupedEmails.some((g) => g.hasDealLinks);
+
+    const all: { key: EmailFilter; label: string }[] = [{ key: "all", label: "All" }];
+    if (hasQuestions) all.push({ key: "questions", label: "Questions" });
+    if (hasInterest) all.push({ key: "interest", label: "Interest" });
+    if (hasCommitments) all.push({ key: "commitments", label: "Commitments" });
+    if (hasWires) all.push({ key: "wires", label: "Wires" });
+    if (hasInfo) all.push({ key: "info", label: "Info" });
+    return all;
+  }, [groupedEmails]);
 
   return (
     <div className="glass-card rounded-2xl overflow-hidden">
@@ -335,6 +354,11 @@ export function EmailsWithFilters({ emails, dealId, dealName }: EmailsWithFilter
                 {group.hasWireDetails && (
                   <span className="text-xs px-2 py-1 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 font-medium">
                     Wire Details
+                  </span>
+                )}
+                {group.hasDealLinks && (
+                  <span className="text-xs px-2 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium">
+                    Deal Info
                   </span>
                 )}
                 {group.hasUrgent && (

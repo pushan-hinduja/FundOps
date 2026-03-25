@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -78,11 +78,12 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
     return true;
   });
 
-  const filters: { key: LPFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "interested", label: "Interested" },
-    { key: "committed", label: "Committed" },
-  ];
+  const filters = useMemo(() => {
+    const all: { key: LPFilter; label: string }[] = [{ key: "all", label: "All" }];
+    if (eligibleLPs.some((lp) => lp.status === "interested")) all.push({ key: "interested", label: "Interested" });
+    if (eligibleLPs.some((lp) => lp.status === "committed")) all.push({ key: "committed", label: "Committed" });
+    return all;
+  }, [eligibleLPs]);
 
   const handleAllocate = async (lpRelationshipId: string) => {
     if (!allocationAmount || isNaN(parseFloat(allocationAmount))) {

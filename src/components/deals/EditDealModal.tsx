@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, Upload, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
+import { DealLinksEditor, type DealLinkEntry } from "./DealLinksEditor";
 
 interface Deal {
   id: string;
@@ -44,6 +45,8 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [ndaRequired, setNdaRequired] = useState(false);
   const [ndaFile, setNdaFile] = useState<File | null>(null);
+  const [dealLinks, setDealLinks] = useState<DealLinkEntry[]>([]);
+  const [existingLinkIds, setExistingLinkIds] = useState<string[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to section when modal opens
@@ -79,6 +82,26 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
     }
     checkNdaSetting();
   }, [isOpen, supabase]);
+
+  // Load existing deal links
+  useEffect(() => {
+    if (!isOpen) return;
+    async function loadLinks() {
+      try {
+        const res = await fetch(`/api/deals/${deal.id}/links`);
+        if (res.ok) {
+          const data = await res.json();
+          const links = data.links || [];
+          setExistingLinkIds(links.map((l: { id: string }) => l.id));
+          setDealLinks(links.map((l: { link_type: string; url: string }) => ({
+            link_type: l.link_type,
+            url: l.url,
+          })));
+        }
+      } catch {}
+    }
+    loadLinks();
+  }, [isOpen, deal.id]);
 
   const [formData, setFormData] = useState({
     name: deal.name,
@@ -141,7 +164,6 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
         fee_percent: formData.fee_percent ? parseFloat(formData.fee_percent) : null,
         carry_percent: formData.carry_percent ? parseFloat(formData.carry_percent) : null,
         status: formData.status,
-        memo_url: formData.memo_url || null,
         created_date: formData.created_date || null,
         close_date: formData.close_date || null,
         investment_stage: formData.investment_stage || null,
@@ -166,6 +188,24 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
 
       if (!response.ok) {
         throw new Error("Failed to update deal");
+      }
+
+      // Save deal links: delete all existing, re-insert current set
+      for (const linkId of existingLinkIds) {
+        await fetch(`/api/deals/${deal.id}/links`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ linkId }),
+        });
+      }
+      for (const link of dealLinks) {
+        if (link.url.trim()) {
+          await fetch(`/api/deals/${deal.id}/links`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ link_type: link.link_type, url: link.url.trim() }),
+          });
+        }
       }
 
       router.refresh();
@@ -406,16 +446,10 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
               </div>
             </div>
 
-            {/* Memo URL */}
+            {/* Deal Links */}
             <div className="mt-4">
-              <label className="block text-sm font-medium mb-1">Memo URL</label>
-              <input
-                type="url"
-                value={formData.memo_url}
-                onChange={(e) => setFormData({ ...formData, memo_url: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
-                placeholder="https://..."
-              />
+              <label className="block text-sm font-medium mb-2">Deal Links</label>
+              <DealLinksEditor links={dealLinks} onChange={setDealLinks} />
             </div>
           </div>
 

@@ -30,6 +30,7 @@ The fund manager receives emails from LPs (investors) regarding deal opportuniti
 3. Their intent (interested, committed, declined, asking questions, or neutral)
 4. Any commitment amount mentioned
 5. The overall sentiment
+6. Any deal-related links shared (data rooms, deal folders)
 
 ## Known Deals (match against these if applicable)
 ${dealsList}
@@ -68,6 +69,7 @@ Return ONLY this JSON structure, no other text:
   "sentiment": "positive | neutral | negative | urgent",
   "questions": ["array of specific questions the LP is asking"],
   "has_wire_details": boolean,
+  "deal_links": [{"link_type": "data_room" | "deal_folder", "url": "https://..."}],
   "confidence": {
     "lp": 0.0-1.0,
     "deal": 0.0-1.0,
@@ -80,11 +82,11 @@ Return ONLY this JSON structure, no other text:
 ## Rules
 1. If you cannot determine a field with confidence, use null and set low confidence (0.0-0.3)
 2. For amounts, extract the number in USD (convert "500K" to 500000, "$1M" to 1000000)
-3. Intent definitions:
-   - "interested" = positive signal but not explicitly committed
-   - "committed" = explicit commitment to invest
-   - "declined" = explicit pass or not interested
-   - "question" = primarily asking questions without clear commitment
+3. Intent definitions (be precise — the distinction between interested and committed matters for pipeline tracking):
+   - "interested" = LP expresses interest or intent to participate but has NOT given a firm, unconditional commitment. Examples: "We'd like to learn more", "This looks interesting", "We're considering participating", "We'd like to target $500K" (targeting is not committing), "We're looking at a $1M allocation", "Count us in for the next call", "We want to participate" (without specifying final terms or confirming amount), "Please send the docs", "We're leaning toward investing"
+   - "committed" = LP gives a definitive, unconditional commitment to invest a specific amount. The language must be firm and final — not exploratory or conditional. Examples: "We commit $500K", "Please proceed with our $1M allocation", "We're in for $500K — send the sub docs", "Confirming our commitment of $750K", "Wire is on its way for $500K". If the commitment is conditional ("pending board approval", "subject to due diligence", "assuming terms don't change"), classify as "interested" not "committed"
+   - "declined" = explicit pass or not interested. Examples: "We'll pass on this one", "Not a fit for us", "We're going to sit this one out"
+   - "question" = primarily asking questions without clear investment signal. Examples: "What's the minimum check size?", "Can you share the deck?", "What are the terms?"
 4. Match LPs by email first, then by name/firm
 5. Match deals by name, allowing for variations ("Acme Series B" = "Acme deal" = "the Acme opportunity")
 6. If an LP or deal is not in the known lists, return null for matched_*_id but still extract the name/firm
@@ -92,6 +94,11 @@ Return ONLY this JSON structure, no other text:
 8. Extract any direct questions the LP is asking about the deal, investment terms, timeline, or process
 9. Questions should be verbatim or minimally paraphrased for clarity - use empty array if no questions are asked
 10. Set has_wire_details to true if the email contains wire transfer information (bank details, routing numbers, account numbers, wire confirmation, transfer reference numbers, SWIFT codes, etc.)
+11. Extract deal-related links from the email body. Classify each link as:
+   - "data_room" = links to data rooms, document portals, or due diligence platforms (e.g., Dropbox data room, Google Drive folder with deal docs, DocSend, Dealpath, Ansarada, Datasite, Box, etc.)
+   - "deal_folder" = links to shared folders, project workspaces, or deal management portals
+   - Only include links that are clearly related to a deal — ignore email signatures, unsubscribe links, social media links, calendar links, and generic website URLs
+   - Return an empty array if no deal-related links are found
 
 Now analyze the email and return JSON:`;
 }

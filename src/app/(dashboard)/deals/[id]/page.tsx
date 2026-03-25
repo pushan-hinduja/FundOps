@@ -14,6 +14,7 @@ import { InvestorUpdatesCard } from "@/components/deal/InvestorUpdatesCard";
 import { DraftDealSection } from "@/components/deal/DraftDealSection";
 import { DealVotingCard } from "@/components/deal/DealVotingCard";
 import { LPsInvolvedCard } from "@/components/deals/LPsInvolvedCard";
+import { DealLinksButton } from "@/components/deals/DealLinksButton";
 
 export const dynamic = "force-dynamic";
 
@@ -273,6 +274,7 @@ export default async function DealDetailPage({
             )}
           </div>
           <div className="flex items-center gap-1.5">
+            <DealLinksButton dealId={deal.id} dealName={deal.name} />
             {!isDraft && (
               <Link
                 href={`/deals/${deal.id}/draft-notes`}

@@ -160,6 +160,7 @@ export async function parseEmailWithAI(
           lp: parsed.lp,
           deal: parsed.deal,
           reasoning: parsed.reasoning,
+          deal_links: parsed.deal_links.length > 0 ? parsed.deal_links : undefined,
         },
         confidence_scores: parsed.confidence,
         processing_status: processingStatus,
@@ -177,6 +178,34 @@ export async function parseEmailWithAI(
         .from("lp_contacts")
         .update({ last_interaction_at: email.received_at })
         .eq("id", detectedLpId);
+    }
+
+    // Auto-save detected deal links
+    if (parsed.deal.matched_deal_id && parsed.deal_links && parsed.deal_links.length > 0) {
+      for (const link of parsed.deal_links) {
+        // Check if this URL already exists for the deal to avoid duplicates
+        const { data: existing } = await supabase
+          .from("deal_links")
+          .select("id")
+          .eq("deal_id", parsed.deal.matched_deal_id)
+          .eq("url", link.url)
+          .maybeSingle();
+
+        if (!existing) {
+          await supabase.from("deal_links").insert({
+            deal_id: parsed.deal.matched_deal_id,
+            link_type: link.link_type,
+            url: link.url,
+          });
+          console.log(
+            "[AI Parser] Auto-saved deal link:",
+            link.link_type,
+            link.url,
+            "for deal",
+            parsed.deal.matched_deal_id
+          );
+        }
+      }
     }
 
     // Update deal totals if committed

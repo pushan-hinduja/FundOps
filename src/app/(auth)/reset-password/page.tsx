@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { GridPage } from "@/components/shared/GridBackground";
 
 function ResetPasswordForm() {
@@ -47,10 +46,7 @@ function ResetPasswordForm() {
 
   const logo = (
     <div className="text-center mb-6">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-3 hover:opacity-80 transition-opacity"
-      >
+      <div className="inline-flex items-center gap-3">
         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
           <svg
             viewBox="0 0 24 24"
@@ -67,7 +63,7 @@ function ResetPasswordForm() {
           </svg>
         </div>
         <span className="text-2xl font-medium tracking-tight">FundOps</span>
-      </Link>
+      </div>
     </div>
   );
 
@@ -97,10 +93,13 @@ function ResetPasswordForm() {
             your new password.
           </p>
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = "/login";
+            }}
             className="mt-4 w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Access Your Account
+            Sign In
           </button>
         </div>
       </div>

@@ -72,7 +72,21 @@ export function TopNav() {
       }
     };
     getUser();
-  }, [supabase, pathname]);
+
+    // Update nav instantly when profile is saved in settings
+    const handleProfileUpdated = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.name || detail?.email) {
+        setUser((prev) => ({
+          ...prev,
+          name: detail.name || prev?.name,
+          email: detail.email || prev?.email,
+        }));
+      }
+    };
+    window.addEventListener("profile-updated", handleProfileUpdated);
+    return () => window.removeEventListener("profile-updated", handleProfileUpdated);
+  }, [supabase]);
 
   const fetchOrgs = useCallback(async () => {
     setOrgsLoading(true);

@@ -39,6 +39,9 @@ export function ProfileDetails({ name: initialName, email: initialEmail }: Profi
       setSavedName(name.trim());
       setSavedEmail(email.trim());
       setSuccess("Profile updated");
+      window.dispatchEvent(new CustomEvent("profile-updated", {
+        detail: { name: name.trim(), email: email.trim() },
+      }));
     } catch (err: any) {
       setError(err.message || "Failed to update profile");
     } finally {

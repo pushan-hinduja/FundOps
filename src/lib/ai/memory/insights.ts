@@ -21,6 +21,33 @@ export interface InsightsResult {
  * Designed to be called from a cron job.
  */
 export async function generateInsights(ctx: InsightsContext): Promise<InsightsResult> {
+  // Expire stale non-dismissed insights older than 24h.
+  // Relevant conditions get re-detected below; irrelevant ones disappear.
+  // Dismissed insights are kept short-term so their hash prevents re-creation.
+  const expireBefore = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { error: expireErr, count: expiredCount } = await ctx.supabase
+    .from("agent_insights")
+    .delete()
+    .eq("organization_id", ctx.organizationId)
+    .eq("is_dismissed", false)
+    .lt("created_at", expireBefore);
+
+  if (expireErr) {
+    console.error("[Insights] Expire error:", expireErr.message);
+  } else if (expiredCount && expiredCount > 0) {
+    console.log("[Insights] Expired " + expiredCount + " stale insight(s)");
+  }
+
+  // Purge dismissed insights older than 30 days to prevent table bloat.
+  // After 30 days, if the same condition recurs it's worth surfacing again.
+  const purgeBefore = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  await ctx.supabase
+    .from("agent_insights")
+    .delete()
+    .eq("organization_id", ctx.organizationId)
+    .eq("is_dismissed", true)
+    .lt("dismissed_at", purgeBefore);
+
   const breakdown: Record<string, number> = {};
 
   breakdown.silent_lps = await detectSilentLps(ctx);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
-import { Sparkles, HelpCircle, Send, X, Search, Database, Mail, BarChart3, Loader2, MessageSquarePlus, History } from "lucide-react";
+import { Sparkles, HelpCircle, Send, X, Search, Database, Mail, BarChart3, Loader2, MessageSquarePlus, History, ChevronUp } from "lucide-react";
 import { useAISearch } from "./AISearchContext";
 import type { ThinkingStatus } from "./AISearchContext";
 
@@ -238,11 +238,17 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
     dismissInsight,
   } = useAISearch();
   const [query, setQuery] = useState("");
+  const [showInsightsPanel, setShowInsightsPanel] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // On dashboard, always show expanded. On other pages, show bubble
   const showFullBar = isDashboard || isOpen;
+
+  // Collapse insights when chat expands
+  useEffect(() => {
+    if (isExpanded) setShowInsightsPanel(false);
+  }, [isExpanded]);
 
   useEffect(() => {
     if (showFullBar && inputRef.current) {
@@ -426,6 +432,8 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
         onLoadSession={loadSession}
         insights={insights}
         onDismissInsight={dismissInsight}
+        showInsights={showInsightsPanel}
+        setShowInsights={setShowInsightsPanel}
       />
     );
   }
@@ -456,6 +464,71 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
               />
               <div ref={messagesEndRef} />
             </div>
+          </div>
+        )}
+
+        {/* Insights - shown when chat is not expanded and insights exist */}
+        {!isExpanded && insights.length > 0 && (
+          <div className="mb-4">
+            {showInsightsPanel ? (
+              <div className="bg-[#3a3a3f] rounded-2xl p-3 shadow-xl space-y-2">
+                <button
+                  onClick={() => setShowInsightsPanel(false)}
+                  className="flex items-center gap-2 px-1 py-1 text-xs text-white/60 hover:text-white/90 transition-colors w-full"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
+                  <span className="font-medium">{insights.length} insight{insights.length !== 1 ? "s" : ""}</span>
+                  <ChevronUp className="w-3.5 h-3.5 ml-auto rotate-180 transition-transform" />
+                </button>
+                <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                  {insights.map((insight) => (
+                    <button
+                      key={insight.id}
+                      onClick={() => {
+                        handleSuggestionClick("Tell me more about this: " + insight.title);
+                        dismissInsight(insight.id);
+                      }}
+                      className="w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-[#4a4a4f]/50 hover:bg-[#5a5a5f]/50 text-left transition-all duration-200 group"
+                    >
+                      <span className={
+                        "mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 " +
+                        (insight.priority === "urgent" || insight.priority === "high"
+                          ? "bg-orange-400"
+                          : "bg-blue-400")
+                      } />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-white/90">{insight.title}</p>
+                        <p className="text-[11px] text-white/50 mt-0.5 leading-relaxed">{insight.description}</p>
+                      </div>
+                      <X
+                        className="w-3.5 h-3.5 text-white/30 hover:text-white/70 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dismissInsight(insight.id);
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowInsightsPanel(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-[#3a3a3f] rounded-2xl shadow-xl w-full transition-colors hover:bg-[#444449]"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                <span className="text-xs text-white/70">
+                  {insights.length} insight{insights.length !== 1 ? "s" : ""} available
+                </span>
+                <ChevronUp className="w-3.5 h-3.5 text-white/40 ml-auto" />
+              </button>
+            )}
           </div>
         )}
 
@@ -577,6 +650,8 @@ interface DashboardAISearchProps {
   onLoadSession: (sessionId: string) => Promise<void>;
   insights: { id: string; type: string; title: string; description: string; priority: string }[];
   onDismissInsight: (id: string) => void;
+  showInsights: boolean;
+  setShowInsights: (show: boolean) => void;
 }
 
 function DashboardAISearch({
@@ -596,6 +671,8 @@ function DashboardAISearch({
   onLoadSession,
   insights,
   onDismissInsight,
+  showInsights,
+  setShowInsights,
 }: DashboardAISearchProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -680,37 +757,72 @@ function DashboardAISearch({
           </>
         )}
 
-        {/* Insights - shown when not expanded and insights exist */}
+        {/* Insights - shown when chat is not expanded and insights exist */}
         {!isExpanded && insights.length > 0 && (
-          <div className="mb-3 px-2 space-y-1.5">
-            {insights.slice(0, 3).map((insight) => (
-              <button
-                key={insight.id}
-                onClick={() => {
-                  handleSuggestionClick("Tell me more about this: " + insight.title);
-                  onDismissInsight(insight.id);
-                }}
-                className="w-full flex items-start gap-2 px-3 py-2 rounded-xl bg-[#4a4a4f]/50 hover:bg-[#5a5a5f]/50 text-left transition-all duration-200 group"
-              >
-                <span className={
-                  "mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 " +
-                  (insight.priority === "urgent" || insight.priority === "high"
-                    ? "bg-orange-400"
-                    : "bg-blue-400")
-                } />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white/90 truncate">{insight.title}</p>
-                  <p className="text-[10px] text-white/50 truncate">{insight.description}</p>
+          <div className="mb-3">
+            {showInsights ? (
+              <div className="px-2 space-y-2">
+                {/* Collapse header */}
+                <button
+                  onClick={() => setShowInsights(false)}
+                  className="flex items-center gap-2 px-1 py-1 text-xs text-white/60 hover:text-white/90 transition-colors w-full"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
+                  <span className="font-medium">{insights.length} insight{insights.length !== 1 ? "s" : ""}</span>
+                  <ChevronUp className="w-3.5 h-3.5 ml-auto rotate-180 transition-transform" />
+                </button>
+
+                {/* Full insight cards */}
+                <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                  {insights.map((insight) => (
+                    <button
+                      key={insight.id}
+                      onClick={() => {
+                        handleSuggestionClick("Tell me more about this: " + insight.title);
+                        onDismissInsight(insight.id);
+                      }}
+                      className="w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-[#4a4a4f]/50 hover:bg-[#5a5a5f]/50 text-left transition-all duration-200 group"
+                    >
+                      <span className={
+                        "mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 " +
+                        (insight.priority === "urgent" || insight.priority === "high"
+                          ? "bg-orange-400"
+                          : "bg-blue-400")
+                      } />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-white/90">{insight.title}</p>
+                        <p className="text-[11px] text-white/50 mt-0.5 leading-relaxed">{insight.description}</p>
+                      </div>
+                      <X
+                        className="w-3.5 h-3.5 text-white/30 hover:text-white/70 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDismissInsight(insight.id);
+                        }}
+                      />
+                    </button>
+                  ))}
                 </div>
-                <X
-                  className="w-3 h-3 text-white/30 hover:text-white/70 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDismissInsight(insight.id);
-                  }}
-                />
+              </div>
+            ) : (
+              /* Collapsed: summary bar */
+              <button
+                onClick={() => setShowInsights(true)}
+                className="flex items-center gap-2 px-3 py-2 mx-2 rounded-xl bg-[#4a4a4f]/40 hover:bg-[#4a4a4f]/60 transition-colors w-[calc(100%-16px)]"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                <span className="text-xs text-white/70">
+                  {insights.length} insight{insights.length !== 1 ? "s" : ""} available
+                </span>
+                <ChevronUp className="w-3.5 h-3.5 text-white/40 ml-auto" />
               </button>
-            ))}
+            )}
           </div>
         )}
 

@@ -126,6 +126,17 @@ export interface UserOrganization {
   created_at: string;
 }
 
+export interface OrganizationInvite {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: "admin" | "partner" | "ops" | "member";
+  invited_by: string;
+  status: "pending" | "accepted" | "canceled";
+  created_at: string;
+  accepted_at: string | null;
+}
+
 export interface AuthAccount {
   id: string;
   user_id: string;

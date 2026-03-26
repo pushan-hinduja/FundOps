@@ -70,7 +70,19 @@ export async function GET() {
         }));
     }
 
-    return NextResponse.json({ members, currentUserId: userData.id });
+    // Fetch pending invites for this organization
+    const { data: pendingInvites } = await serviceClient
+      .from("organization_invites")
+      .select("id, email, role, created_at")
+      .eq("organization_id", userData.organization_id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+
+    return NextResponse.json({
+      members,
+      pendingInvites: pendingInvites || [],
+      currentUserId: userData.id,
+    });
   } catch (error: any) {
     console.error("[Org Members GET] Error:", error);
     return NextResponse.json(
@@ -92,57 +104,123 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
     const serviceClient = createServiceClient();
 
-    const { data: targetUser, error: findError } = await serviceClient
+    // Check if user already exists in our users table
+    const { data: targetUser } = await serviceClient
       .from("users")
       .select("id, email, name, organization_id")
-      .eq("email", email.toLowerCase().trim())
+      .eq("email", normalizedEmail)
       .single();
 
-    if (findError || !targetUser) {
-      return NextResponse.json(
-        { error: "No user found with that email. They must sign up first." },
-        { status: 404 }
-      );
+    if (targetUser) {
+      // User exists — add them directly (existing flow)
+      const { data: existingMembership } = await serviceClient
+        .from("user_organizations")
+        .select("id")
+        .eq("user_id", targetUser.id)
+        .eq("organization_id", userData.organization_id)
+        .single();
+
+      if (existingMembership) {
+        return NextResponse.json(
+          { error: "User is already in your organization" },
+          { status: 400 }
+        );
+      }
+
+      const { error: junctionError } = await serviceClient
+        .from("user_organizations")
+        .insert({
+          user_id: targetUser.id,
+          organization_id: userData.organization_id,
+          role: "member",
+        });
+
+      if (junctionError) throw junctionError;
+
+      // If user has no active org, set this one as active
+      if (!targetUser.organization_id) {
+        await serviceClient
+          .from("users")
+          .update({ organization_id: userData.organization_id })
+          .eq("id", targetUser.id);
+      }
+
+      return NextResponse.json({
+        member: { id: targetUser.id, name: targetUser.name, email: targetUser.email, role: "member" },
+      });
     }
 
-    const { data: existingMembership } = await serviceClient
-      .from("user_organizations")
+    // User doesn't exist — send invite
+    // Check for existing pending invite
+    const { data: existingInvite } = await serviceClient
+      .from("organization_invites")
       .select("id")
-      .eq("user_id", targetUser.id)
+      .eq("email", normalizedEmail)
       .eq("organization_id", userData.organization_id)
+      .eq("status", "pending")
       .single();
 
-    if (existingMembership) {
+    if (existingInvite) {
       return NextResponse.json(
-        { error: "User is already in your organization" },
+        { error: "An invite has already been sent to this email" },
         { status: 400 }
       );
     }
 
-    // Add to junction table only
-    const { error: junctionError } = await serviceClient
-      .from("user_organizations")
-      .insert({
-        user_id: targetUser.id,
-        organization_id: userData.organization_id,
-        role: "member",
-      });
+    // Get organization name for the invite email template
+    const { data: org } = await serviceClient
+      .from("organizations")
+      .select("name")
+      .eq("id", userData.organization_id)
+      .single();
 
-    if (junctionError) throw junctionError;
+    const orgName = org?.name || "your organization";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const redirectTo = `${appUrl}/auth/callback?next=${encodeURIComponent("/reset-password?invite=true")}`;
 
-    // If user has no active org, set this one as active
-    if (!targetUser.organization_id) {
-      await serviceClient
-        .from("users")
-        .update({ organization_id: userData.organization_id })
-        .eq("id", targetUser.id);
+    // Send invite via Supabase Admin API
+    // The invite email template can use {{ .Data.invited_org_name }} to show the org name
+    const { error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(
+      normalizedEmail,
+      {
+        data: {
+          invited_org_id: userData.organization_id,
+          invited_org_name: orgName,
+        },
+        redirectTo,
+      }
+    );
+
+    if (inviteError) {
+      console.error("[Org Members POST] Invite error:", inviteError);
+      // User may already exist in auth.users but not in our users table
+      if (inviteError.message?.includes("already been registered") || inviteError.message?.includes("already exists")) {
+        return NextResponse.json(
+          { error: "This email is already registered. Ask them to sign in, then you can add them." },
+          { status: 400 }
+        );
+      }
+      throw inviteError;
     }
 
-    return NextResponse.json({
-      member: { id: targetUser.id, name: targetUser.name, email: targetUser.email, role: "member" },
-    });
+    // Create invite record
+    const { data: invite, error: insertError } = await serviceClient
+      .from("organization_invites")
+      .insert({
+        organization_id: userData.organization_id,
+        email: normalizedEmail,
+        role: "member",
+        invited_by: userData.id,
+      })
+      .select("id, email, role, created_at")
+      .single();
+
+    if (insertError) throw insertError;
+
+    return NextResponse.json({ invite });
   } catch (error: any) {
     console.error("[Org Members POST] Error:", error);
     return NextResponse.json(
@@ -212,10 +290,27 @@ export async function DELETE(request: NextRequest) {
   const { userData } = result;
 
   try {
-    const { userId } = await request.json();
+    const { userId, inviteId } = await request.json();
 
+    const serviceClient = createServiceClient();
+
+    // Cancel a pending invite
+    if (inviteId) {
+      const { error: deleteError } = await serviceClient
+        .from("organization_invites")
+        .delete()
+        .eq("id", inviteId)
+        .eq("organization_id", userData.organization_id)
+        .eq("status", "pending");
+
+      if (deleteError) throw deleteError;
+
+      return NextResponse.json({ success: true });
+    }
+
+    // Remove an existing member
     if (!userId || typeof userId !== "string") {
-      return NextResponse.json({ error: "userId is required" }, { status: 400 });
+      return NextResponse.json({ error: "userId or inviteId is required" }, { status: 400 });
     }
 
     if (userId === userData.id) {
@@ -224,8 +319,6 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    const serviceClient = createServiceClient();
 
     const { data: membership } = await serviceClient
       .from("user_organizations")

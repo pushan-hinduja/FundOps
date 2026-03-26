@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GridPage } from "@/components/shared/GridBackground";
 
 function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const isInvite = searchParams.get("invite") === "true";
+
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,11 +38,22 @@ function ResetPasswordForm() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      // Update password
+      const { error: pwError } = await supabase.auth.updateUser({ password });
+      if (pwError) throw pwError;
+
+      // If invite mode, also update name if provided
+      if (isInvite && name.trim()) {
+        await fetch("/api/user/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim() }),
+        });
+      }
+
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || "Failed to reset password");
+      setError(err.message || "Failed to set password");
     } finally {
       setIsLoading(false);
     }
@@ -110,20 +125,32 @@ function ResetPasswordForm() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-medium">Password updated</h2>
+          <h2 className="text-xl font-medium">
+            {isInvite ? "Account setup complete" : "Password updated"}
+          </h2>
           <p className="text-sm text-neutral-500">
-            Your password has been reset successfully. You can now sign in with
-            your new password.
+            {isInvite
+              ? "Your account is ready. Let's get started."
+              : "Your password has been reset successfully. You can now sign in with your new password."}
           </p>
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              window.location.href = "/login";
-            }}
-            className="mt-4 w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Sign In
-          </button>
+          {isInvite ? (
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="mt-4 w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Go to Dashboard
+            </button>
+          ) : (
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/login";
+              }}
+              className="mt-4 w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Sign In
+            </button>
+          )}
         </div>
       </div>
     );
@@ -133,6 +160,15 @@ function ResetPasswordForm() {
     <div className="w-full max-w-sm mx-auto">
       {logo}
 
+      {isInvite && (
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-medium">Welcome to FundOps</h2>
+          <p className="text-sm text-neutral-500 mt-1">
+            Set up your account to get started.
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleReset} className="space-y-4">
         {error && (
           <div className="p-3 rounded-xl text-sm bg-red-50 text-red-600">
@@ -140,9 +176,25 @@ function ResetPasswordForm() {
           </div>
         )}
 
+        {isInvite && (
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium mb-1.5">
+              Your Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              placeholder="John Doe"
+            />
+          </div>
+        )}
+
         <div>
           <label htmlFor="new-password" className="block text-sm font-medium mb-1.5">
-            New Password
+            {isInvite ? "Password" : "New Password"}
           </label>
           <input
             id="new-password"
@@ -177,7 +229,9 @@ function ResetPasswordForm() {
           disabled={isLoading}
           className="w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {isLoading ? "Resetting..." : "Reset Password"}
+          {isLoading
+            ? isInvite ? "Setting up..." : "Resetting..."
+            : isInvite ? "Complete Setup" : "Reset Password"}
         </button>
       </form>
     </div>
@@ -187,7 +241,9 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <GridPage>
-      <ResetPasswordForm />
+      <Suspense fallback={<div className="text-center text-neutral-400">Loading...</div>}>
+        <ResetPasswordForm />
+      </Suspense>
     </GridPage>
   );
 }

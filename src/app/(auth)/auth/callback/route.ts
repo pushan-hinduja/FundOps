@@ -63,6 +63,52 @@ export async function GET(request: Request) {
             }
           }
         }
+
+        // Process any pending organization invites for this email
+        const { data: pendingInvites } = await serviceClient
+          .from("organization_invites")
+          .select("id, organization_id, role")
+          .eq("email", user.email!)
+          .eq("status", "pending");
+
+        if (pendingInvites && pendingInvites.length > 0) {
+          for (const invite of pendingInvites) {
+            // Add user to the invited organization
+            await serviceClient
+              .from("user_organizations")
+              .upsert(
+                {
+                  user_id: user.id,
+                  organization_id: invite.organization_id,
+                  role: invite.role,
+                },
+                { onConflict: "user_id,organization_id" }
+              );
+
+            // Mark invite as accepted
+            await serviceClient
+              .from("organization_invites")
+              .update({
+                status: "accepted",
+                accepted_at: new Date().toISOString(),
+              })
+              .eq("id", invite.id);
+          }
+
+          // If user has no active org, set the first invited org as active
+          const { data: currentUser } = await serviceClient
+            .from("users")
+            .select("organization_id")
+            .eq("id", user.id)
+            .single();
+
+          if (!currentUser?.organization_id) {
+            await serviceClient
+              .from("users")
+              .update({ organization_id: pendingInvites[0].organization_id })
+              .eq("id", user.id);
+          }
+        }
       }
 
       return NextResponse.redirect(`${origin}${next}`);

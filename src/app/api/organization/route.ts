@@ -36,17 +36,42 @@ export async function DELETE() {
   const orgId = userData.organization_id;
 
   try {
+    // Find all users whose active org is the one being deleted
+    const { data: affectedUsers } = await serviceClient
+      .from("users")
+      .select("id")
+      .eq("organization_id", orgId);
+
     // Clear organization_id for all users in this org
     await serviceClient
       .from("users")
       .update({ organization_id: null })
       .eq("organization_id", orgId);
 
-    // Remove all user_organizations entries
+    // Remove all user_organizations entries for this org
     await serviceClient
       .from("user_organizations")
       .delete()
       .eq("organization_id", orgId);
+
+    // Reassign affected users to their next available org (if any)
+    if (affectedUsers) {
+      for (const u of affectedUsers) {
+        const { data: nextMembership } = await serviceClient
+          .from("user_organizations")
+          .select("organization_id")
+          .eq("user_id", u.id)
+          .limit(1)
+          .single();
+
+        if (nextMembership) {
+          await serviceClient
+            .from("users")
+            .update({ organization_id: nextMembership.organization_id })
+            .eq("id", u.id);
+        }
+      }
+    }
 
     // Delete the organization itself
     const { error } = await serviceClient

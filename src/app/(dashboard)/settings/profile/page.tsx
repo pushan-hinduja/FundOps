@@ -1,7 +1,8 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { User } from "lucide-react";
+import { User, AlertTriangle } from "lucide-react";
 import { ProfileDetails } from "@/components/settings/ProfileDetails";
+import { DeleteAccountButton } from "@/components/settings/DeleteAccountButton";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,25 @@ export default async function ProfilePage() {
     .select("name, email")
     .eq("id", user.id)
     .single();
+
+  // Find organizations where this user is the sole member
+  const { data: memberships } = await serviceClient
+    .from("user_organizations")
+    .select("organization_id, organizations(name)")
+    .eq("user_id", user.id);
+
+  const soleOrgNames: string[] = [];
+  if (memberships) {
+    for (const m of memberships) {
+      const { count } = await serviceClient
+        .from("user_organizations")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", m.organization_id);
+      if (count === 1) {
+        soleOrgNames.push((m.organizations as any)?.name ?? "Unknown");
+      }
+    }
+  }
 
   return (
     <div className="px-8 py-6">
@@ -49,6 +69,25 @@ export default async function ProfilePage() {
             name={userData?.name || ""}
             email={userData?.email || user.email || ""}
           />
+        </div>
+
+        {/* Danger Zone */}
+        <div className="glass-card rounded-2xl p-6 border border-destructive/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-destructive/10 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <h2 className="text-lg font-medium">Delete My Account</h2>
+              <p className="text-sm text-muted-foreground">
+                Irreversible actions for your account
+              </p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Deleting your account will permanently remove all your data and cannot be undone.
+          </p>
+          <DeleteAccountButton soleOrgNames={soleOrgNames} />
         </div>
       </div>
     </div>

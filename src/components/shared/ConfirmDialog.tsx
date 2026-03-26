@@ -8,7 +8,7 @@ interface ConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  description: string;
+  description: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   variant?: "default" | "warning" | "danger";
@@ -69,9 +69,9 @@ export function ConfirmDialog({
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line">
+            <div className="text-sm text-muted-foreground mt-2 whitespace-pre-line">
               {description}
-            </p>
+            </div>
           </div>
         </div>
 

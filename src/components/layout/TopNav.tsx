@@ -11,10 +11,12 @@ import {
   Building2,
   ChevronDown,
   Check,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
+import { CreateOrgModal } from "@/components/shared/CreateOrgModal";
 
 interface OrgItem {
   id: string;
@@ -41,6 +43,7 @@ export function TopNav() {
   const [orgsLoading, setOrgsLoading] = useState(true);
   const [showOrgMenu, setShowOrgMenu] = useState(false);
   const [switchingOrg, setSwitchingOrg] = useState(false);
+  const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -146,8 +149,13 @@ export function TopNav() {
       .slice(0, 2);
   };
 
+  const handleOrgCreated = async () => {
+    setShowCreateOrgModal(false);
+    await fetchOrgs();
+    router.refresh();
+  };
+
   const activeOrg = organizations.find((o) => o.isActive);
-  const hasMultipleOrgs = organizations.length > 1;
   const hasOrg = !!activeOrg;
 
   return (
@@ -209,19 +217,12 @@ export function TopNav() {
             <span className="text-muted-foreground/40 text-lg">/</span>
             <div className="relative">
               <button
-                onClick={() => hasMultipleOrgs && setShowOrgMenu(!showOrgMenu)}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                  hasMultipleOrgs
-                    ? "hover:bg-secondary/50 cursor-pointer"
-                    : "cursor-default"
-                )}
+                onClick={() => setShowOrgMenu(!showOrgMenu)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-secondary/50 cursor-pointer"
               >
                 <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
                 <span>{activeOrg!.name}</span>
-                {hasMultipleOrgs && (
-                  <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", showOrgMenu && "rotate-180")} />
-                )}
+                <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", showOrgMenu && "rotate-180")} />
               </button>
 
               {showOrgMenu && (
@@ -248,6 +249,18 @@ export function TopNav() {
                         {org.isActive && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
                       </button>
                     ))}
+                    <div className="border-t border-border/50 mt-1 pt-1">
+                      <button
+                        onClick={() => {
+                          setShowOrgMenu(false);
+                          setShowCreateOrgModal(true);
+                        }}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm w-full transition-colors text-muted-foreground hover:text-foreground hover:bg-white/30 dark:hover:bg-white/10"
+                      >
+                        <Plus className="w-4 h-4 flex-shrink-0" />
+                        <span>Add Organization</span>
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -365,6 +378,11 @@ export function TopNav() {
           )}
         </div>
       </div>
+      <CreateOrgModal
+        isOpen={showCreateOrgModal}
+        onClose={() => setShowCreateOrgModal(false)}
+        onCreated={handleOrgCreated}
+      />
     </header>
   );
 }

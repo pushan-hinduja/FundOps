@@ -181,9 +181,31 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const redirectTo = `${appUrl}/auth/callback?next=${encodeURIComponent("/reset-password?invite=true")}`;
 
+    // If a previous invite was canceled, the auth user may still exist.
+    // Clean it up so we can re-invite.
+    const { data: canceledInvite } = await serviceClient
+      .from("organization_invites")
+      .select("auth_user_id")
+      .eq("email", normalizedEmail)
+      .eq("status", "canceled")
+      .not("auth_user_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (canceledInvite?.auth_user_id) {
+      await serviceClient.auth.admin.deleteUser(canceledInvite.auth_user_id);
+      // Clean up old canceled invite records for this email
+      await serviceClient
+        .from("organization_invites")
+        .delete()
+        .eq("email", normalizedEmail)
+        .eq("status", "canceled");
+    }
+
     // Send invite via Supabase Admin API
     // The invite email template can use {{ .Data.invited_org_name }} to show the org name
-    const { error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(
+    const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(
       normalizedEmail,
       {
         data: {
@@ -196,7 +218,6 @@ export async function POST(request: NextRequest) {
 
     if (inviteError) {
       console.error("[Org Members POST] Invite error:", inviteError);
-      // User may already exist in auth.users but not in our users table
       if (inviteError.message?.includes("already been registered") || inviteError.message?.includes("already exists")) {
         return NextResponse.json(
           { error: "This email is already registered. Ask them to sign in, then you can add them." },
@@ -206,7 +227,8 @@ export async function POST(request: NextRequest) {
       throw inviteError;
     }
 
-    // Create invite record
+    // Create invite record with the auth user ID so we can clean up on cancel
+    const authUserId = inviteData?.user?.id || null;
     const { data: invite, error: insertError } = await serviceClient
       .from("organization_invites")
       .insert({
@@ -214,6 +236,7 @@ export async function POST(request: NextRequest) {
         email: normalizedEmail,
         role: "member",
         invited_by: userData.id,
+        auth_user_id: authUserId,
       })
       .select("id, email, role, created_at")
       .single();
@@ -296,12 +319,38 @@ export async function DELETE(request: NextRequest) {
 
     // Cancel a pending invite
     if (inviteId) {
+      // Fetch the invite to get the auth_user_id before deleting
+      const { data: invite } = await serviceClient
+        .from("organization_invites")
+        .select("auth_user_id, email")
+        .eq("id", inviteId)
+        .eq("organization_id", userData.organization_id)
+        .eq("status", "pending")
+        .single();
+
+      if (!invite) {
+        return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+      }
+
+      // Check if this email has pending invites from OTHER orgs before deleting auth user
+      const { data: otherInvites } = await serviceClient
+        .from("organization_invites")
+        .select("id")
+        .eq("email", invite.email)
+        .eq("status", "pending")
+        .neq("id", inviteId);
+
+      // Delete the auth user Supabase created, but only if no other orgs have
+      // pending invites for this email
+      if (invite.auth_user_id && (!otherInvites || otherInvites.length === 0)) {
+        await serviceClient.auth.admin.deleteUser(invite.auth_user_id);
+      }
+
+      // Delete the invite record
       const { error: deleteError } = await serviceClient
         .from("organization_invites")
         .delete()
-        .eq("id", inviteId)
-        .eq("organization_id", userData.organization_id)
-        .eq("status", "pending");
+        .eq("id", inviteId);
 
       if (deleteError) throw deleteError;
 

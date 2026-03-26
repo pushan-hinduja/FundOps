@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     const orgName = org?.name || "your organization";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const redirectTo = `${appUrl}/auth/callback?next=${encodeURIComponent("/reset-password?invite=true")}`;
+    const redirectTo = `${appUrl}/accept-invite`;
 
     // If a previous invite was canceled, the auth user may still exist.
     // Clean it up so we can re-invite.

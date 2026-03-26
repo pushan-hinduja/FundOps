@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
-import { Sparkles, HelpCircle, Send, X, Search, Database, Mail, BarChart3, Loader2, MessageSquarePlus, History, ChevronUp } from "lucide-react";
+import { Sparkles, HelpCircle, Send, X, Search, Database, Mail, BarChart3, Loader2, MessageSquarePlus, History, ChevronUp, AlertTriangle } from "lucide-react";
 import { useAISearch } from "./AISearchContext";
 import type { ThinkingStatus } from "./AISearchContext";
 
@@ -289,13 +289,12 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Request failed" }));
-        addMessage({ role: "assistant", content: `Error: ${errorData.error || "Request failed"}` });
+        addMessage({ role: "assistant", content: "Something went wrong. Please try again.", isError: true });
         return;
       }
 
       if (!response.body) {
-        addMessage({ role: "assistant", content: "Error: No response stream" });
+        addMessage({ role: "assistant", content: "Something went wrong. Please try again.", isError: true });
         return;
       }
 
@@ -353,7 +352,7 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
                 break;
 
               case "error":
-                addMessage({ role: "assistant", content: `Error: ${data.message}` });
+                addMessage({ role: "assistant", content: "Something went wrong. Please try again.", isError: true });
                 break;
 
               case "session":
@@ -384,7 +383,8 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
       } else {
         addMessage({
           role: "assistant",
-          content: "Sorry, I encountered an error processing your request.",
+          content: "Something went wrong. Please try again.",
+          isError: true,
         });
       }
     } finally {
@@ -574,7 +574,7 @@ export default function AISearchBar({ isDashboard = false }: AISearchBarProps) {
 // ===== Shared Message List Component =====
 
 interface MessageListProps {
-  messages: { role: "user" | "assistant"; content: string }[];
+  messages: { role: "user" | "assistant"; content: string; isError?: boolean }[];
   streamingContent: string;
   thinkingStatus: ThinkingStatus | null;
   isLoading: boolean;
@@ -588,6 +588,13 @@ function MessageList({ messages, streamingContent, thinkingStatus, isLoading }: 
           <div key={index} className="flex justify-end">
             <div className="max-w-[85%] rounded-2xl px-4 py-2.5 bg-[#8a8a8f] text-white shadow-lg">
               <p className="text-sm whitespace-pre-wrap">{renderInlineMarkdown(message.content)}</p>
+            </div>
+          </div>
+        ) : message.isError ? (
+          <div key={index} className="px-1">
+            <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+              <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+              <p className="text-sm text-white/90">{message.content}</p>
             </div>
           </div>
         ) : (
@@ -636,7 +643,7 @@ function MessageList({ messages, streamingContent, thinkingStatus, isLoading }: 
 interface DashboardAISearchProps {
   isExpanded: boolean;
   setIsExpanded: (expanded: boolean) => void;
-  messages: { role: "user" | "assistant"; content: string }[];
+  messages: { role: "user" | "assistant"; content: string; isError?: boolean }[];
   isLoading: boolean;
   streamingContent: string;
   thinkingStatus: ThinkingStatus | null;

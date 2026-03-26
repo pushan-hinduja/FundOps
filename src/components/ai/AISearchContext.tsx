@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 export interface Message {
   role: "user" | "assistant";
   content: string;
+  isError?: boolean;
 }
 
 export interface ThinkingStatus {

@@ -52,7 +52,7 @@ export function LPAllocationCard({
 
   return (
     <>
-      <div className="group relative px-6 py-4 hover:bg-secondary/30 transition-colors">
+      <div className="group relative px-4 sm:px-6 py-4 hover:bg-secondary/30 transition-colors">
         <div className="flex items-start justify-between mb-3">
           <div>
             <Link
@@ -76,7 +76,7 @@ export function LPAllocationCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
           <div>
             <p className="text-xs text-muted-foreground">Reserved</p>
             <p className="font-medium metric-number">
@@ -116,8 +116,8 @@ export function LPAllocationCard({
           </div>
         </div>
 
-        {/* Update Allocation - appears on hover, centered */}
-        <div className="absolute inset-0 flex items-center justify-end pr-6 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Update Allocation - always visible on mobile, hover on desktop */}
+        <div className="sm:absolute sm:inset-0 flex items-center justify-end sm:pr-6 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-3 sm:mt-0">
           <button
             onClick={() => setIsModalOpen(true)}
             className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"

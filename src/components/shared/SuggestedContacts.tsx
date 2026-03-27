@@ -96,7 +96,7 @@ export function SuggestedContacts({
     return (
       <button
         onClick={() => setIsHidden(false)}
-        className="h-full w-12 bg-card border-l border-t border-border flex items-center justify-center hover:bg-secondary transition-colors"
+        className="hidden md:flex h-full w-12 bg-card border-l border-t border-border items-center justify-center hover:bg-secondary transition-colors"
         title="Show Suggested Contacts"
       >
         <svg
@@ -118,7 +118,7 @@ export function SuggestedContacts({
   }
 
   return (
-    <div className="h-full w-80 bg-card border-l border-t border-border flex flex-col">
+    <div className="hidden md:flex h-full w-80 bg-card border-l border-t border-border flex-col">
       <div className="p-5 border-b border-border flex items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-medium">Suggested</h2>

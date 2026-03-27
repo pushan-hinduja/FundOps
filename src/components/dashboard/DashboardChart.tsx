@@ -229,18 +229,18 @@ export default function DashboardChart({
   return (
     <>
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-medium tracking-tight">{organizationName}</h1>
+          <h1 className="text-2xl md:text-3xl font-medium tracking-tight">{organizationName}</h1>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {(["week", "month", "quarter", "year"] as Timeframe[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTimeframe(t)}
-                className={`px-3 py-1.5 text-sm transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 text-sm transition-colors ${
                   timeframe === t
                     ? "font-medium text-foreground border-b-2 border-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -257,7 +257,7 @@ export default function DashboardChart({
       <div className="mb-12">
         <p className="section-label mb-4">Total Capital Committed</p>
 
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
           <span className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-foreground"></span>
             <span className="text-sm">Committed</span>
@@ -275,11 +275,11 @@ export default function DashboardChart({
         {hasData ? (
           <>
             {/* Large Number Display */}
-            <div className="text-center py-8">
-              <h2 className="metric-number text-7xl md:text-8xl tracking-tight">
+            <div className="text-center py-4 sm:py-8">
+              <h2 className="metric-number text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight">
                 {formatFullCurrency(selectedTotals.committed)}
               </h2>
-              <p className="text-muted-foreground mt-2">
+              <p className="text-muted-foreground mt-2 text-sm sm:text-base">
                 Committed in selected {timeframe}
               </p>
             </div>

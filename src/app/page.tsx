@@ -4,7 +4,7 @@ import { GridPage } from "@/components/shared/GridBackground";
 export default function Home() {
   return (
     <GridPage>
-      <div className="text-center px-8 w-full">
+      <div className="text-center px-4 sm:px-8 w-full">
         {/* Logo */}
         <div className="inline-flex items-center gap-3 mb-6">
           <svg viewBox="130 95 140 150" className="w-12 h-12" xmlns="http://www.w3.org/2000/svg">
@@ -58,16 +58,16 @@ export default function Home() {
           AI to automate your deal flow and help manage your fundraising pipeline.
         </p>
 
-        <div className="flex gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
           <Link
             href="/login"
-            className="px-8 py-3.5 bg-black text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+            className="px-8 py-3.5 bg-black text-white rounded-xl font-medium hover:opacity-90 transition-opacity w-full sm:w-auto text-center"
           >
             Sign In
           </Link>
           <Link
             href="/login?mode=signup"
-            className="px-8 py-3.5 bg-neutral-100 text-black rounded-xl font-medium hover:bg-neutral-200 transition-colors"
+            className="px-8 py-3.5 bg-neutral-100 text-black rounded-xl font-medium hover:bg-neutral-200 transition-colors w-full sm:w-auto text-center"
           >
             Get Started
           </Link>

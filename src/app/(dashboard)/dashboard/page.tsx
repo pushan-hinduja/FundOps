@@ -106,7 +106,7 @@ export default async function DashboardPage() {
 
   return (
     <OrgGuard>
-    <div className="px-8 py-6 pb-36">
+    <div className="px-4 md:px-8 py-6 pb-36">
       {/* Chart Section - Client Component */}
       <DashboardChart
         deals={deals}

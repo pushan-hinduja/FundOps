@@ -88,7 +88,7 @@ export function DealDetailClient({
   };
 
   const allocatedCard = (
-    <div className="w-1/2 h-[32rem] glass-card rounded-2xl overflow-hidden flex flex-col">
+    <div className="w-full lg:w-1/2 h-auto lg:h-[32rem] glass-card rounded-2xl overflow-hidden flex flex-col">
       <div className="px-6 py-4 border-b border-border shrink-0">
         <h2 className="text-lg font-medium">
           Allocated ({relationships.length})
@@ -113,9 +113,9 @@ export function DealDetailClient({
   }
 
   return (
-    <div className="flex gap-6 mb-6">
+    <div className="flex flex-col lg:flex-row gap-6 mb-6">
       {/* Close Readiness Dashboard */}
-      <div className="w-1/2 h-[32rem]">
+      <div className="w-full lg:w-1/2 h-auto lg:h-[32rem]">
         <CloseReadinessDashboard metrics={metrics} dealId={dealId} dealStatus={dealStatus} />
       </div>
 

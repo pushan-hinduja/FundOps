@@ -36,7 +36,7 @@ export default async function DealNotesPage({
   if (!deal) return notFound();
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 md:px-8 py-6">
       <div className="mb-8">
         <Link
           href={`/deals/${deal.id}`}
@@ -55,7 +55,7 @@ export default async function DealNotesPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <DraftDealSection dealId={deal.id} />
         <DealVotingCard dealId={deal.id} />
       </div>

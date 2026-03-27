@@ -226,7 +226,7 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
       />
 
       {/* Modal */}
-      <div ref={modalRef} className="relative glass-card text-foreground rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div ref={modalRef} className="relative glass-card text-foreground rounded-none sm:rounded-2xl p-4 sm:p-6 w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-medium">Edit Deal</h2>
           <button
@@ -286,7 +286,7 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
           </div>
 
           {/* Access + Sector + Geography */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Access</label>
               <select
@@ -338,7 +338,7 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Created Date</label>
               <input
@@ -360,7 +360,7 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
           </div>
 
           {/* Investment Info */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Investment Stage</label>
               <input
@@ -395,7 +395,7 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
           </div>
 
           {/* Check Size Range */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Min Check ($)</label>
               <CurrencyInput
@@ -417,7 +417,7 @@ export function EditDealModal({ deal, isOpen, onClose, scrollToSection }: EditDe
           {/* Deal Terms */}
           <div className="border-t border-border pt-4 mt-4">
             <h3 className="text-sm font-medium mb-3">Deal Terms</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Management Fee (%)</label>
                 <input

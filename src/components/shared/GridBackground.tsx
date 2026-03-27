@@ -3,8 +3,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 const TARGET_SIZE = 80;
-const SIDE_CELLS = 4; // 4 full boxes visible on each side
-const VERT_CELLS = 2; // 2 full boxes visible top and bottom
 
 export function GridPage({ children }: { children: ReactNode }) {
   const [gridStyle, setGridStyle] = useState<React.CSSProperties>({});
@@ -14,6 +12,12 @@ export function GridPage({ children }: { children: ReactNode }) {
     function calc() {
       const w = window.innerWidth;
       const h = window.innerHeight;
+
+      // Responsive: on mobile, no side cells — content goes edge to edge
+      // Grid only shows above and below the content
+      const isMobile = w < 640;
+      const sideCells = isMobile ? 0 : w < 768 ? 2 : 4;
+      const vertCells = isMobile ? 1 : 2;
 
       const cols = Math.round(w / TARGET_SIZE);
       const rows = Math.round(h / TARGET_SIZE);
@@ -42,12 +46,17 @@ export function GridPage({ children }: { children: ReactNode }) {
         pointerEvents: "none" as const,
       });
 
+      const contentLeft = sideCells * cellW;
+      const contentWidth = sideCells > 0
+        ? (cols - sideCells * 2) * cellW - 2
+        : w;
+
       setContentStyle({
         position: "absolute",
-        left: SIDE_CELLS * cellW + 1,
-        top: topOffset + VERT_CELLS * cellW + 1,
-        width: (cols - SIDE_CELLS * 2) * cellW - 2,
-        height: (finalRows - VERT_CELLS * 2) * cellW - 2,
+        left: sideCells > 0 ? contentLeft + 1 : 0,
+        top: topOffset + vertCells * cellW + 1,
+        width: contentWidth,
+        height: (finalRows - vertCells * 2) * cellW - 2,
         overflow: "visible" as const,
       });
     }
@@ -62,7 +71,7 @@ export function GridPage({ children }: { children: ReactNode }) {
       <div style={gridStyle} />
 
       <div
-        className="z-10 bg-white flex items-center justify-center"
+        className="z-10 bg-white flex items-center justify-center px-4 sm:px-0"
         style={contentStyle}
       >
         {children}

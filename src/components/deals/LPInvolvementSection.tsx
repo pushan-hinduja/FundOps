@@ -148,62 +148,62 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
           {filteredLPs.map((rel) => (
             <div
               key={rel.id}
-              className="flex items-center justify-between px-6 py-4"
+              className="px-4 sm:px-6 py-4"
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/lps/${rel.lp_contacts?.id}`}
-                    className="font-medium hover:text-muted-foreground transition-colors"
-                  >
-                    {rel.lp_contacts?.name}
-                  </Link>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-lg font-medium ${
-                      rel.status === "allocated"
-                        ? "bg-secondary text-green-600"
-                        : rel.status === "committed"
-                        ? "bg-secondary text-blue-600"
-                        : "bg-secondary text-amber-600"
-                    }`}
-                  >
-                    {rel.status.charAt(0).toUpperCase() + rel.status.slice(1)}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {rel.lp_contacts?.firm || rel.lp_contacts?.email}
-                </p>
-                {/* Special Deal Terms Indicator - only show for allocated LPs with special terms */}
-                {rel.status === "allocated" &&
-                  (rel.lp_contacts?.special_fee_percent !== null ||
-                    rel.lp_contacts?.special_carry_percent !== null) && (
-                    <div className="flex items-center gap-2 mt-2.5">
-                      <span className="text-xs px-2 py-0.5 rounded-md bg-white dark:bg-background text-muted-foreground border border-border">
-                        Special Terms:{" "}
-                        {rel.lp_contacts?.special_fee_percent !== null && (
-                          <span>Fee {rel.lp_contacts?.special_fee_percent}%</span>
-                        )}
-                        {rel.lp_contacts?.special_fee_percent !== null && rel.lp_contacts?.special_carry_percent !== null && ", "}
-                        {rel.lp_contacts?.special_carry_percent !== null && (
-                          <span className="ml-1">Carry {rel.lp_contacts?.special_carry_percent}%</span>
-                        )}
-                      </span>
-                    </div>
-                  )}
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="font-medium metric-number text-lg">
-                    {rel.status === "allocated"
-                      ? formatCurrency(rel.allocated_amount)
-                      : rel.committed_amount
-                      ? formatCurrency(rel.committed_amount)
-                      : "-"}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href={`/lps/${rel.lp_contacts?.id}`}
+                      className="font-medium hover:text-muted-foreground transition-colors"
+                    >
+                      {rel.lp_contacts?.name}
+                    </Link>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-lg font-medium ${
+                        rel.status === "allocated"
+                          ? "bg-secondary text-green-600"
+                          : rel.status === "committed"
+                          ? "bg-secondary text-blue-600"
+                          : "bg-secondary text-amber-600"
+                      }`}
+                    >
+                      {rel.status.charAt(0).toUpperCase() + rel.status.slice(1)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {rel.lp_contacts?.firm || rel.lp_contacts?.email}
                   </p>
-                  {rel.status !== "allocated" && rel.committed_amount && (
-                    <p className="text-xs text-muted-foreground">potential</p>
-                  )}
+                  {/* Special Deal Terms Indicator - only show for allocated LPs with special terms */}
+                  {rel.status === "allocated" &&
+                    (rel.lp_contacts?.special_fee_percent !== null ||
+                      rel.lp_contacts?.special_carry_percent !== null) && (
+                      <div className="flex items-center gap-2 mt-2.5">
+                        <span className="text-xs px-2 py-0.5 rounded-md bg-white dark:bg-background text-muted-foreground border border-border">
+                          Special Terms:{" "}
+                          {rel.lp_contacts?.special_fee_percent !== null && (
+                            <span>Fee {rel.lp_contacts?.special_fee_percent}%</span>
+                          )}
+                          {rel.lp_contacts?.special_fee_percent !== null && rel.lp_contacts?.special_carry_percent !== null && ", "}
+                          {rel.lp_contacts?.special_carry_percent !== null && (
+                            <span className="ml-1">Carry {rel.lp_contacts?.special_carry_percent}%</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="font-medium metric-number text-lg">
+                      {rel.status === "allocated"
+                        ? formatCurrency(rel.allocated_amount)
+                        : rel.committed_amount
+                        ? formatCurrency(rel.committed_amount)
+                        : "-"}
+                    </p>
+                    {rel.status !== "allocated" && rel.committed_amount && (
+                      <p className="text-xs text-muted-foreground">potential</p>
+                    )}
+                  </div>
                   {rel.latest_response_at && (
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(rel.latest_response_at), {
@@ -213,11 +213,11 @@ export function LPInvolvementSection({ lpRelationships, dealId, dealTerms }: LPI
                   )}
                 </div>
 
-                {/* Allocate Button */}
+                {/* Allocate Button - right aligned */}
                 {rel.status !== "allocated" && (
-                  <div>
+                  <div className="shrink-0 self-center">
                     {allocatingLpId === rel.id ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
                         <CurrencyInput
                           placeholder="Amount ($)"
                           value={allocationAmount}

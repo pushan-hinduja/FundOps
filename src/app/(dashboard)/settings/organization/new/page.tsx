@@ -59,7 +59,7 @@ export default function NewOrganizationPage() {
   };
 
   return (
-    <div className="px-8 py-6 max-w-lg">
+    <div className="px-4 md:px-8 py-6 max-w-lg">
       <div className="mb-6">
         <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground">
           ← Back to Settings

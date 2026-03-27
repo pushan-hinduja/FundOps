@@ -24,7 +24,7 @@ export default async function DealsPage() {
 
   if (!userData?.organization_id) {
     return (
-      <div className="px-8 py-6">
+      <div className="px-4 md:px-8 py-6">
         <h1 className="text-3xl font-medium tracking-tight mb-4">Deals</h1>
         <div className="glass-card p-8 rounded-2xl text-center">
           <p className="text-muted-foreground">
@@ -148,14 +148,14 @@ export default async function DealsPage() {
 
   return (
     <OrgGuard>
-    <div className="px-8 py-6">
+    <div className="px-4 md:px-8 py-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-medium tracking-tight">Deals</h1>
           <p className="text-muted-foreground mt-1">Manage your fundraising deals</p>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
+        <div className="flex flex-col sm:items-end gap-1.5">
           {lastSyncAt && (
             <p className="text-xs text-muted-foreground">
               Last updated {lastSyncAt}

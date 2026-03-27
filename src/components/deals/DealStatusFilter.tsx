@@ -20,7 +20,7 @@ export function DealStatusFilter({ counts, onFilterChange }: DealStatusFilterPro
   const [active, setActive] = useState("all");
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       {STATUSES.map(({ value, label }) => {
         const count = value === "all" ? counts.all : (counts[value] || 0);
         if (value !== "all" && value !== "archived" && count === 0) return null;

@@ -109,7 +109,7 @@ export default function NewLPPage() {
   };
 
   return (
-    <div className="px-8 py-6 max-w-2xl">
+    <div className="px-4 md:px-8 py-6 max-w-2xl">
       <div className="mb-8">
         <Link
           href="/lps"
@@ -128,7 +128,7 @@ export default function NewLPPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 glass-card rounded-2xl p-8"
+        className="space-y-6 glass-card rounded-2xl p-4 sm:p-8"
       >
         {error && (
           <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm">
@@ -141,7 +141,7 @@ export default function NewLPPage() {
           <h2 className="text-sm font-medium text-muted-foreground mb-4">
             Basic Information
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-2">
                 Name *
@@ -173,7 +173,7 @@ export default function NewLPPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div>
               <label htmlFor="firm" className="block text-sm font-medium mb-2">
                 Firm
@@ -203,7 +203,7 @@ export default function NewLPPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div>
               <label htmlFor="phone" className="block text-sm font-medium mb-2">
                 Phone
@@ -226,7 +226,7 @@ export default function NewLPPage() {
           <h2 className="text-sm font-medium text-muted-foreground mb-4">
             Investor Profile
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label
                 htmlFor="investorType"
@@ -278,7 +278,7 @@ export default function NewLPPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div>
               <label
                 htmlFor="taxStatus"

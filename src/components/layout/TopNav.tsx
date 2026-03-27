@@ -12,6 +12,8 @@ import {
   ChevronDown,
   Check,
   Plus,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
@@ -155,163 +157,148 @@ export function TopNav() {
     router.refresh();
   };
 
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setShowMobileMenu(false);
+  }, [pathname]);
+
   const activeOrg = organizations.find((o) => o.isActive);
   const hasOrg = !!activeOrg;
 
   return (
-    <header className="h-20 bg-white px-8 flex items-center relative">
-      {/* Left: Logo + Org Switcher */}
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <svg viewBox="130 95 140 150" className="w-7 h-7" xmlns="http://www.w3.org/2000/svg">
-            <line x1="200" y1="170" x2="200" y2="85" stroke="#111111" strokeWidth="4.5" opacity="0.85" transform="rotate(0, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="90" stroke="#111111" strokeWidth="4.5" opacity="0.76" transform="rotate(45, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="88" stroke="#111111" strokeWidth="4.5" opacity="0.8" transform="rotate(90, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="92" stroke="#111111" strokeWidth="4.5" opacity="0.72" transform="rotate(150, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="86" stroke="#111111" strokeWidth="4.5" opacity="0.85" transform="rotate(200, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="90" stroke="#111111" strokeWidth="4.5" opacity="0.76" transform="rotate(270, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="88" stroke="#111111" strokeWidth="4.5" opacity="0.78" transform="rotate(315, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="108" stroke="#111111" strokeWidth="3.25" opacity="0.62" transform="rotate(20, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="112" stroke="#111111" strokeWidth="3.25" opacity="0.56" transform="rotate(65, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="105" stroke="#111111" strokeWidth="3.25" opacity="0.66" transform="rotate(110, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="115" stroke="#111111" strokeWidth="3.25" opacity="0.52" transform="rotate(130, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="110" stroke="#111111" strokeWidth="3.25" opacity="0.58" transform="rotate(175, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="108" stroke="#111111" strokeWidth="3.25" opacity="0.62" transform="rotate(225, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="112" stroke="#111111" strokeWidth="3.25" opacity="0.54" transform="rotate(250, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="106" stroke="#111111" strokeWidth="3.25" opacity="0.64" transform="rotate(295, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="110" stroke="#111111" strokeWidth="3.25" opacity="0.56" transform="rotate(340, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="128" stroke="#111111" strokeWidth="2.25" opacity="0.46" transform="rotate(10, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="132" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(35, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="130" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(55, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="126" stroke="#111111" strokeWidth="2.25" opacity="0.48" transform="rotate(78, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="134" stroke="#111111" strokeWidth="2.25" opacity="0.38" transform="rotate(100, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="128" stroke="#111111" strokeWidth="2.25" opacity="0.44" transform="rotate(120, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="132" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(142, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="130" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(162, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="126" stroke="#111111" strokeWidth="2.25" opacity="0.46" transform="rotate(188, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="134" stroke="#111111" strokeWidth="2.25" opacity="0.38" transform="rotate(212, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="128" stroke="#111111" strokeWidth="2.25" opacity="0.44" transform="rotate(238, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="130" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(258, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="132" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(282, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="126" stroke="#111111" strokeWidth="2.25" opacity="0.46" transform="rotate(305, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="134" stroke="#111111" strokeWidth="2.25" opacity="0.38" transform="rotate(328, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="130" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(350, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="88" stroke="#1E3A5F" strokeWidth="5.5" opacity="0.95" transform="rotate(30, 200, 170)"/>
-            <line x1="200" y1="170" x2="200" y2="92" stroke="#1E3A5F" strokeWidth="5.5" opacity="0.85" transform="rotate(240, 200, 170)"/>
-            <circle cx="200" cy="170" r="13" fill="#111111"/>
-            <circle cx="200" cy="170" r="5.25" fill="#FFFFFF"/>
-          </svg>
-          <span className="text-lg font-medium tracking-tight">FundOps</span>
-        </Link>
+    <>
+      <header className="h-16 md:h-20 bg-white px-4 md:px-8 flex items-center relative">
+        {/* Left: Logo + Org Switcher */}
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
+            <svg viewBox="130 95 140 150" className="w-7 h-7" xmlns="http://www.w3.org/2000/svg">
+              <line x1="200" y1="170" x2="200" y2="85" stroke="#111111" strokeWidth="4.5" opacity="0.85" transform="rotate(0, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="90" stroke="#111111" strokeWidth="4.5" opacity="0.76" transform="rotate(45, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="88" stroke="#111111" strokeWidth="4.5" opacity="0.8" transform="rotate(90, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="92" stroke="#111111" strokeWidth="4.5" opacity="0.72" transform="rotate(150, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="86" stroke="#111111" strokeWidth="4.5" opacity="0.85" transform="rotate(200, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="90" stroke="#111111" strokeWidth="4.5" opacity="0.76" transform="rotate(270, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="88" stroke="#111111" strokeWidth="4.5" opacity="0.78" transform="rotate(315, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="108" stroke="#111111" strokeWidth="3.25" opacity="0.62" transform="rotate(20, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="112" stroke="#111111" strokeWidth="3.25" opacity="0.56" transform="rotate(65, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="105" stroke="#111111" strokeWidth="3.25" opacity="0.66" transform="rotate(110, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="115" stroke="#111111" strokeWidth="3.25" opacity="0.52" transform="rotate(130, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="110" stroke="#111111" strokeWidth="3.25" opacity="0.58" transform="rotate(175, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="108" stroke="#111111" strokeWidth="3.25" opacity="0.62" transform="rotate(225, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="112" stroke="#111111" strokeWidth="3.25" opacity="0.54" transform="rotate(250, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="106" stroke="#111111" strokeWidth="3.25" opacity="0.64" transform="rotate(295, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="110" stroke="#111111" strokeWidth="3.25" opacity="0.56" transform="rotate(340, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="128" stroke="#111111" strokeWidth="2.25" opacity="0.46" transform="rotate(10, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="132" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(35, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="130" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(55, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="126" stroke="#111111" strokeWidth="2.25" opacity="0.48" transform="rotate(78, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="134" stroke="#111111" strokeWidth="2.25" opacity="0.38" transform="rotate(100, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="128" stroke="#111111" strokeWidth="2.25" opacity="0.44" transform="rotate(120, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="132" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(142, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="130" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(162, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="126" stroke="#111111" strokeWidth="2.25" opacity="0.46" transform="rotate(188, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="134" stroke="#111111" strokeWidth="2.25" opacity="0.38" transform="rotate(212, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="128" stroke="#111111" strokeWidth="2.25" opacity="0.44" transform="rotate(238, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="130" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(258, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="132" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(282, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="126" stroke="#111111" strokeWidth="2.25" opacity="0.46" transform="rotate(305, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="134" stroke="#111111" strokeWidth="2.25" opacity="0.38" transform="rotate(328, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="130" stroke="#111111" strokeWidth="2.25" opacity="0.42" transform="rotate(350, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="88" stroke="#1E3A5F" strokeWidth="5.5" opacity="0.95" transform="rotate(30, 200, 170)"/>
+              <line x1="200" y1="170" x2="200" y2="92" stroke="#1E3A5F" strokeWidth="5.5" opacity="0.85" transform="rotate(240, 200, 170)"/>
+              <circle cx="200" cy="170" r="13" fill="#111111"/>
+              <circle cx="200" cy="170" r="5.25" fill="#FFFFFF"/>
+            </svg>
+            <span className="text-lg font-medium tracking-tight hidden sm:inline">FundOps</span>
+          </Link>
 
-        {orgsLoading ? (
-          <>
-            <span className="text-muted-foreground/40 text-lg">/</span>
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5">
-              <div className="w-3.5 h-3.5 rounded bg-muted animate-pulse" />
-              <div className="w-28 h-4 rounded bg-muted animate-pulse" />
-            </div>
-          </>
-        ) : hasOrg ? (
-          <>
-            <span className="text-muted-foreground/40 text-lg">/</span>
-            <div className="relative">
-              <button
-                onClick={() => setShowOrgMenu(!showOrgMenu)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-secondary/50 cursor-pointer"
-              >
-                <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>{activeOrg!.name}</span>
-                <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", showOrgMenu && "rotate-180")} />
-              </button>
-
-              {showOrgMenu && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowOrgMenu(false)}
-                  />
-                  <div className="absolute left-0 top-full mt-2 w-56 glass-menu rounded-xl py-1 z-50">
-                    {organizations.map((org) => (
-                      <button
-                        key={org.id}
-                        onClick={() => !org.isActive && handleSwitchOrg(org.id)}
-                        disabled={switchingOrg}
-                        className={cn(
-                          "flex items-center gap-2.5 px-4 py-2.5 text-sm w-full transition-colors",
-                          org.isActive
-                            ? "text-foreground font-medium"
-                            : "text-foreground hover:bg-white/30 dark:hover:bg-white/10"
-                        )}
-                      >
-                        <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <span className="truncate flex-1 text-left">{org.name}</span>
-                        {org.isActive && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
-                      </button>
-                    ))}
-                    <div className="border-t border-border/50 mt-1 pt-1">
-                      <button
-                        onClick={() => {
-                          setShowOrgMenu(false);
-                          setShowCreateOrgModal(true);
-                        }}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm w-full transition-colors text-muted-foreground hover:text-foreground hover:bg-white/30 dark:hover:bg-white/10"
-                      >
-                        <Plus className="w-4 h-4 flex-shrink-0" />
-                        <span>Add Organization</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        ) : null}
-      </div>
-
-      {/* Center: Navigation - only shown when user has an org, skeleton while loading */}
-      {(hasOrg || orgsLoading) && (
-        <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-          {orgsLoading ? (
-            navItems.map((item) => (
-              <div key={item.href} className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
-            ))
-          ) : (
-          navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <div key={item.href} className="relative group">
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200",
-                    isActive
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "text-muted-foreground border-border hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                  )}
-                >
-                  <item.icon className="w-[18px] h-[18px]" />
-                </Link>
-                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 glass-menu rounded-lg px-3 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
-                  <span className="text-xs font-medium">{item.label}</span>
+          {/* Org Switcher - hidden on mobile (shown in mobile menu) */}
+          <div className="hidden md:flex items-center gap-3 min-w-0">
+            {orgsLoading ? (
+              <>
+                <span className="text-muted-foreground/40 text-lg">/</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5">
+                  <div className="w-3.5 h-3.5 rounded bg-muted animate-pulse" />
+                  <div className="w-28 h-4 rounded bg-muted animate-pulse" />
                 </div>
-              </div>
-            );
-          })
-          )}
-        </nav>
-      )}
+              </>
+            ) : hasOrg ? (
+              <>
+                <span className="text-muted-foreground/40 text-lg">/</span>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowOrgMenu(!showOrgMenu)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-secondary/50 cursor-pointer"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="truncate max-w-[160px]">{activeOrg!.name}</span>
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", showOrgMenu && "rotate-180")} />
+                  </button>
 
-      {/* Right: Actions and Profile */}
-      <div className="flex items-center gap-3 ml-auto">
-        {/* Action Icons */}
-        <div className="flex items-center gap-2">
-          {orgsLoading ? (
-            <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
-          ) : (
-            [
-              { href: "/settings", icon: Settings, label: "Settings" },
-            ].map((item) => {
+                  {showOrgMenu && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowOrgMenu(false)}
+                      />
+                      <div className="absolute left-0 top-full mt-2 w-56 glass-menu rounded-xl py-1 z-50">
+                        {organizations.map((org) => (
+                          <button
+                            key={org.id}
+                            onClick={() => !org.isActive && handleSwitchOrg(org.id)}
+                            disabled={switchingOrg}
+                            className={cn(
+                              "flex items-center gap-2.5 px-4 py-2.5 text-sm w-full transition-colors",
+                              org.isActive
+                                ? "text-foreground font-medium"
+                                : "text-foreground hover:bg-white/30 dark:hover:bg-white/10"
+                            )}
+                          >
+                            <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="truncate flex-1 text-left">{org.name}</span>
+                            {org.isActive && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                          </button>
+                        ))}
+                        <div className="border-t border-border/50 mt-1 pt-1">
+                          <button
+                            onClick={() => {
+                              setShowOrgMenu(false);
+                              setShowCreateOrgModal(true);
+                            }}
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm w-full transition-colors text-muted-foreground hover:text-foreground hover:bg-white/30 dark:hover:bg-white/10"
+                          >
+                            <Plus className="w-4 h-4 flex-shrink-0" />
+                            <span>Add Organization</span>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {/* Mobile: show org name only */}
+          {hasOrg && !orgsLoading && (
+            <div className="flex md:hidden items-center gap-1.5 min-w-0">
+              <span className="text-muted-foreground/40 text-lg shrink-0">/</span>
+              <span className="text-sm font-medium truncate">{activeOrg!.name}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Center: Navigation - desktop only */}
+        {(hasOrg || orgsLoading) && (
+          <nav className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-2">
+            {orgsLoading ? (
+              navItems.map((item) => (
+                <div key={item.href} className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
+              ))
+            ) : (
+            navItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <div key={item.href} className="relative group">
@@ -332,57 +319,223 @@ export function TopNav() {
                 </div>
               );
             })
-          )}
-        </div>
+            )}
+          </nav>
+        )}
 
-        {/* Profile */}
-        <div className="relative">
-          {userLoading ? (
-            <div className="flex items-center pl-3 pr-2 py-1.5">
-              <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-xl hover:bg-secondary/50 transition-colors"
-              >
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-xs font-medium text-white">
-                  {getInitials(user?.name)}
-                </div>
-                <div className="text-left hidden sm:block">
-                  <div className="text-sm font-medium leading-tight">{user?.name || "User"}</div>
-                  <div className="text-xs text-muted-foreground leading-tight">{user?.email || ""}</div>
-                </div>
-              </button>
-
-              {/* Dropdown Menu */}
-              {showProfileMenu && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowProfileMenu(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-2 w-48 glass-menu rounded-xl py-1 z-50">
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-white/30 dark:hover:bg-white/10 transition-colors w-full"
+        {/* Right: Actions and Profile - desktop */}
+        <div className="hidden md:flex items-center gap-3 ml-auto">
+          {/* Action Icons */}
+          <div className="flex items-center gap-2">
+            {orgsLoading ? (
+              <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
+            ) : (
+              [
+                { href: "/settings", icon: Settings, label: "Settings" },
+              ].map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <div key={item.href} className="relative group">
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200",
+                        isActive
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "text-muted-foreground border-border hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                      )}
                     >
-                      <LogOut className="w-4 h-4" />
-                      Sign Out
-                    </button>
+                      <item.icon className="w-[18px] h-[18px]" />
+                    </Link>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 glass-menu rounded-lg px-3 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </div>
                   </div>
-                </>
-              )}
-            </>
-          )}
+                );
+              })
+            )}
+          </div>
+
+          {/* Profile */}
+          <div className="relative">
+            {userLoading ? (
+              <div className="flex items-center pl-3 pr-2 py-1.5">
+                <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-xl hover:bg-secondary/50 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-xs font-medium text-white">
+                    {getInitials(user?.name)}
+                  </div>
+                  <div className="text-left hidden sm:block">
+                    <div className="text-sm font-medium leading-tight">{user?.name || "User"}</div>
+                    <div className="text-xs text-muted-foreground leading-tight">{user?.email || ""}</div>
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showProfileMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowProfileMenu(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-48 glass-menu rounded-xl py-1 z-50">
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-white/30 dark:hover:bg-white/10 transition-colors w-full"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* Mobile: Hamburger button */}
+        <button
+          className="md:hidden ml-auto flex items-center justify-center w-10 h-10 rounded-xl border border-border transition-colors hover:bg-secondary/50"
+          onClick={() => setShowMobileMenu(true)}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileMenu(false)} />
+          <div className="absolute right-0 top-0 h-full w-72 bg-white dark:bg-background shadow-xl flex flex-col animate-in slide-in-from-right duration-200">
+            {/* Mobile Menu Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <span className="font-medium">Menu</span>
+              <button
+                onClick={() => setShowMobileMenu(false)}
+                className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* User Info */}
+            {!userLoading && user && (
+              <div className="px-4 py-3 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-xs font-medium text-white shrink-0">
+                    {getInitials(user?.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{user?.name || "User"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email || ""}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Org Switcher (mobile) */}
+            {hasOrg && (
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-xs text-muted-foreground mb-2">Organization</p>
+                {organizations.map((org) => (
+                  <button
+                    key={org.id}
+                    onClick={() => {
+                      if (!org.isActive) handleSwitchOrg(org.id);
+                    }}
+                    disabled={switchingOrg}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 text-sm w-full rounded-lg transition-colors mb-1",
+                      org.isActive
+                        ? "bg-secondary text-foreground font-medium"
+                        : "text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <span className="truncate flex-1 text-left">{org.name}</span>
+                    {org.isActive && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    setShowCreateOrgModal(true);
+                  }}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm w-full rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+                >
+                  <Plus className="w-4 h-4 flex-shrink-0" />
+                  <span>Add Organization</span>
+                </button>
+              </div>
+            )}
+
+            {/* Navigation Links */}
+            {(hasOrg || orgsLoading) && (
+              <nav className="px-4 py-3 space-y-1 flex-1">
+                {navItems.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setShowMobileMenu(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground hover:bg-secondary/50"
+                      )}
+                    >
+                      <item.icon className="w-[18px] h-[18px]" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+                <Link
+                  href="/settings"
+                  onClick={() => setShowMobileMenu(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                    pathname.startsWith("/settings")
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground hover:bg-secondary/50"
+                  )}
+                >
+                  <Settings className="w-[18px] h-[18px]" />
+                  Settings
+                </Link>
+              </nav>
+            )}
+
+            {/* Sign Out */}
+            <div className="p-4 border-t border-border mt-auto">
+              <button
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  handleSignOut();
+                }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary/50 transition-colors w-full"
+              >
+                <LogOut className="w-[18px] h-[18px]" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CreateOrgModal
         isOpen={showCreateOrgModal}
         onClose={() => setShowCreateOrgModal(false)}
         onCreated={handleOrgCreated}
       />
-    </header>
+    </>
   );
 }

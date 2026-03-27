@@ -444,6 +444,20 @@
     }
   }
 
+  /* Slide in from right (mobile menu) */
+  .slide-in-from-right {
+    animation-name: slideInFromRight;
+  }
+
+  @keyframes slideInFromRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
   /* Zoom in */
   .zoom-in-95 {
     animation-name: zoomIn95;

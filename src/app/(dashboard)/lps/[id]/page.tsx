@@ -120,7 +120,7 @@ export default async function LPDetailPage({
   };
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 md:px-8 py-6">
       {/* Back link */}
       <Link
         href="/lps"
@@ -131,10 +131,10 @@ export default async function LPDetailPage({
       </Link>
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-medium tracking-tight">{lp.name}</h1>
-          <div className="flex items-center gap-4 mt-2 text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-medium tracking-tight">{lp.name}</h1>
+          <div className="flex items-center gap-4 mt-2 text-muted-foreground flex-wrap">
             {lp.firm && (
               <span className="flex items-center gap-1.5">
                 <Building2 className="w-4 h-4" />
@@ -163,7 +163,7 @@ export default async function LPDetailPage({
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-card rounded-2xl p-6 border border-border">
           <p className="section-label mb-2">Total Commitments</p>
           <p className="metric-number text-3xl text-[hsl(var(--success))]">
@@ -194,9 +194,9 @@ export default async function LPDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content - Profile, Deal History */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           <LPDetailClient
             lp={lp}
             dealRelationships={dealRelationships}

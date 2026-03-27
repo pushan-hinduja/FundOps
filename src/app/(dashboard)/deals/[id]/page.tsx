@@ -219,16 +219,16 @@ export default async function DealDetailPage({
   };
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 md:px-8 py-6">
       {/* Header */}
       <div className="mb-8">
         <Link href="/deals" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back to Deals
         </Link>
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
           <div>
-            <h1 className="text-3xl font-medium tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-medium tracking-tight">
               {deal.name}
               {deal.company_name && (
                 <span className="text-muted-foreground"> ({deal.company_name})</span>
@@ -273,7 +273,7 @@ export default async function DealDetailPage({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <DealLinksButton dealId={deal.id} dealName={deal.name} />
             {!isDraft && (
               <Link
@@ -318,7 +318,7 @@ export default async function DealDetailPage({
       {/* Draft Deal Layout */}
       {isDraft ? (
         <>
-          <div className="grid grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <DraftDealSection dealId={deal.id} />
             <DealVotingCard dealId={deal.id} />
           </div>
@@ -326,7 +326,7 @@ export default async function DealDetailPage({
       ) : (
         <>
           {/* Deal Stats */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div className="bg-card rounded-2xl p-6 border border-border">
               <p className="section-label mb-2">Target Raise</p>
               <p className="metric-number text-3xl">{formatCurrency(deal.target_raise)}</p>
@@ -374,8 +374,8 @@ export default async function DealDetailPage({
       )}
 
       {deal.status === "closed" && (
-        <div className="flex gap-6 mb-6">
-          <div className="w-1/2 h-[32rem]">
+        <div className="flex flex-col lg:flex-row gap-6 mb-6">
+          <div className="w-full lg:w-1/2 h-auto lg:h-[32rem]">
             <InvestorUpdatesCard
               dealId={deal.id}
               dealName={deal.name}
@@ -421,9 +421,9 @@ export default async function DealDetailPage({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LP Involvement */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           <LPInvolvementSection
             lpRelationships={lpRelationships || []}
             dealId={deal.id}

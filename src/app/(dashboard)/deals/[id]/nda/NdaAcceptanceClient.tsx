@@ -49,7 +49,7 @@ export function NdaAcceptanceClient({
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
-      <div className="border-b border-border px-8 py-4 flex items-center justify-between shrink-0">
+      <div className="border-b border-border px-4 md:px-8 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
             <ShieldCheck className="w-5 h-5 text-primary" />
@@ -66,7 +66,7 @@ export function NdaAcceptanceClient({
 
       {/* Document Viewer (only if document exists) */}
       {documentUrl && (
-        <div className="flex-1 overflow-hidden px-8 py-6">
+        <div className="flex-1 overflow-hidden px-4 md:px-8 py-6">
           <div className="h-full rounded-2xl border border-border overflow-hidden bg-white">
             <iframe
               src={`${documentUrl}#toolbar=0`}
@@ -78,7 +78,7 @@ export function NdaAcceptanceClient({
       )}
 
       {/* Acceptance Section */}
-      <div className={`${documentUrl ? "border-t border-border" : "flex-1 flex items-center"} px-8 py-5 shrink-0`}>
+      <div className={`${documentUrl ? "border-t border-border" : "flex-1 flex items-center"} px-4 md:px-8 py-5 shrink-0`}>
         <div className="max-w-3xl mx-auto w-full">
           {error && (
             <div className="bg-destructive/10 text-destructive text-sm px-4 py-2.5 rounded-lg mb-4">

@@ -185,9 +185,9 @@ export function DashboardMetricCards({
 
       {/* Active Deals Modal */}
       {openModal === "deals" && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpenModal(null)} />
-          <div className="relative glass-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative glass-card rounded-none sm:rounded-2xl p-4 sm:p-6 w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-medium">Active Deals</h2>
               <button onClick={() => setOpenModal(null)} className="p-2 hover:bg-secondary rounded-lg transition-colors">
@@ -262,9 +262,9 @@ export function DashboardMetricCards({
 
       {/* Capital Allocated Modal */}
       {openModal === "capital" && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpenModal(null)} />
-          <div className="relative glass-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative glass-card rounded-none sm:rounded-2xl p-4 sm:p-6 w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-medium">Capital Allocated</h2>
               <button onClick={() => setOpenModal(null)} className="p-2 hover:bg-secondary rounded-lg transition-colors">
@@ -332,9 +332,9 @@ export function DashboardMetricCards({
 
       {/* Pending Actions Modal */}
       {openModal === "pending" && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpenModal(null)} />
-          <div className="relative glass-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative glass-card rounded-none sm:rounded-2xl p-4 sm:p-6 w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-medium">Pending Actions</h2>
               <button onClick={() => setOpenModal(null)} className="p-2 hover:bg-secondary rounded-lg transition-colors">
@@ -404,9 +404,9 @@ export function DashboardMetricCards({
 
       {/* Target Progress Modal */}
       {openModal === "progress" && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpenModal(null)} />
-          <div className="relative glass-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative glass-card rounded-none sm:rounded-2xl p-4 sm:p-6 w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-medium">Target Progress</h2>
               <button onClick={() => setOpenModal(null)} className="p-2 hover:bg-secondary rounded-lg transition-colors">

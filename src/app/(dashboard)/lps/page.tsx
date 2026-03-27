@@ -91,15 +91,15 @@ export default async function LPsPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-5rem)]">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]">
       {/* LP Contacts Table */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
         <div>
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-medium tracking-tight">LP Contacts</h1>
-              <p className="text-muted-foreground mt-1">Manage your limited partner relationships</p>
+              <h1 className="text-2xl md:text-3xl font-medium tracking-tight">LP Contacts</h1>
+              <p className="text-muted-foreground mt-1 text-sm">Manage your limited partner relationships</p>
             </div>
             <div className="flex items-center gap-3">
               <EmailSyncButton />
@@ -137,7 +137,9 @@ export default async function LPsPage() {
               </Link>
             </div>
           ) : (
-            <div className="glass-card rounded-2xl overflow-hidden">
+            <>
+            {/* Desktop Table */}
+            <div className="glass-card rounded-2xl overflow-hidden hidden md:block">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
@@ -189,6 +191,39 @@ export default async function LPsPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {lps.map((lp) => (
+                <Link
+                  key={lp.id}
+                  href={`/lps/${lp.id}`}
+                  className="block glass-card rounded-xl p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{lp.name}</p>
+                      {lp.firm && (
+                        <p className="text-sm text-muted-foreground truncate">{lp.firm}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{lp.email}</p>
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                    <span className="font-medium text-[hsl(var(--success))] metric-number text-sm">
+                      {formatCurrency(lp.total_commitments)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {lp.last_interaction_at
+                        ? formatDistanceToNow(new Date(lp.last_interaction_at), { addSuffix: true })
+                        : "-"}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            </>
           )}
         </div>
       </div>

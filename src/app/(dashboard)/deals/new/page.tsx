@@ -148,7 +148,7 @@ export default function NewDealPage() {
   };
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 md:px-8 py-6">
       <div className="mb-8">
         <Link href="/deals" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -158,7 +158,7 @@ export default function NewDealPage() {
         <p className="text-muted-foreground mt-1">Create a new fundraising deal</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 glass-card rounded-2xl p-8">
+      <form onSubmit={handleSubmit} className="space-y-6 glass-card rounded-2xl p-4 sm:p-8">
         {error && (
           <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm">
             {error}
@@ -224,7 +224,7 @@ export default function NewDealPage() {
         </div>
 
         {/* Access + Sector + Geography */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label htmlFor="access" className="block text-sm font-medium mb-2">Access</label>
             <select
@@ -279,7 +279,7 @@ export default function NewDealPage() {
         </div>
 
         {/* Dates */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="createdDate" className="block text-sm font-medium mb-2">
               Created Date
@@ -307,7 +307,7 @@ export default function NewDealPage() {
         </div>
 
         {/* Investment Info */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="investmentStage" className="block text-sm font-medium mb-2">
               Investment Stage
@@ -336,7 +336,7 @@ export default function NewDealPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label htmlFor="targetRaise" className="block text-sm font-medium mb-2">
               Target Raise ($)
@@ -380,7 +380,7 @@ export default function NewDealPage() {
         {/* Deal Terms */}
         <div className="border-t border-border pt-6 mt-6">
           <h3 className="text-sm font-medium mb-4">Deal Terms</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="feePercent" className="block text-sm font-medium mb-2">
                 Management Fee (%)
@@ -419,7 +419,7 @@ export default function NewDealPage() {
         {/* Investor Updates */}
         <div className="border-t border-border pt-6 mt-6">
           <h3 className="text-sm font-medium mb-4">Investor Updates</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="founderEmail" className="block text-sm font-medium mb-2">
                 Founder/Company Email

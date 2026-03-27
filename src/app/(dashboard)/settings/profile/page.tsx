@@ -41,7 +41,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 md:px-8 py-6">
       <div className="mb-6">
         <Link
           href="/settings"
@@ -53,7 +53,7 @@ export default async function ProfilePage() {
       </div>
 
       <div className="space-y-6">
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
               <User className="w-5 h-5 text-muted-foreground" />
@@ -72,7 +72,7 @@ export default async function ProfilePage() {
         </div>
 
         {/* Danger Zone */}
-        <div className="glass-card rounded-2xl p-6 border border-destructive/20">
+        <div className="glass-card rounded-2xl p-4 sm:p-6 border border-destructive/20">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-destructive/10 rounded-xl flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-destructive" />

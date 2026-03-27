@@ -37,7 +37,7 @@ export default async function SettingsPage() {
   const hasOrg = !!userData?.organization_id;
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 md:px-8 py-6">
       {/* Header */}
       <div className="mb-8">
         {!hasOrg && (
@@ -56,7 +56,7 @@ export default async function SettingsPage() {
 
       <div className="space-y-6">
         {/* Profile Section */}
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
               <User className="w-5 h-5 text-muted-foreground" />
@@ -67,13 +67,13 @@ export default async function SettingsPage() {
             </div>
           </div>
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-border">
-              <span className="text-sm text-muted-foreground">Email</span>
-              <span className="font-medium">{user.email}</span>
+            <div className="flex items-center justify-between py-3 border-b border-border gap-4">
+              <span className="text-sm text-muted-foreground shrink-0">Email</span>
+              <span className="font-medium truncate text-right">{user.email}</span>
             </div>
-            <div className="flex items-center justify-between py-3 border-b border-border">
-              <span className="text-sm text-muted-foreground">Name</span>
-              <span className="font-medium">{userData?.name || "Not set"}</span>
+            <div className="flex items-center justify-between py-3 border-b border-border gap-4">
+              <span className="text-sm text-muted-foreground shrink-0">Name</span>
+              <span className="font-medium truncate text-right">{userData?.name || "Not set"}</span>
             </div>
             <div className="pt-2">
               <Link
@@ -90,7 +90,7 @@ export default async function SettingsPage() {
         {hasOrg && (
           <>
             {/* Organization Section */}
-            <div className="glass-card rounded-2xl p-6">
+            <div className="glass-card rounded-2xl p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-muted-foreground" />
@@ -101,14 +101,14 @@ export default async function SettingsPage() {
                 </div>
               </div>
               <div className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Name</span>
-                  <span className="font-medium">{userData.organizations?.name}</span>
+                <div className="flex items-center justify-between py-3 border-b border-border gap-4">
+                  <span className="text-sm text-muted-foreground shrink-0">Name</span>
+                  <span className="font-medium truncate text-right">{userData.organizations?.name}</span>
                 </div>
                 {userData.organizations?.domain && (
-                  <div className="flex items-center justify-between py-3 border-b border-border">
-                    <span className="text-sm text-muted-foreground">Domain</span>
-                    <span className="font-medium">{userData.organizations.domain}</span>
+                  <div className="flex items-center justify-between py-3 border-b border-border gap-4">
+                    <span className="text-sm text-muted-foreground shrink-0">Domain</span>
+                    <span className="font-medium truncate text-right">{userData.organizations.domain}</span>
                   </div>
                 )}
                 {userRole === "admin" && (
@@ -126,7 +126,7 @@ export default async function SettingsPage() {
             </div>
 
             {/* Integrations Section */}
-            <div className="glass-card rounded-2xl p-6">
+            <div className="glass-card rounded-2xl p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
                   <Link2 className="w-5 h-5 text-muted-foreground" />

@@ -115,6 +115,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);
+  // Return the user to an error page with a type-specific message
+  const type = next === "/reset-password" ? "reset_password" : "confirm_email";
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_error&type=${type}`);
 }

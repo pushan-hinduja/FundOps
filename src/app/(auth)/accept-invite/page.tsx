@@ -14,6 +14,7 @@ function AcceptInviteForm() {
   const [step, setStep] = useState(0); // 0 = loading, 1 = name/password, 2 = org confirmation
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInitError, setIsInitError] = useState(false);
   const [barStyle, setBarStyle] = useState<React.CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -25,6 +26,7 @@ function AcceptInviteForm() {
       const hash = window.location.hash.substring(1);
       if (!hash) {
         setError("Invalid invite link. Please ask your admin to resend the invite.");
+        setIsInitError(true);
         setStep(1);
         return;
       }
@@ -35,6 +37,7 @@ function AcceptInviteForm() {
 
       if (!accessToken || !refreshToken) {
         setError("Invalid invite link. Please ask your admin to resend the invite.");
+        setIsInitError(true);
         setStep(1);
         return;
       }
@@ -47,6 +50,7 @@ function AcceptInviteForm() {
 
       if (sessionError) {
         setError("This invite link has expired. Please ask your admin to resend the invite.");
+        setIsInitError(true);
         setStep(1);
         return;
       }
@@ -55,6 +59,7 @@ function AcceptInviteForm() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setError("Could not verify your identity. Please ask your admin to resend the invite.");
+        setIsInitError(true);
         setStep(1);
         return;
       }
@@ -204,6 +209,24 @@ function AcceptInviteForm() {
       <div className="w-full max-w-sm mx-auto">
         {logo}
         <div className="text-center text-neutral-400 text-sm">Setting up your invite...</div>
+      </div>
+    );
+  }
+
+  // Show only the error message when the link is invalid/expired
+  if (isInitError) {
+    return (
+      <div className="w-full max-w-sm mx-auto">
+        {logo}
+        <div className="p-3 rounded-xl text-sm bg-red-50 text-red-600">
+          {error}
+        </div>
+        <Link
+          href="/login"
+          className="block mt-4 w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity text-center"
+        >
+          Back to Sign In
+        </Link>
       </div>
     );
   }

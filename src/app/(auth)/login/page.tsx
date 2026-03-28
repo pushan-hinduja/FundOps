@@ -23,9 +23,23 @@ function LoginForm() {
   const [step, setStep] = useState(1);
   const [signupComplete, setSignupComplete] = useState(false);
   const [barStyle, setBarStyle] = useState<React.CSSProperties>({});
+  const [linkError, setLinkError] = useState<string | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const supabase = createClient();
+
+  // Show error message for invalid/expired auth links
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "auth_callback_error") {
+      const type = searchParams.get("type");
+      if (type === "reset_password") {
+        setLinkError("This password reset link is invalid or has expired. Please request a new one.");
+      } else {
+        setLinkError("This confirmation link is invalid or has expired. Please sign up again to receive a new link.");
+      }
+    }
+  }, [searchParams]);
 
   // Position progress bar 10px from bottom of the content area
   useEffect(() => {
@@ -191,6 +205,28 @@ function LoginForm() {
   );
 
   const inputClass = "w-full px-4 py-2.5 border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-neutral-200 transition-all text-sm";
+
+  // Invalid/expired link error screen
+  if (linkError) {
+    return (
+      <div className="w-full max-w-sm mx-auto">
+        {logo}
+        <div className="p-3 rounded-xl text-sm bg-red-50 text-red-600">
+          {linkError}
+        </div>
+        <button
+          onClick={() => {
+            setLinkError(null);
+            // Clean up the URL params
+            window.history.replaceState(null, "", "/login");
+          }}
+          className="mt-4 w-full py-2.5 px-4 bg-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          Back to Sign In
+        </button>
+      </div>
+    );
+  }
 
   // Sign In form
   if (mode === "signin") {
